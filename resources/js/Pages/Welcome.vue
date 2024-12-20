@@ -7,9 +7,7 @@
                 <span class="text-6xl font-bold">🚧</span>
             </div>
             <h1 class="text-4xl font-extrabold mb-4">Estamos em Construção!</h1>
-            <p class="text-lg mb-6">
-                Nosso site está sendo atualizado. Volte em breve!
-            </p>
+            <p class="text-lg mb-6">site em contrução.</p>
             <div class="text-sm text-gray-200">
                 Enquanto isso, você pode ficar conectado conosco nas redes
                 sociais.
