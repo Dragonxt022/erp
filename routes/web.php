@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Rotas livres
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -13,6 +14,13 @@ Route::get('/', function () {
     ]);
 });
 
+
+Route::get('/entar', function () {
+    return Inertia::render('Entrar/Index');
+})->name('entar');
+
+
+// Rotas protegidas
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
