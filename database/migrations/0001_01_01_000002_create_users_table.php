@@ -15,10 +15,18 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('pin')->unique()->nullable();  // Alterando o campo para aceitar valores nulos
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
-            $table->foreignId('current_team_id')->nullable();
+
+            // Nova coluna de chave estrangeira para unidade
+            $table->foreignId('unidade_id')->nullable()->constrained('infor_unidade')->onDelete('set null');
+
+            // Relacionamento com a tabela cargos (id)
+            $table->foreignId('cargo_id')->nullable()->constrained('cargos')->onDelete('set null');  // Agora referenciando o cargo
+            $table->string('cpf')->nullable();  // Novo campo para o CPF do usuário
+
             $table->string('profile_photo_path', 2048)->nullable();
             $table->timestamps();
         });

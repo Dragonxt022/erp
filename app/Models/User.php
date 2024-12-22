@@ -13,8 +13,6 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     use HasApiTokens;
-
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
     use HasProfilePhoto;
     use Notifiable;
@@ -29,6 +27,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'unidade_id',  // Novo campo de unidade
+        'cargo_id',    // Novo campo de cargo
+        'pin',         // Novo campo para PIN
+        'cpf',         // Novo campo para CPF
     ];
 
     /**
@@ -64,4 +66,37 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Relacionamento com a tabela de permissões
+     */
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'user_permissions');
+    }
+
+    /**
+     * Relacionamento com a tabela de UserDetails
+     */
+    public function userDetails()
+    {
+        return $this->hasOne(UserDetails::class);
+    }
+
+    /**
+     * Relacionamento com a tabela de Unidade
+     */
+    public function unidade()
+    {
+        return $this->belongsTo(InforUnidade::class, 'unidade_id');
+    }
+
+    /**
+     * Relacionamento com a tabela de Cargo
+     */
+    public function cargo()
+    {
+        return $this->belongsTo(Cargo::class, 'cargo_id'); // Referência à chave estrangeira cargo_id
+    }
+
 }
