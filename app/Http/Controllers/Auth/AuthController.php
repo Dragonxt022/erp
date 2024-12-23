@@ -64,7 +64,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             // Retornar para a página principal do dashboard
-            return Inertia::render('Painel/Index');
+            return Inertia::location(route('painel')); 
         } catch (\Exception $e) {
             Log::error('Erro ao tentar autenticar usuário: ' . $e->getMessage());
 

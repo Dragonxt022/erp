@@ -1,31 +1,44 @@
 <template>
-  <div
+  <Link
+    v-if="!isLogout"
     class="menu-item"
-    :class="['menu-item', { active: isActive }]"
-    @click="handleClick"
+    :class="{ active: isActive }"
+    :href="link"
   >
     <div class="icon">
       <img :src="icon" alt="icon" />
     </div>
     <div class="label">{{ label }}</div>
-  </div>
+  </Link>
+
+  <!-- Caso seja logout, trata com POST -->
+  <form v-else @submit.prevent="handleLogout">
+    <button type="submit" class="menu-item">
+      <div class="icon">
+        <img :src="icon" alt="icon" />
+      </div>
+      <div class="label">{{ label }}</div>
+    </button>
+  </form>
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue';
+import { defineProps } from 'vue';
+import { router } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
   label: String,
   icon: String,
-  link: String,
-  isActive: Boolean,
+  link: String, // URL ou rota gerada com Inertia
+  isActive: Boolean, // Define o estado ativo
+  isLogout: Boolean, // Define se o link é para logout
 });
 
-const emit = defineEmits();
-
-const handleClick = () => {
-  // Emite o evento para o componente pai se necessário
-  emit('onActivate', props.link);
+const handleLogout = () => {
+  if (props.isLogout) {
+    router.post(route('logout')); // Envia a requisição POST para a rota de logout
+  }
 };
 </script>
 
