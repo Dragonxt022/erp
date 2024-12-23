@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
-    <Head title="E-mail" />
-    <div class="painel-title">E-mail</div>
+    <Head title="Unidades" />
+    <div class="painel-title">Unidades</div>
     <div class="painel-subtitle">
       <p>Acompanhe seu negócio em tempo real</p>
     </div>

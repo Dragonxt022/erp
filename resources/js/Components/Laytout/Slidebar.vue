@@ -94,6 +94,11 @@ const menuCategories = [
         icon: '/storage/images/inspecionador.svg',
         link: 'painel/inspetor',
       },
+      {
+        label: 'Sair',
+        icon: '/storage/images/log-out.png',
+        link: 'painel/inspetor',
+      },
     ],
   },
 ];

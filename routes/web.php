@@ -25,9 +25,41 @@ Route::middleware([
         return Inertia::render('Painel/Index');
     })->name('painel');
 
+    Route::get('/email', function () {
+        return Inertia::render('Email/Index');
+    })->name('email');
 
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/comunidade', function () {
+        return Inertia::render('Comunidade/Index');
+    })->name('comunidade');
+
+    Route::get('/midias', function () {
+        return Inertia::render('Midias/Index');
+    })->name('midias');
+
+    Route::get('/megafone', function () {
+        return Inertia::render('Megafone/Index');
+    })->name('megafone');
+
+    Route::get('/franqueados', function () {
+        return Inertia::render('Franqueados/Index');
+    })->name('franqueados');
+
+    Route::get('/unidades', function () {
+        return Inertia::render('Unidades/Index');
+    })->name('unidades');
+
+    Route::get('/insumos', function () {
+        return Inertia::render('Insumos/Index');
+    })->name('insumos');
+
+    Route::get('/inspetor', function () {
+        return Inertia::render('Inspetor/Index');
+    })->name('inspetor');
+
+    Route::get('/sair', function () {
+        return Inertia::render('sair/Index');
+    })->name('sair');
+
 
 });
