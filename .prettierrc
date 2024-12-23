@@ -1,31 +1,11 @@
 {
-    "semi": true,
-    "singleQuote": true,
-    "tabWidth": 2,
-    "useTabs": false,
-    "bracketSpacing": true,
-    "jsxBracketSameLine": false,
-    "trailingComma": "es5",
-    "arrowParens": "always",
-    "endOfLine": "lf",
-    "htmlWhitespaceSensitivity": "ignore",
-    "phpVersion": "7.4",
-    "embeddedLanguageFormatting": "auto",
-    "printWidth": 80,
-    "proseWrap": "preserve",
-    "overrides": [
-        {
-            "files": "*.php",
-            "options": {
-                "tabWidth": 4,
-                "singleQuote": false
-            }
-        },
-        {
-            "files": "*.html",
-            "options": {
-                "printWidth": 120
-            }
-        }
-    ]
+  "printWidth": 80,
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "htmlWhitespaceSensitivity": "ignore",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf"
 }

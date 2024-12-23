@@ -1,85 +1,197 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import AuthenticationCard from '@/Components/AuthenticationCard.vue';
-import AuthenticationCardLogo from '@/Components/AuthenticationCardLogo.vue';
 import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
 
 const props = defineProps({
-    email: String,
-    token: String,
+  email: String,
+  token: String,
 });
 
 const form = useForm({
-    token: props.token,
-    email: props.email,
-    password: '',
-    password_confirmation: '',
+  token: props.token,
+  email: props.email,
+  password: '',
+  password_confirmation: '',
 });
 
 const submit = () => {
-    form.post(route('password.update'), {
-        onFinish: () => form.reset('password', 'password_confirmation'),
-    });
+  form.post(route('password.update'), {
+    onFinish: () => form.reset('password', 'password_confirmation'),
+  });
 };
 </script>
 
-<template>
-    <Head title="Reset Password" />
+<style scoped>
+.login-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: #f3f8f3;
+}
 
-    <AuthenticationCard>
-        <template #logo>
-            <AuthenticationCardLogo />
-        </template>
+.logo-img {
+  width: 151px;
+  height: 30px;
+  position: absolute;
+  left: 40px;
+  top: 19px;
+}
+
+.login-box {
+  padding: 70px 60px;
+  position: absolute;
+  left: 35%;
+  top: 145px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+}
+
+.login-box-inner {
+  width: 367px;
+  height: 402px;
+  position: relative;
+}
+
+.title-container {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #262a27;
+  line-height: 41px;
+}
+
+.subtitle {
+  font-size: 17px;
+  color: #6d6d6e;
+}
+
+.input-container {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+label {
+  font-size: 17px;
+  font-weight: 600;
+  color: #262a27;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  padding: 8px 16px;
+  background: white;
+  border: 2px solid #d7d7db;
+  border-radius: 8px;
+  font-size: 16px;
+  color: #222222;
+  opacity: 0.8;
+}
+
+.forgot-password {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #262a27;
+  margin-top: 10px;
+}
+</style>
+<template>
+  <Head title="Recuperar Senha" />
+  <div class="relative w-[1280px] h-[70px] bg-white overflow-hidden">
+    <!-- Fundo branco -->
+    <div class="absolute inset-0 bg-white"></div>
+
+    <!-- Logotipo (área para adicionar logo ou texto) -->
+    <div class="absolute left-[65px] top-[21px] w-[149px] h-[27.27px]">
+      <img
+        src="/storage/images/logo_tipo_verde.svg"
+        alt="loto tipo verde"
+        class="w-full h-full"
+      />
+    </div>
+
+    <!-- Menu hambúrguer -->
+    <div
+      class="absolute left-[19px] top-[26px] flex flex-wrap gap-[3px] w-[26px] h-[18px]"
+    >
+      <img
+        src="/storage/images/quadrados_verdes.svg"
+        alt="Quadrados verdes"
+        class="w-full h-full"
+      />
+    </div>
+  </div>
+
+  <div class="login-container">
+    <!-- Imagens com alt para acessibilidade -->
+
+    <div class="login-box">
+      <div class="login-box-inner">
+        <div class="title-container">
+          <div class="title">Recuperar Senha</div>
+          <div class="subtitle">Defina uma nova senha para sua conta</div>
+        </div>
+
+        <!-- Mensagem de status de erro ou sucesso -->
+        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
+          {{ status }}
+        </div>
 
         <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-                <TextInput
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
+          <!-- Campo Nova Senha -->
+          <div class="input-container">
+            <label for="password">Nova Senha</label>
+            <input
+              id="password"
+              v-model="form.password"
+              class="input"
+              type="password"
+              placeholder="●●●●●●●●●●●●"
+              autocomplete="new-password"
+              aria-label="Nova Senha"
+            />
+            <!-- Exibindo erro -->
+            <InputError class="mt-2" :message="form.errors.password" />
+          </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-                <TextInput
-                    id="password"
-                    v-model="form.password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="new-password"
-                />
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
+          <!-- Campo Confirmar Senha -->
+          <div class="input-container">
+            <label for="password_confirmation">Confirmar Senha</label>
+            <input
+              id="password_confirmation"
+              v-model="form.password_confirmation"
+              class="input"
+              type="password"
+              placeholder="●●●●●●●●●●●●"
+              autocomplete="new-password"
+              aria-label="Confirmar Senha"
+            />
+            <!-- Exibindo erro -->
+            <InputError
+              class="mt-2"
+              :message="form.errors.password_confirmation"
+            />
+          </div>
 
-            <div class="mt-4">
-                <InputLabel for="password_confirmation" value="Confirm Password" />
-                <TextInput
-                    id="password_confirmation"
-                    v-model="form.password_confirmation"
-                    type="password"
-                    class="mt-1 block w-full"
-                    required
-                    autocomplete="new-password"
-                />
-                <InputError class="mt-2" :message="form.errors.password_confirmation" />
-            </div>
-
-            <div class="flex items-center justify-end mt-4">
-                <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Reset Password
-                </PrimaryButton>
-            </div>
+          <!-- Botão Atualizar Senha -->
+          <ButtonPrimary
+            :class="{ 'opacity-25': form.processing }"
+            :disabled="form.processing"
+          >
+            Atualizar Senha
+          </ButtonPrimary>
         </form>
-    </AuthenticationCard>
+      </div>
+    </div>
+  </div>
 </template>

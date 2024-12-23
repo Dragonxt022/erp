@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -15,9 +16,12 @@ Route::get('/', function () {
 });
 
 
-Route::get('/entar', function () {
-    return Inertia::render('Entrar/Index');
-})->name('entar');
+// Rotas de autenticação
+Route::get('/entrar', [AuthController::class, 'showLoginForm'])->name('entrar');
+
+// Rota para o login (POST), utilizando o AuthController
+Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painal');
+
 
 
 // Rotas protegidas
@@ -26,7 +30,14 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
+
+    Route::get('/painel', function () {
+        return Inertia::render('Painel/Index');
+    })->name('painel');
+
+
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
 });

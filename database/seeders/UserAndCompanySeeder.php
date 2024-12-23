@@ -39,9 +39,9 @@ class UserAndCompanySeeder extends Seeder
 
         // Criando o usuário
         $user = User::create([
-            'name' => 'Usuário Teste',
-            'email' => 'usuario@teste.com',
-            'password' => Hash::make('password123'),  // Senha segura
+            'name' => 'Administrador',
+            'email' => 'erp@erp.taiksu.com.br',
+            'password' => Hash::make('12345678'),  // Senha segura
             'unidade_id' => $unidade->id,  // Referencia a unidade criada
             'cargo_id' => $cargo->id,  // Agora estamos referenciando o cargo pelo seu ID
             'pin' => '1234',  // PIN do usuário
