@@ -1,9 +1,9 @@
 <template>
   <AppLayout>
-    <Head title="Painel" />
+    <Head title="Fornecedores" />
     <div class="painel-container">
       <div class="painel-content">
-        <div class="painel-title">Painel</div>
+        <div class="painel-title">Fornecedores</div>
         <div class="painel-subtitle">
           <p>Acompanhe seu negócio em tempo real</p>
           <p>
