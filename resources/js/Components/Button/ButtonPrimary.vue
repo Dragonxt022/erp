@@ -1,7 +1,6 @@
 <template>
   <button class="login-btn-text">
     <slot></slot>
-    <!-- Para permitir que o texto do botão seja personalizado -->
   </button>
 </template>
 

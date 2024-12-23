@@ -33,6 +33,11 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
+         // Redireciona todas as tentativas de acesso à página de login para a rota 'entrar'
+         Fortify::loginView(function () {
+            return redirect()->route('entrar'); // Substitua 'entrar' pela rota que deseja
+        });
+
         RateLimiter::for('login', function (Request $request) {
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
 

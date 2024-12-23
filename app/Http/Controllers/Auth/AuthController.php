@@ -79,9 +79,6 @@ class AuthController extends Controller
         }
     }
 
-
-
-
     /**
      * Handle the logout request.
      *
@@ -96,4 +93,6 @@ class AuthController extends Controller
         // Retornar a resposta para o frontend, indicando que o logout foi realizado
         return Inertia::render('Auth/Entrar'); // Exemplo, retornar à página de login
     }
+
+
 }
