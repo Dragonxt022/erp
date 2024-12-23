@@ -9,11 +9,13 @@
       <div class="navbar-left">
         <div class="navbar-logo">
           <div class="mr-4">
-            <img
-              src="/storage/images/quadrados_verdes.svg"
-              alt="Quadrados verdes"
-              class="w-full h-full"
-            />
+            <a href="https://www.taiksu.com.br/office/" target="_blank">
+              <img
+                src="/storage/images/quadrados_verdes.svg"
+                alt="Quadrados verdes"
+                class="w-full h-full"
+              />
+            </a>
           </div>
           <div>
             <img
