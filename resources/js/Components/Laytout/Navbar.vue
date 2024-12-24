@@ -164,7 +164,7 @@ a {
 }
 
 .user-details {
-  line-height: 1.2px;
+  line-height: 16px;
   display: flex;
   flex-direction: column;
 }
