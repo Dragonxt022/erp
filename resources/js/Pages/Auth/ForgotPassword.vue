@@ -39,8 +39,8 @@ const submit = async () => {
 }
 
 .background-img {
-  width: 543px;
-  height: 832px;
+  width: auto;
+  height: 100vh;
   position: absolute;
 }
 

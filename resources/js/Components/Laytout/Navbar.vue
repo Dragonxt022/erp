@@ -18,11 +18,13 @@
             </a>
           </div>
           <div>
-            <img
-              src="/storage/images/logo_tipo_verde.svg"
-              alt="loto tipo verde"
-              class="w-full h-full"
-            />
+            <a :href="route('painel')">
+              <img
+                src="/storage/images/logo_tipo_verde.svg"
+                alt="loto tipo verde"
+                class="w-full h-full"
+              />
+            </a>
           </div>
         </div>
       </div>
@@ -39,14 +41,12 @@
           <div class="inner-circle"></div>
         </div>
         <div class="user-info">
-          <img
-            src="https://via.placeholder.com/36x36"
-            alt="Avatar"
-            class="avatar"
-          />
+          <img :src="profilePhoto" alt="Avatar" class="avatar" />
           <div class="user-details">
-            <div class="user-name">Gustavo Conte</div>
-            <div class="user-location">Santa Catarina</div>
+            <div class="user-name">{{ user.name }}</div>
+            <div class="user-location">
+              {{ user.user_details?.cidade }}
+            </div>
           </div>
         </div>
       </div>
@@ -55,12 +55,52 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'Navbar',
+  data() {
+    return {
+      user: {},
+    };
+  },
+  computed: {
+    // Computed property para determinar a URL da foto de perfil
+    profilePhoto() {
+      // Verifica se há uma imagem de perfil, senão usa a imagem padrão
+      return this.user.profile_photo_path
+        ? `/storage/images/${this.user.profile_photo_path}`
+        : '/storage/images/user.png'; // Caminho da imagem padrão
+    },
+  },
+  mounted() {
+    this.fetchUserProfile();
+  },
+  methods: {
+    async fetchUserProfile() {
+      try {
+        const response = await axios.get('/api/profile');
+        if (response.data.status === 'success') {
+          this.user = response.data.data; // Atualiza o perfil do usuário com os dados retornados
+        } else {
+          console.error(
+            'Erro ao carregar os dados do usuário:',
+            response.data.message
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+      }
+    },
+  },
 };
 </script>
 
 <style scoped>
+a {
+  text-decoration: none;
+  cursor: pointer;
+}
 .navbar {
   width: 100%;
   height: 70px;
@@ -124,6 +164,7 @@ export default {
 }
 
 .user-details {
+  line-height: 1.2px;
   display: flex;
   flex-direction: column;
 }

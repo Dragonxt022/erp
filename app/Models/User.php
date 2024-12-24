@@ -99,6 +99,14 @@ class User extends Authenticatable
         return $this->belongsTo(Cargo::class, 'cargo_id'); // Referência à chave estrangeira cargo_id
     }
 
+     /**
+     * Acessor para obter o nome completo do cargo.
+     */
+    public function getCargoNameAttribute()
+    {
+        return $this->cargo ? $this->cargo->name : null;
+    }
+
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));

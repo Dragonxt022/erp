@@ -62,4 +62,8 @@ Route::middleware([
     })->name('sair');
 
 
+    Route::get('/api/profile', [AuthController::class, 'getProfile']);
+
+
+
 });

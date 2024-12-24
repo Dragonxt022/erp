@@ -118,7 +118,7 @@ const applyCpfMask = (event) => {
     value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
   }
 
-  form.cpf = value; // Atualiza o modelo Vue com o CPF formatado
+  form.cpf = value;
 };
 </script>
 
@@ -131,8 +131,8 @@ const applyCpfMask = (event) => {
 }
 
 .background-img {
-  width: 543px;
-  height: 832px;
+  width: auto;
+  height: 100vh;
   position: absolute;
 }
 

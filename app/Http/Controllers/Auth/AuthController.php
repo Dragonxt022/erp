@@ -64,7 +64,7 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             // Retornar para a página principal do dashboard
-            return Inertia::location(route('painel')); 
+            return Inertia::location(route('painel'));
         } catch (\Exception $e) {
             Log::error('Erro ao tentar autenticar usuário: ' . $e->getMessage());
 
@@ -93,6 +93,37 @@ class AuthController extends Controller
         // Retornar a resposta para o frontend, indicando que o logout foi realizado
         return Inertia::render('Auth/Entrar'); // Exemplo, retornar à página de login
     }
+
+    // API
+    // Função para enviar os dados do perfil do usuário autenticado
+    public function getProfile()
+    {
+        // Verifica se o usuário está autenticado
+        $user = Auth::user();
+
+        if ($user) {
+            // Carrega os relacionamentos necessários
+            $user = $user->load('permissions', 'userDetails', 'unidade', 'cargo');
+
+            // Adiciona manualmente o nome do cargo, caso o acessor não esteja funcionando
+            $user->cargo_name = $user->cargo ? $user->cargo->name : null;
+
+            // Retorna os dados do usuário com os relacionamentos
+            return response()->json([
+                'status' => 'success',
+                'data' => $user,
+            ]);
+        }
+
+        // Se o usuário não estiver autenticado, retorna erro
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Usuário não autenticado.',
+        ], 401);
+    }
+
+
+
 
 
 }
