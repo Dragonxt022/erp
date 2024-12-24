@@ -20,6 +20,6 @@
 }
 
 .login-btn-text:hover {
-  background-color: #437520; /* Alterando a cor de fundo no hover */
+  background-color: #3b622b; /* Alterando a cor de fundo no hover */
 }
 </style>

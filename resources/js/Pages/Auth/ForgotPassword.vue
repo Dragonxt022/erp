@@ -24,7 +24,8 @@ const submit = async () => {
     },
     onError: (errors) => {
       // Caso haja erros, exiba o erro no formulário
-      status = errors.email ? 'Ocorreu um erro ao enviar o e-mail.' : null;
+      console.log(errors);
+      form.errors.email = errors.email;
     },
   });
 };
