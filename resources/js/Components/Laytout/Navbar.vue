@@ -21,7 +21,7 @@
             <a :href="route('painel')">
               <img
                 src="/storage/images/logo_tipo_verde.svg"
-                alt="loto tipo verde"
+                alt="logo tipo verde"
                 class="w-full h-full"
               />
             </a>
@@ -43,10 +43,10 @@
         <div class="user-info">
           <img :src="profilePhoto" alt="Avatar" class="avatar" />
           <div class="user-details">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-location">
-              {{ user.user_details?.cidade }}
-            </div>
+            <div class="user-name">{{ user?.name }}</div>
+            <div class="user-location">{{ user?.user_details?.cidade }}</div>
+
+            <!-- Exibindo cargo -->
           </div>
         </div>
       </div>
@@ -54,44 +54,38 @@
   </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script lang="js">
+import { ref, onMounted, computed } from 'vue';
+import { useUserStore } from '@/stores/user'; // Importando o store
 
 export default {
-  name: 'Navbar',
-  data() {
-    return {
-      user: {},
-    };
-  },
-  computed: {
-    // Computed property para determinar a URL da foto de perfil
-    profilePhoto() {
-      // Verifica se há uma imagem de perfil, senão usa a imagem padrão
-      return this.user.profile_photo_path
-        ? `/storage/images/${this.user.profile_photo_path}`
-        : '/storage/images/user.png'; // Caminho da imagem padrão
-    },
-  },
-  mounted() {
-    this.fetchUserProfile();
-  },
-  methods: {
-    async fetchUserProfile() {
-      try {
-        const response = await axios.get('/api/profile');
-        if (response.data.status === 'success') {
-          this.user = response.data.data; // Atualiza o perfil do usuário com os dados retornados
-        } else {
-          console.error(
-            'Erro ao carregar os dados do usuário:',
-            response.data.message
-          );
-        }
-      } catch (error) {
-        console.error('Erro ao buscar perfil:', error);
+  setup() {
+    const userStore = useUserStore();
+
+    // Aguardar o carregamento do perfil
+    onMounted(async () => {
+      if (!userStore.user) {
+        await userStore.fetchUserProfile();
       }
-    },
+    });
+
+    // Variáveis reativas para o template
+    const user = computed(() => userStore.user);
+    const profilePhoto = computed(() => {
+      // Verifica se existe foto do perfil, senão gera uma imagem com as iniciais
+      return user.value?.profile_photo_url ||
+             `https://ui-avatars.com/api/?name=${getInitials(user.value?.name)}&color=7F9CF5&background=EBF4FF`;
+    });
+
+    // Função para pegar as iniciais do nome
+    function getInitials(name) {
+      if (!name) return 'NN'; // Se não houver nome, retorna NN
+      const nameParts = name.split(' ');
+      const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join('');
+      return initials;
+    }
+
+    return { user, profilePhoto };
   },
 };
 </script>
