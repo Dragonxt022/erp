@@ -25,4 +25,6 @@ class InforUnidade extends Model
      {
          return $this->hasMany(User::class);  // Uma unidade pode ter muitos usuários
      }
+
+
 }

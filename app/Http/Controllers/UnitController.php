@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use App\Models\InforUnidade;
+use App\Models\User;
+use Illuminate\Http\Request;
+
+class UnitController extends Controller
+{
+    /**
+     * Exibir a lista de unidades.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getUnidades()
+    {
+        // Recupera todas as unidades
+        $unidades = InforUnidade::orderBy('id', 'desc')->get();
+
+        // Para cada unidade, recupera os usuários relacionados
+        $resultados = $unidades->map(function ($unidade) {
+            return [
+                'unidade' => $unidade,
+                'usuarios' => User::where('unidade_id', $unidade->id)->get(),
+            ];
+        });
+
+        return response()->json($resultados);
+    }
+
+
+
+
+    /**
+     * Criar uma nova unidade.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function createUnidade(Request $request)
+    {
+        // Validação dos dados recebidos
+        $request->validate([
+            'cep' => 'required|string|max:10',
+            'cidade' => 'required|string|max:255',
+            'bairro' => 'required|string|max:255',
+            'rua' => 'required|string|max:255',
+            'numero' => 'required|string|max:10',
+            'cnpj' => 'required|string|max:18', // Exemplo de máscara de CNPJ
+        ]);
+
+        // Cria a nova unidade
+        $unidade = InforUnidade::create([
+            'cep' => $request->cep,
+            'cidade' => $request->cidade,
+            'bairro' => $request->bairro,
+            'rua' => $request->rua,
+            'numero' => $request->numero,
+            'cnpj' => $request->cnpj,
+        ]);
+
+        // Retorna a unidade criada com status 201 (Criado)
+        return response()->json($unidade, 201);
+    }
+}

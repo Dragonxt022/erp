@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -62,7 +62,12 @@ Route::middleware([
     })->name('sair');
 
 
+    // API
     Route::get('/api/profile', [AuthController::class, 'getProfile']);
+
+    // Unidades
+    Route::get('/api/unidades', [ UnitController::class, 'getUnidades']);
+    Route::post('/api/unidades', [UnitController::class, 'createUnidade']);
 
 
 
