@@ -90,6 +90,7 @@ watch(
   (newVal) => {
     if (newVal) {
       id.value = newVal.id || '';
+      cidade.value = newVal.cidade || '';
       cep.value = newVal.cep || '';
       bairro.value = newVal.bairro || '';
       rua.value = newVal.rua || '';
