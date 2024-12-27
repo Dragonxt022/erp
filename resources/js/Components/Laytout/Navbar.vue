@@ -44,9 +44,10 @@
           <img :src="profilePhoto" alt="Avatar" class="avatar" />
           <div class="user-details">
             <div class="user-name">{{ user?.name }}</div>
-            <div class="user-location">{{ user?.user_details?.cidade }}</div>
-
-            <!-- Exibindo cargo -->
+            <div class="user-location">
+              {{ unidade?.cidade || 'Taiksu Franchising' }}
+            </div>
+            <!-- Exibindo a cidade da unidade -->
           </div>
         </div>
       </div>
@@ -62,15 +63,31 @@ export default {
   setup() {
     const userStore = useUserStore();
 
+    // Função para atualizar a unidade e a cidade
+    const updateUnitData = async () => {
+      // Faça uma chamada para atualizar os dados da unidade do servidor
+      const updatedUnit = await userStore.fetchUnitData(); // Implemente essa função no seu store ou serviço
+
+      // Verifique se a cidade mudou
+      if (updatedUnit?.cidade !== userStore.user?.unidade?.cidade) {
+        // Se a cidade foi alterada, atualize os dados no store
+        userStore.user.unidade.cidade = updatedUnit.cidade;
+      }
+    };
+
     // Aguardar o carregamento do perfil
     onMounted(async () => {
       if (!userStore.user) {
         await userStore.fetchUserProfile();
       }
+
+      // Chame a função para atualizar a unidade e cidade após carregar o perfil
+      await updateUnitData();
     });
 
     // Variáveis reativas para o template
     const user = computed(() => userStore.user);
+    const unidade = computed(() => userStore.user?.unidade); // Acessando unidade diretamente do userStore
     const profilePhoto = computed(() => {
       // Verifica se existe foto do perfil, senão gera uma imagem com as iniciais
       return user.value?.profile_photo_url ||
@@ -85,7 +102,7 @@ export default {
       return initials;
     }
 
-    return { user, profilePhoto };
+    return { user, profilePhoto, unidade };
   },
 };
 </script>

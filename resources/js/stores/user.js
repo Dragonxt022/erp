@@ -6,6 +6,7 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     user: JSON.parse(localStorage.getItem('user')) || null, // Carregar do localStorage, se existir
   }),
+
   actions: {
     async fetchUserProfile() {
       if (this.user) return; // Se já existe, não faz a requisição novamente
@@ -21,9 +22,28 @@ export const useUserStore = defineStore('user', {
         console.error('Erro ao buscar perfil:', error);
       }
     },
+
     clearUser() {
       this.user = null;
       localStorage.removeItem('user'); // Limpar o localStorage quando o usuário fizer logout
+    },
+
+    async fetchUnitData() {
+      try {
+        const response = await axios.get('/api/unidade');
+        const updatedUnit = response.data;
+
+        // Verifica se a cidade mudou e atualiza
+        if (this.user?.unidade?.cidade !== updatedUnit.cidade) {
+          this.user.unidade = updatedUnit; // Atualiza os dados da unidade
+          localStorage.setItem('user', JSON.stringify(this.user)); // Atualiza o localStorage
+        }
+
+        return updatedUnit;
+      } catch (error) {
+        console.error('Erro ao buscar dados da unidade:', error);
+        throw error; // Caso haja erro, propaga o erro
+      }
     },
   },
 });

@@ -94,7 +94,7 @@ const resetForm = () => {
 
 // Valida os campos do formulário
 const validateForm = () => {
-  if (!cnpj.value || !cidade.value || !cep.value || !bairro.value) {
+  if (!cnpj.value || !cep.value || !bairro.value) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;

@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('user_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');  // Relaciona com a tabela users
-            $table->string('cep');
-            $table->string('cidade');
-            $table->string('bairro');
-            $table->string('rua');
-            $table->string('numero');
+            $table->string('cep')->nullable();
+            $table->string('cidade')->nullable();
+            $table->string('bairro')->nullable();
+            $table->string('rua')->nullable();
+            $table->string('numero')->nullable();
             $table->timestamps();
         });
     }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('infor_unidade', function (Blueprint $table) {
             $table->id();
             $table->string('cep');
-            $table->string('cidade');
+            $table->string('cidade')->nullable();
             $table->string('bairro');
             $table->string('rua');
             $table->string('numero');

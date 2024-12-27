@@ -108,14 +108,7 @@ const cancelForm = () => {
 
 // Envia os dados atualizados para a API
 const submitForm = async () => {
-  if (
-    !id.value ||
-    !cidade.value ||
-    !cnpj.value ||
-    !cep.value ||
-    !rua.value ||
-    !numero.value
-  ) {
+  if (!id.value || !cnpj.value || !cep.value || !rua.value || !numero.value) {
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return;
   }
