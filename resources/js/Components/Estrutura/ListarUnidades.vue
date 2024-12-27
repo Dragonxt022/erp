@@ -8,12 +8,21 @@
       <p>Listagem de todas as unidades da franquia</p>
     </div>
     <!-- Campo de pesquisa -->
-    <div class="search-container">
+    <div class="search-container relative flex items-center w-full mb-4">
+      <!-- Ícone de pesquisa -->
+      <div class="absolute left-3">
+        <img
+          src="/storage/images/search.svg"
+          alt="Ícone de pesquisa"
+          class="w-5 h-5 text-gray-500"
+        />
+      </div>
+      <!-- Campo de pesquisa -->
       <input
         type="text"
         v-model="searchQuery"
         placeholder="Pesquisar unidades"
-        class="search-input"
+        class="search-input pl-10 w-full py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
       />
     </div>
 
@@ -22,8 +31,8 @@
       <div
         v-for="item in filteredUnidades"
         :key="item.unidade.id"
-        class="card cursor-pointer"
-        @click="selecionarUnidade(unidade)"
+        class="card cursor-pointer transform transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+        @click="selecionarUnidade(item)"
       >
         <div class="card-inner">
           <div class="icon-container">
@@ -79,6 +88,14 @@ export default {
         console.error('Erro ao carregar unidades:', error);
       }
     },
+
+    selecionarUnidade(item) {
+      // Emite o evento para o componente pai, passando tanto a unidade quanto os usuários
+      this.$emit('unidade-selecionada', {
+        unidade: item.unidade,
+        usuarios: item.usuarios,
+      });
+    },
   },
   computed: {
     // Filtra as unidades pelo nome da cidade
@@ -111,18 +128,6 @@ export default {
 .button-container {
   margin-top: 20px;
   text-align: right;
-}
-.search-container {
-  margin-bottom: 16px;
-  display: flex;
-  justify-content: center;
-}
-
-.search-input {
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  width: 100%;
 }
 
 .card-container {

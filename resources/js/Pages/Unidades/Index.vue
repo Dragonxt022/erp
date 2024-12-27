@@ -16,29 +16,28 @@
       </div>
 
       <!-- Coluna 2: Alternar entre Detalhes e Cadastro -->
-      <div>
+      <div class="flex flex-col gap-4">
         <!-- Mostrar Detalhes da Unidade Selecionada ou Cadastro -->
         <template v-if="!showCadastroUnidade">
           <DetalhesUnidade :unidade="unidadeSelecionada" />
-          <!-- Botão para adicionar nova unidade -->
-          <div class="button-container">
-            <ButtonPrimary @click="toggleCadastro">
-              <img
-                src="/storage/images/arrow_left_alt.svg"
-                alt=""
-                class="inline-block mr-2"
-              />
-              Nova Unidade
-            </ButtonPrimary>
+          <div class="flex justify-end">
+            <ButtonPrimaryMedio
+              text="Nova Unidade"
+              iconPath="/storage/images/arrow_left_alt.svg"
+              @click="toggleCadastro"
+              :class="{ hidden: isEditMode }"
+            />
           </div>
         </template>
         <template v-else>
-          <!-- Formulário de Cadastro de Unidade -->
-          <CadastroUnidade
-            :isVisible="showCadastroUnidade"
-            @unidade-cadastrada="handleCadastro"
-            @cancelar="toggleCadastro"
-          />
+          <div class="mt-4">
+            <!-- Formulário de Cadastro de Unidade -->
+            <CadastroUnidade
+              :isVisible="showCadastroUnidade"
+              @unidade-cadastrada="handleCadastro"
+              @cancelar="toggleCadastro"
+            />
+          </div>
         </template>
       </div>
     </div>
@@ -46,16 +45,15 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import CadastroUnidade from '@/Components/Estrutura/CadastroUnidade.vue';
 import ListarUnidades from '@/Components/Estrutura/ListarUnidades.vue';
 import DetalhesUnidade from '@/Components/Estrutura/DetalhesUnidade.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
+import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 
-const unidadeSelecionada = ref(null);
-
+const unidadeSelecionada = ref({ unidade: [], usuarios: [] });
 const showCadastroUnidade = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
@@ -71,13 +69,13 @@ const handleCadastro = () => {
 
 // Atualiza a lista de unidades
 const fetchUnidades = () => {
-  const listarUnidades = $refs.listarUnidades;
+  const listarUnidades = ref.listarUnidades;
   listarUnidades.fetchUnidades();
 };
 
 // Define a unidade selecionada
-const selecionarUnidade = (unidade) => {
-  unidadeSelecionada.value = unidade;
+const selecionarUnidade = (dados) => {
+  unidadeSelecionada.value = dados; // Atribui a unidade e os usuários
 };
 </script>
 

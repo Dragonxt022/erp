@@ -2,15 +2,15 @@
   <button
     :type="type"
     @click="onClick"
-    class="h-[46px] px-[38px] py-3 bg-[#6db631] rounded-[10px] shadow-[2px_2px_10px_0px_rgba(0,0,0,0.04)] flex justify-center items-center gap-2.5"
+    class="h-[46px] px-[38px] py-3 bg-[#F3F8F3] rounded-[10px] flex justify-center items-center gap-2.5"
   >
+    <!-- Ícone opcional -->
+    <img v-if="iconPath" :src="iconPath" alt="icon" class="h-6 w-6" />
     <span
-      class="text-center text-[#f3f8f3] text-[15px] font-semibold font-['Figtree'] leading-tight"
+      class="text-center text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
     >
       {{ text }}
     </span>
-    <!-- Ícone opcional -->
-    <img v-if="iconPath" :src="iconPath" alt="icon" class="h-6 w-6" />
   </button>
 </template>
 
@@ -47,10 +47,5 @@ const onClick = () => {
 /* Hover e transições */
 button {
   transition: all 0.2s ease;
-}
-
-button:hover {
-  background-color: #5a9f28;
-  box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.08);
 }
 </style>

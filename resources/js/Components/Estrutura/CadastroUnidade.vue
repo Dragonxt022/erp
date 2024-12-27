@@ -1,25 +1,19 @@
 <template>
-  <!-- Verifica a visibilidade do elemento lateral -->
   <div v-if="isVisible" class="sidebar-container">
-    <!-- Título principal -->
     <div class="painel-title">Dados da nova unidade</div>
     <div class="painel-subtitle">
       <p>Informações básicas sobre a operação</p>
     </div>
-    <!-- Subtítulo da página -->
     <div class="w-full h-[525px] bg-white rounded-[20px] p-12">
       <form @submit.prevent="submitForm">
-        <LabelModel text="Nome" />
-        <InputModel v-model="nome" placeholder="Nome da Empresa" />
-
         <LabelModel text="CNPJ" />
-        <InputModel v-model="cnpj" placeholder="CNPJ" />
+        <InputModel v-model="cnpj" @input="applyCnpjMask" placeholder="CNPJ" />
 
         <LabelModel text="Cidade" />
         <InputModel v-model="cidade" placeholder="Cidade" />
 
         <LabelModel text="CEP" />
-        <InputModel v-model="cep" placeholder="CEP" />
+        <InputModel v-model="cep" @input="applyCepMask" placeholder="CEP" />
 
         <LabelModel text="Número" />
         <InputModel v-model="numero" placeholder="Número" />
@@ -30,15 +24,13 @@
         <LabelModel text="Bairro" />
         <InputModel v-model="bairro" placeholder="Bairro" />
 
-        <!-- Exibição de mensagens de erro -->
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
 
         <div class="form-buttons">
-          <ButtonCancelar @click="cancelForm">Cancelar</ButtonCancelar>
-          <!-- Adicionando a prop 'text' ao botão -->
-          <ButtonPrimaryMedio @click="submitForm" text="Cadastrar" />
+          <ButtonCancelar text="Cancelar" @click="cancelForm" />
+          <ButtonPrimaryMedio text="Cadastrar" @click="submitForm" />
         </div>
       </form>
     </div>
@@ -46,14 +38,18 @@
 </template>
 
 <script setup>
-import { ref, toRefs } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+import { ref } from 'vue';
 import axios from 'axios';
-import { defineProps } from 'vue';
+import { Inertia } from '@inertiajs/inertia';
+import { defineProps, defineEmits } from 'vue';
 import InputModel from '../Inputs/InputModel.vue';
 import LabelModel from '../Label/LabelModel.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
+
+import { useToast } from 'vue-toastification'; // Importa o hook useToast
+
+const toast = useToast(); // Cria a instância do toast
 
 const props = defineProps({
   isVisible: {
@@ -62,74 +58,90 @@ const props = defineProps({
   },
 });
 
-// Variáveis do formulário
-const nome = ref('');
+const emit = defineEmits(['cancelar']);
+
+const cnpj = ref('');
 const cep = ref('');
 const cidade = ref('');
 const bairro = ref('');
 const rua = ref('');
 const numero = ref('');
-const cnpj = ref('');
 const errorMessage = ref('');
 
-// Definindo o evento "cancelar" que será emitido para o componente pai
-const emit = defineEmits(['cancelar']);
-
-// Função para cancelar e esconder o formulário
+// Cancela e reseta o formulário
 const cancelForm = () => {
-  resetForm(); // Limpa o formulário
-  $emit('cancelar');
+  resetForm();
+  emit('cancelar');
 };
 
-// Função para resetar os campos do formulário
+// Reseta os valores do formulário
 const resetForm = () => {
-  nome.value = '';
+  cnpj.value = '';
   cep.value = '';
   cidade.value = '';
   bairro.value = '';
   rua.value = '';
   numero.value = '';
-  cnpj.value = '';
   errorMessage.value = '';
 };
 
-// Função para validar os campos do formulário
+// Valida os campos do formulário
 const validateForm = () => {
-  if (!nome.value || !cnpj.value || !cidade.value || !cep.value || !rua.value) {
+  if (!cnpj.value || !cidade.value || !cep.value || !bairro.value) {
+    toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
   }
-  errorMessage.value = '';
   return true;
 };
 
-// Função para enviar o formulário
+// Envia os dados do formulário
 const submitForm = async () => {
   if (!validateForm()) return;
 
   try {
     const response = await axios.post('/api/unidades', {
-      nome: nome.value,
+      cnpj: cnpj.value,
       cep: cep.value,
       cidade: cidade.value,
       bairro: bairro.value,
       rua: rua.value,
       numero: numero.value,
-      cnpj: cnpj.value,
     });
 
-    console.log('Empresa cadastrada com sucesso:', response.data);
-
-    // Redireciona para a página de unidades utilizando o Inertia
-    Inertia.visit('/unidades'); // Navegação sem recarregar a página
-
-    resetForm(); // Reseta o formulário após sucesso
-    isVisible.value = false; // Oculta o formulário após sucesso
+    console.log('Unidade cadastrada com sucesso:', response.data);
+    toast.success('Unidade cadastrada com sucesso!');
+    Inertia.visit('/unidades');
+    resetForm();
   } catch (error) {
-    console.error('Erro ao cadastrar unidade:', error);
+    toast.error('Erro ao cadastrar unidade.');
     errorMessage.value =
       error.response?.data?.message || 'Erro ao cadastrar unidade.';
   }
+};
+
+// Aplica máscara ao CNPJ
+const applyCnpjMask = (event) => {
+  let value = event.target.value.replace(/\D/g, '');
+  if (value.length > 14) value = value.slice(0, 14);
+
+  value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+  value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+  value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+  value = value.replace(/(\d{4})(\d)/, '$1-$2');
+
+  cnpj.value = value;
+};
+
+// Aplica máscara ao CEP
+const applyCepMask = (event) => {
+  let value = event.target.value.replace(/\D/g, ''); // Remove caracteres não numéricos
+  if (value.length > 8) value = value.slice(0, 8); // Limita o valor a 8 dígitos
+
+  // Aplica a máscara de CEP
+  value = value.replace(/(\d{5})(\d)/, '$1-$2');
+
+  cep.value = value; // Atualiza o valor do CEP no formulário
 };
 </script>
 
@@ -137,57 +149,20 @@ const submitForm = async () => {
 .painel-title {
   font-size: 34px;
   font-weight: 700;
-  color: #262a27; /* Cor escura para título */
-  line-height: 30px;
+  color: #262a27;
 }
 
 .painel-subtitle {
   font-size: 17px;
   margin-bottom: 25px;
-  color: #6d6d6e; /* Cor secundária */
-  max-width: 600px; /* Limita a largura do subtítulo */
-}
-
-.form-container {
+  color: #6d6d6e;
   max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .form-buttons {
   display: flex;
   justify-content: flex-end;
   margin-top: 20px;
-}
-
-.btn-submit {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-submit:hover {
-  background-color: #0056b3;
-}
-
-.btn-cancel {
-  background-color: #dc3545;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  margin-right: 10px;
-}
-
-.btn-cancel:hover {
-  background-color: #c82333;
 }
 
 .error-message {

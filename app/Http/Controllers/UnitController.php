@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\InforUnidade;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class UnitController extends Controller
 {
@@ -62,6 +63,44 @@ class UnitController extends Controller
         ]);
 
         // Retorna a unidade criada com status 201 (Criado)
-        return response()->json($unidade, 201);
+        return response()->json($unidade);
     }
+
+    public function updateUnidade(Request $request, $id)
+    {
+        // Validação dos dados recebidos
+        $request->validate([
+            'cep' => 'required|string|max:10',
+            'cidade' => 'required|string|max:255',
+            'bairro' => 'required|string|max:255',
+            'rua' => 'required|string|max:255',
+            'numero' => 'required|string|max:10',
+            'cnpj' => 'required|string|max:18', // Exemplo de máscara de CNPJ
+        ]);
+
+        // Busca a unidade pelo ID
+        $unidade = InforUnidade::find($id);
+
+        // Retorna erro caso a unidade não exista
+        if (!$unidade) {
+            return response()->json(['message' => 'Unidade não encontrada.'], 404);
+        }
+
+        // Atualiza os dados da unidade
+        $unidade->update([
+            'cep' => $request->cep,
+            'cidade' => $request->cidade,
+            'bairro' => $request->bairro,
+            'rua' => $request->rua,
+            'numero' => $request->numero,
+            'cnpj' => $request->cnpj,
+        ]);
+
+        return back()->with('flash', [
+            'message' => 'Atualizado!',
+            'type' => 'success',
+        ]);
+
+    }
+
 }

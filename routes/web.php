@@ -63,11 +63,14 @@ Route::middleware([
 
 
     // API
-    Route::get('/api/profile', [AuthController::class, 'getProfile']);
+    Route::get('/api/profile', [AuthController::class, 'getProfile'])->name('profile.get');
 
     // Unidades
-    Route::get('/api/unidades', [ UnitController::class, 'getUnidades']);
-    Route::post('/api/unidades', [UnitController::class, 'createUnidade']);
+    Route::get('/api/unidades', [UnitController::class, 'getUnidades'])->name('unidades.get');
+    Route::post('/api/unidades', [UnitController::class, 'createUnidade'])->name('unidades.create');
+    Route::put('/api/unidades/{id}', [UnitController::class, 'updateUnidade'])->name('unidades.update');
+
+
 
 
 
