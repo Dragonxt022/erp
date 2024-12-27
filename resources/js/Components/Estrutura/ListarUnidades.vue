@@ -1,5 +1,12 @@
 <template>
   <div>
+    <!-- Título principal -->
+    <div class="painel-title">Nossas Unidades</div>
+
+    <!-- Subtítulo da página -->
+    <div class="painel-subtitle">
+      <p>Listagem de todas as unidades da franquia</p>
+    </div>
     <!-- Campo de pesquisa -->
     <div class="search-container">
       <input
@@ -12,7 +19,12 @@
 
     <!-- Container de cards -->
     <div class="card-container">
-      <div v-for="item in filteredUnidades" :key="item.unidade.id" class="card">
+      <div
+        v-for="item in filteredUnidades"
+        :key="item.unidade.id"
+        class="card cursor-pointer"
+        @click="selecionarUnidade(unidade)"
+      >
         <div class="card-inner">
           <div class="icon-container">
             <div class="icon-bg"></div>
@@ -43,7 +55,9 @@
 </template>
 
 <script>
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
+const unidades = ref([]);
 
 export default {
   data() {
@@ -80,6 +94,24 @@ export default {
 </script>
 
 <style scoped>
+.painel-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #262a27; /* Cor escura para título */
+  line-height: 30px;
+}
+
+.painel-subtitle {
+  font-size: 17px;
+  margin-bottom: 25px;
+  color: #6d6d6e; /* Cor secundária */
+  max-width: 600px; /* Limita a largura do subtítulo */
+}
+
+.button-container {
+  margin-top: 20px;
+  text-align: right;
+}
 .search-container {
   margin-bottom: 16px;
   display: flex;

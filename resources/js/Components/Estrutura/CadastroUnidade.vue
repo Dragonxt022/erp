@@ -1,125 +1,115 @@
 <template>
-  <div>
-    <!-- Botão para abrir a modal -->
-    <button @click="openModal" class="btn-open-modal">Cadastrar Unidade</button>
+  <!-- Verifica a visibilidade do elemento lateral -->
+  <div v-if="isVisible" class="sidebar-container">
+    <!-- Título principal -->
+    <div class="painel-title">Dados da nova unidade</div>
+    <div class="painel-subtitle">
+      <p>Informações básicas sobre a operação</p>
+    </div>
+    <!-- Subtítulo da página -->
+    <div class="w-full h-[525px] bg-white rounded-[20px] p-12">
+      <form @submit.prevent="submitForm">
+        <LabelModel text="Nome" />
+        <InputModel v-model="nome" placeholder="Nome da Empresa" />
 
-    <!-- Modal -->
-    <div v-if="isModalOpen" class="modal-overlay">
-      <div class="modal-content">
-        <h3>Cadastro de Unidade</h3>
-        <form @submit.prevent="submitForm">
-          <div>
-            <label for="cep">CEP:</label>
-            <input
-              v-model="cep"
-              type="text"
-              id="cep"
-              placeholder="Digite o CEP"
-              required
-            />
-          </div>
-          <div>
-            <label for="cidade">Cidade:</label>
-            <input
-              v-model="cidade"
-              type="text"
-              id="cidade"
-              placeholder="Digite a cidade"
-              required
-            />
-          </div>
-          <div>
-            <label for="bairro">Bairro:</label>
-            <input
-              v-model="bairro"
-              type="text"
-              id="bairro"
-              placeholder="Digite o bairro"
-              required
-            />
-          </div>
-          <div>
-            <label for="rua">Rua:</label>
-            <input
-              v-model="rua"
-              type="text"
-              id="rua"
-              placeholder="Digite a rua"
-              required
-            />
-          </div>
-          <div>
-            <label for="numero">Número:</label>
-            <input
-              v-model="numero"
-              type="text"
-              id="numero"
-              placeholder="Digite o número"
-              required
-            />
-          </div>
-          <div>
-            <label for="cnpj">CNPJ:</label>
-            <input
-              v-model="cnpj"
-              type="text"
-              id="cnpj"
-              placeholder="Digite o CNPJ"
-              required
-            />
-          </div>
-          <div class="modal-buttons">
-            <button type="button" @click="closeModal" class="btn-cancel">
-              Cancelar
-            </button>
-            <button type="submit" class="btn-submit">Cadastrar</button>
-          </div>
-        </form>
-      </div>
+        <LabelModel text="CNPJ" />
+        <InputModel v-model="cnpj" placeholder="CNPJ" />
+
+        <LabelModel text="Cidade" />
+        <InputModel v-model="cidade" placeholder="Cidade" />
+
+        <LabelModel text="CEP" />
+        <InputModel v-model="cep" placeholder="CEP" />
+
+        <LabelModel text="Número" />
+        <InputModel v-model="numero" placeholder="Número" />
+
+        <LabelModel text="Rua" />
+        <InputModel v-model="rua" placeholder="Rua" />
+
+        <LabelModel text="Bairro" />
+        <InputModel v-model="bairro" placeholder="Bairro" />
+
+        <!-- Exibição de mensagens de erro -->
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <div class="form-buttons">
+          <ButtonCancelar @click="cancelForm">Cancelar</ButtonCancelar>
+          <!-- Adicionando a prop 'text' ao botão -->
+          <ButtonPrimaryMedio @click="submitForm" text="Cadastrar" />
+        </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, toRefs } from 'vue';
 import { Inertia } from '@inertiajs/inertia';
-
 import axios from 'axios';
+import { defineProps } from 'vue';
+import InputModel from '../Inputs/InputModel.vue';
+import LabelModel from '../Label/LabelModel.vue';
+import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
+import ButtonCancelar from '../Button/ButtonCancelar.vue';
 
-// Variáveis para o formulário
-const isModalOpen = ref(false); // Controle de abertura da modal
+const props = defineProps({
+  isVisible: {
+    type: Boolean,
+    required: true,
+  },
+});
+
+// Variáveis do formulário
+const nome = ref('');
 const cep = ref('');
 const cidade = ref('');
 const bairro = ref('');
 const rua = ref('');
 const numero = ref('');
 const cnpj = ref('');
+const errorMessage = ref('');
 
-// Função para abrir a modal
-const openModal = () => {
-  isModalOpen.value = true;
+// Definindo o evento "cancelar" que será emitido para o componente pai
+const emit = defineEmits(['cancelar']);
+
+// Função para cancelar e esconder o formulário
+const cancelForm = () => {
+  resetForm(); // Limpa o formulário
+  $emit('cancelar');
 };
 
-// Função para fechar a modal
-const closeModal = () => {
-  isModalOpen.value = false;
-  resetForm(); // Reseta o formulário
-};
-
-// Função para resetar o formulário
+// Função para resetar os campos do formulário
 const resetForm = () => {
+  nome.value = '';
   cep.value = '';
   cidade.value = '';
   bairro.value = '';
   rua.value = '';
   numero.value = '';
   cnpj.value = '';
+  errorMessage.value = '';
 };
 
-// Função para enviar os dados do formulário via API
+// Função para validar os campos do formulário
+const validateForm = () => {
+  if (!nome.value || !cnpj.value || !cidade.value || !cep.value || !rua.value) {
+    errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
+    return false;
+  }
+  errorMessage.value = '';
+  return true;
+};
+
+// Função para enviar o formulário
 const submitForm = async () => {
+  if (!validateForm()) return;
+
   try {
     const response = await axios.post('/api/unidades', {
+      nome: nome.value,
       cep: cep.value,
       cidade: cidade.value,
       bairro: bairro.value,
@@ -128,57 +118,49 @@ const submitForm = async () => {
       cnpj: cnpj.value,
     });
 
-    console.log('Unidade cadastrada com sucesso:', response.data);
+    console.log('Empresa cadastrada com sucesso:', response.data);
 
     // Redireciona para a página de unidades utilizando o Inertia
-    Inertia.visit('/unidades'); // Isso fará com que a navegação ocorra sem recarregar a página
+    Inertia.visit('/unidades'); // Navegação sem recarregar a página
 
-    closeModal(); // Fecha a modal após o sucesso
+    resetForm(); // Reseta o formulário após sucesso
+    isVisible.value = false; // Oculta o formulário após sucesso
   } catch (error) {
     console.error('Erro ao cadastrar unidade:', error);
+    errorMessage.value =
+      error.response?.data?.message || 'Erro ao cadastrar unidade.';
   }
 };
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+.painel-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: #262a27; /* Cor escura para título */
+  line-height: 30px;
 }
 
-.modal-content {
-  background-color: white;
+.painel-subtitle {
+  font-size: 17px;
+  margin-bottom: 25px;
+  color: #6d6d6e; /* Cor secundária */
+  max-width: 600px; /* Limita a largura do subtítulo */
+}
+
+.form-container {
+  max-width: 600px;
+  margin: 0 auto;
   padding: 20px;
+  background-color: white;
   border-radius: 8px;
-  width: 400px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.modal-buttons {
+.form-buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 20px;
-}
-
-.btn-open-modal {
-  background-color: #28a745;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-open-modal:hover {
-  background-color: #218838;
 }
 
 .btn-submit {
@@ -201,21 +183,16 @@ const submitForm = async () => {
   border-radius: 5px;
   border: none;
   cursor: pointer;
+  margin-right: 10px;
 }
 
 .btn-cancel:hover {
   background-color: #c82333;
 }
 
-input {
-  width: 100%;
-  padding: 8px;
-  margin: 10px 0;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-label {
-  font-weight: bold;
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
 }
 </style>
