@@ -25,7 +25,7 @@ createInertiaApp({
 
     return createApp({ render: () => h(App, props) })
       .use(plugin)
-      .use(Toast, { position: 'top-center', timeout: 3000 })
+      .use(Toast, { position: 'top-center', timeout: 5000 })
       .use(notify)
       .use(pinia)
       .use(ZiggyVue)
