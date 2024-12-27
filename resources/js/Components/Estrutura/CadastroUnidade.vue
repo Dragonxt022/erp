@@ -15,12 +15,19 @@
         <LabelModel text="CEP" />
         <InputModel v-model="cep" @input="applyCepMask" placeholder="CEP" />
 
-        <LabelModel text="Número" />
-        <InputModel v-model="numero" placeholder="Número" />
-
-        <LabelModel text="Rua" />
-        <InputModel v-model="rua" placeholder="Rua" />
-
+        <div class="flex space-x-4">
+          <!-- flex para organizar os itens em linha, space-x-4 para espaçamento -->
+          <div class="flex flex-col w-1/2">
+            <!-- Flexbox dentro do div para empilhar os elementos -->
+            <LabelModel text="Rua" />
+            <InputModel v-model="rua" placeholder="Rua" />
+          </div>
+          <div class="flex flex-col w-1/2">
+            <!-- Outro flex para o lado direito -->
+            <LabelModel text="Número" />
+            <InputModel v-model="numero" placeholder="Número" />
+          </div>
+        </div>
         <LabelModel text="Bairro" />
         <InputModel v-model="bairro" placeholder="Bairro" />
 

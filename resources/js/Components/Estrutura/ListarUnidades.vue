@@ -31,7 +31,7 @@
       <div
         v-for="item in filteredUnidades"
         :key="item.unidade.id"
-        class="card cursor-pointer transform transition-transform duration-200 hover:scale-105 hover:shadow-lg"
+        class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
         @click="selecionarUnidade(item)"
       >
         <div class="card-inner">
