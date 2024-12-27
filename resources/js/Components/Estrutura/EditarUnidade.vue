@@ -91,7 +91,6 @@ watch(
     if (newVal) {
       id.value = newVal.id || '';
       cep.value = newVal.cep || '';
-      cidade.value = newVal.cidade || '';
       bairro.value = newVal.bairro || '';
       rua.value = newVal.rua || '';
       numero.value = newVal.numero || '';

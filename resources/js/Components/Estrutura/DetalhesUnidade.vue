@@ -44,7 +44,7 @@
       <div
         class="absolute left-0 top-0 text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[34px] tracking-tight"
       >
-        {{ unidade.unidade?.cidade || 'Selecione uma empresa' }}
+        {{ unidade.unidade?.cidade || unidade.cidade || 'N/A' }}
       </div>
 
       <!-- Propriedade da Unidade -->

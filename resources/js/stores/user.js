@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const useUserStore = defineStore('user', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null, // Carregar do localStorage, se existir
+    user: null, // Não usa mais o localStorage
   }),
 
   actions: {
@@ -13,8 +13,7 @@ export const useUserStore = defineStore('user', {
       try {
         const response = await axios.get('/api/profile');
         if (response.data.status === 'success') {
-          this.user = response.data.data; // Armazena os dados do usuário
-          localStorage.setItem('user', JSON.stringify(this.user)); // Salva no localStorage
+          this.user = response.data.data; // Armazena os dados do usuário diretamente
         } else {
           console.error('Erro ao carregar o perfil:', response.data.message);
         }
@@ -24,22 +23,13 @@ export const useUserStore = defineStore('user', {
     },
 
     clearUser() {
-      this.user = null;
-      localStorage.removeItem('user'); // Limpar o localStorage quando o usuário fizer logout
+      this.user = null; // Limpar dados do usuário
     },
 
     async fetchUnitData() {
       try {
         const response = await axios.get('/api/unidade');
-        const updatedUnit = response.data;
-
-        // Verifica se a cidade mudou e atualiza
-        if (this.user?.unidade?.cidade !== updatedUnit.cidade) {
-          this.user.unidade = updatedUnit; // Atualiza os dados da unidade
-          localStorage.setItem('user', JSON.stringify(this.user)); // Atualiza o localStorage
-        }
-
-        return updatedUnit;
+        return response.data; // Retorna dados atualizados da unidade
       } catch (error) {
         console.error('Erro ao buscar dados da unidade:', error);
         throw error; // Caso haja erro, propaga o erro

@@ -123,7 +123,7 @@ a {
 .navbar-content {
   display: flex;
   justify-content: space-between;
-  padding: 0 40px;
+  padding: 0 23px;
   position: absolute;
   width: 100%;
   top: 50%;

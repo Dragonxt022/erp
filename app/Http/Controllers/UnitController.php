@@ -25,11 +25,13 @@ class UnitController extends Controller
             return [
                 'unidade' => $unidade,
                 'usuarios' => User::where('unidade_id', $unidade->id)->get(),
+                'cidade' => $unidade->cidade ?? 'Taiksu Franchising', // Verifica se cidade é null e substitui
             ];
         });
 
         return response()->json($resultados);
     }
+
 
 
 
@@ -45,7 +47,7 @@ class UnitController extends Controller
         // Validação dos dados recebidos
         $request->validate([
             'cep' => 'required|string|max:10',
-            'cidade' => 'required|string|max:255',
+            'cidade' => 'nullable|string|max:255',
             'bairro' => 'required|string|max:255',
             'rua' => 'required|string|max:255',
             'numero' => 'required|string|max:10',
@@ -71,7 +73,7 @@ class UnitController extends Controller
         // Validação dos dados recebidos
         $request->validate([
             'cep' => 'required|string|max:10',
-            'cidade' => 'required|string|max:255',
+            'cidade' => 'nullable|string|max:255',
             'bairro' => 'required|string|max:255',
             'rua' => 'required|string|max:255',
             'numero' => 'required|string|max:10',

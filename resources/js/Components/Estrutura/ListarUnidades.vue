@@ -46,7 +46,7 @@
           </div>
           <div class="text-container">
             <!-- Cidade da unidade -->
-            <div class="city">{{ item.unidade.cidade }}</div>
+            <div class="city">{{ item.unidade.cidade || item.cidade }}</div>
 
             <!-- Usuários ou mensagem de unidade sem franqueado -->
             <div class="owner">
@@ -94,17 +94,19 @@ export default {
       this.$emit('unidade-selecionada', {
         unidade: item.unidade,
         usuarios: item.usuarios,
+        cidade: item.cidade,
       });
     },
   },
   computed: {
-    // Filtra as unidades pelo nome da cidade
     filteredUnidades() {
-      return this.unidades.filter((item) =>
-        item.unidade.cidade
-          .toLowerCase()
-          .includes(this.searchQuery.toLowerCase())
-      );
+      return this.unidades.filter((item) => {
+        const cidade = item.unidade.cidade || item.cidade; // Usando item.cidade se item.unidade.cidade for vazio ou null
+        return (
+          cidade &&
+          cidade.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+      });
     },
   },
 };
