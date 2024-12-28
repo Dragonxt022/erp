@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-[88px] h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-2 mb-1"
+    class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-3 mb-2"
   >
     {{ text }}
   </div>

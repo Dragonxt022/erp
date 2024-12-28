@@ -1,11 +1,5 @@
 <template>
   <div v-if="isVisible" class="sidebar-container">
-    <!-- Título principal -->
-    <div class="painel-title">Editar Dados da Unidade</div>
-    <div class="painel-subtitle">
-      <p>Modifique os dados da unidade</p>
-    </div>
-
     <div class="w-full h-[680px] bg-white rounded-[20px] p-12">
       <form @submit.prevent="submitForm">
         <input type="hidden" v-model="id" />
@@ -163,7 +157,7 @@ const submitForm = async () => {
 
 .form-buttons {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   margin-top: 20px;
 }
 

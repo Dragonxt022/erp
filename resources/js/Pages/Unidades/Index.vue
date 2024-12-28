@@ -20,7 +20,7 @@
         <!-- Mostrar Detalhes da Unidade Selecionada ou Cadastro -->
         <template v-if="!showCadastroUnidade">
           <DetalhesUnidade :unidade="unidadeSelecionada" />
-          <div class="flex justify-end">
+          <div class="absolute bottom-4 right-4">
             <ButtonPrimaryMedio
               text="Nova Unidade"
               iconPath="/storage/images/arrow_left_alt.svg"

@@ -63,26 +63,12 @@ export default {
   setup() {
     const userStore = useUserStore();
 
-    // Função para atualizar a unidade e a cidade
-    const updateUnitData = async () => {
-      // Faça uma chamada para atualizar os dados da unidade do servidor
-      const updatedUnit = await userStore.fetchUnitData(); // Implemente essa função no seu store ou serviço
-
-      // Verifique se a cidade mudou
-      if (updatedUnit?.cidade !== userStore.user?.unidade?.cidade) {
-        // Se a cidade foi alterada, atualize os dados no store
-        userStore.user.unidade.cidade = updatedUnit.cidade;
-      }
-    };
 
     // Aguardar o carregamento do perfil
     onMounted(async () => {
       if (!userStore.user) {
         await userStore.fetchUserProfile();
       }
-
-      // Chame a função para atualizar a unidade e cidade após carregar o perfil
-      await updateUnitData();
     });
 
     // Variáveis reativas para o template

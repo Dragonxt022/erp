@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -69,6 +70,9 @@ Route::middleware([
     Route::get('/api/unidades', [UnitController::class, 'getUnidades'])->name('unidades.get');
     Route::post('/api/unidades', [UnitController::class, 'createUnidade'])->name('unidades.create');
     Route::put('/api/unidades/{id}', [UnitController::class, 'updateUnidade'])->name('unidades.update');
+
+    // Usuários
+    Route::get('/api/usuarios', [UserController::class, 'index'])->name('usuarios.index');
 
 
 

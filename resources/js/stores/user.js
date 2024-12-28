@@ -25,15 +25,5 @@ export const useUserStore = defineStore('user', {
     clearUser() {
       this.user = null; // Limpar dados do usuário
     },
-
-    async fetchUnitData() {
-      try {
-        const response = await axios.get('/api/unidade');
-        return response.data; // Retorna dados atualizados da unidade
-      } catch (error) {
-        console.error('Erro ao buscar dados da unidade:', error);
-        throw error; // Caso haja erro, propaga o erro
-      }
-    },
   },
 });
