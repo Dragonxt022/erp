@@ -87,12 +87,7 @@ export default {
 
     // Seleciona um usuário e emite o evento para o pai
     selecionarUsuario(usuario) {
-      this.$emit('usuario-selecionado', {
-        id: usuario.id,
-        nome: usuario.name,
-        cpf: usuario.cpf,
-        email: usuario.email,
-      });
+      this.$emit('usuario-selecionado', usuario);
     },
 
     // Gera as iniciais do nome

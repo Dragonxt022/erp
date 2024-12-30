@@ -19,7 +19,10 @@
       <div class="flex flex-col gap-4">
         <!-- Mostrar Detalhes da Unidade Selecionada ou Cadastro -->
         <template v-if="!showCadastroUnidade">
-          <DetalhesUnidade :unidade="unidadeSelecionada" />
+          <template v-if="unidadeSelecionada">
+            <!-- Mostrar Detalhes da Unidade Selecionada -->
+            <DetalhesUnidade :unidade="unidadeSelecionada" />
+          </template>
           <div class="absolute bottom-4 right-4">
             <ButtonPrimaryMedio
               text="Nova Unidade"
@@ -53,7 +56,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 
-const unidadeSelecionada = ref({ unidade: [], usuarios: [] });
+const unidadeSelecionada = ref(null);
 const showCadastroUnidade = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
@@ -75,7 +78,7 @@ const fetchUnidades = () => {
 
 // Define a unidade selecionada
 const selecionarUnidade = (dados) => {
-  unidadeSelecionada.value = dados; // Atribui a unidade e os usuários
+  unidadeSelecionada.value = dados; // Atribui a unidade selecionada
 };
 </script>
 

@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
     <!-- Cabeçalho da página -->
-    <Head title="Unidades" />
+    <Head title="Franqueados" />
 
     <!-- Container principal da grade com 2 colunas -->
     <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
@@ -18,18 +18,10 @@
       <div class="flex flex-col gap-4">
         <template v-if="!showCadastroUsuario">
           <!-- Passa os dados do usuário selecionado apenas se existirem -->
-          <template
-            v-if="
-              usuarioSelecionada.value &&
-              usuarioSelecionada.value.usuarios &&
-              usuarioSelecionada.value.unidades
-            "
-          >
-            <DetalhesUsuario
-              :usuarios="usuarioSelecionada.value.usuarios"
-              :unidades="usuarioSelecionada.value.unidades"
-            />
+          <template v-if="usuarioSelecionada">
+            <DetalhesUsuario :usuario="usuarioSelecionada" />
           </template>
+
           <div class="absolute bottom-4 right-4">
             <ButtonPrimaryMedio
               text="Novo Franqueado"
@@ -62,7 +54,8 @@ import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import CadastroFranqueado from '@/Components/Estrutura/CadastroFranqueado.vue';
 
 // Dados do usuário selecionado
-const usuarioSelecionada = ref({ usuarios: [], unidades: [] });
+const usuarioSelecionada = ref(null);
+
 const showCadastroUsuario = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
@@ -83,16 +76,13 @@ const fetchUnidades = () => {
 };
 
 // Define os dados da unidade selecionada
-const usuarioSelecionado = (dados) => {
-  if (dados && typeof dados === 'object') {
-    usuarioSelecionada.value = {
-      usuarios: dados.usuarios || [],
-      unidades: dados.unidades || [],
-    };
+const usuarioSelecionado = (usuario) => {
+  if (usuario && typeof usuario === 'object') {
+    usuarioSelecionada.value = usuario;
   } else {
     console.warn(
       'Dados inválidos recebidos no evento usuario-selecionado:',
-      dados
+      usuario
     );
   }
 };

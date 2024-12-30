@@ -154,6 +154,7 @@ const units = ref([]); // Lista de unidades
 
 const selectedCargo = ref(null); // Cargo selecionado
 const cargos = ref([]); // Lista de cargos
+const selectedFile = ref(null);
 
 const isLoading = ref(false);
 
@@ -203,15 +204,15 @@ const removeImage = () => {
 const handleImageUpload = (event) => {
   const file = event.target.files[0];
   if (file) {
+    selectedFile.value = file; // Armazena o arquivo original
     const reader = new FileReader();
     reader.onload = () => {
-      profilePhotoUrl.value = reader.result; // Armazena o caminho da imagem
+      profilePhotoUrl.value = reader.result; // Armazena o caminho base64 (para exibição, se necessário)
       toast.success('Imagem carregada com sucesso!');
     };
     reader.readAsDataURL(file);
   }
 };
-
 // Cancela e reseta o formulário
 const cancelForm = () => {
   resetForm();
@@ -226,6 +227,7 @@ const resetForm = () => {
   profilePhotoUrl.value = '';
   selectedUnit.value = null;
   selectedCargo.value = null;
+  selectedFile.value = null;
   errorMessage.value = '';
 };
 
@@ -245,14 +247,26 @@ const submitForm = async () => {
 
   try {
     isLoading.value = true;
-    const response = await axios.post('/api/usuarios', {
-      name: name.value,
-      email: email.value,
-      cpf: cpf.value,
-      profile_photo_url: profilePhotoUrl.value,
-      unidade_id: selectedUnit.value,
-      cargo_id: selectedCargo.value,
+
+    // Cria o objeto FormData
+    const formData = new FormData();
+    formData.append('name', name.value);
+    formData.append('email', email.value);
+    formData.append('cpf', cpf.value);
+    formData.append('unidade_id', selectedUnit.value);
+    formData.append('cargo_id', selectedCargo.value);
+
+    // Inclua o arquivo de imagem apenas se ele for selecionado
+    if (selectedFile.value) {
+      formData.append('profile_photo', selectedFile.value); // Envia o arquivo real
+    }
+
+    const response = await axios.post('/api/usuarios', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
+
     console.log('Dados cadastrados com sucesso:', response.data);
     toast.success('Cadastro realizado com sucesso!');
     Inertia.visit('/franqueados');
