@@ -1,6 +1,9 @@
 <template>
   <div v-if="isVisible" class="sidebar-container">
-    <div class="painel-title">Dados da nova unidade</div>
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+    <div v-else class="painel-title">Dados da nova unidade</div>
     <div class="painel-subtitle">
       <p>Informações básicas sobre a operação</p>
     </div>
@@ -35,9 +38,19 @@
           {{ errorMessage }}
         </div>
 
+        <!-- Componente de confirmação -->
+        <ConfirmDialog
+          :isVisible="isConfirmDialogVisible"
+          :motivo="motivo"
+          @confirm="handleConfirm"
+          @cancel="handleCancel"
+        />
         <div class="form-buttons">
           <ButtonCancelar text="Cancelar" @click="cancelForm" />
-          <ButtonPrimaryMedio text="Cadastrar" @click="submitForm" />
+          <ButtonPrimaryMedio
+            text="Cadastrar"
+            @click="showConfirmDialog('Criar nova unidade?')"
+          />
         </div>
       </form>
     </div>
@@ -55,6 +68,7 @@ import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 
 import { useToast } from 'vue-toastification'; // Importa o hook useToast
+import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
 
 const toast = useToast(); // Cria a instância do toast
 
@@ -74,6 +88,11 @@ const bairro = ref('');
 const rua = ref('');
 const numero = ref('');
 const errorMessage = ref('');
+
+const isLoading = ref(false);
+
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
 
 // Cancela e reseta o formulário
 const cancelForm = () => {
@@ -107,6 +126,7 @@ const submitForm = async () => {
   if (!validateForm()) return;
 
   try {
+    isLoading.value = true;
     const response = await axios.post('/api/unidades', {
       cnpj: cnpj.value,
       cep: cep.value,
@@ -124,6 +144,8 @@ const submitForm = async () => {
     toast.error('Erro ao cadastrar unidade.');
     errorMessage.value =
       error.response?.data?.message || 'Erro ao cadastrar unidade.';
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -149,6 +171,20 @@ const applyCepMask = (event) => {
   value = value.replace(/(\d{5})(\d)/, '$1-$2');
 
   cep.value = value; // Atualiza o valor do CEP no formulário
+};
+
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  submitForm();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
 };
 </script>
 
@@ -176,5 +212,37 @@ const applyCepMask = (event) => {
   color: red;
   font-size: 14px;
   margin-top: 10px;
+}
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Estilos para o spinner */
+.spinner {
+  border: 4px solid #f3f3f3; /* Cor de fundo */
+  border-top: 4px solid #6db631; /* Cor do topo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+/* Animação do spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

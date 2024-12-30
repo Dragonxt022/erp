@@ -24,15 +24,19 @@ class Cargo extends Model
     public function getNameAttribute($value)
     {
         $mapaCargos = [
-            'G' => 'Gerente',
-            'CE' => 'Controle de Estoque',
-            'SR' => 'Super Resíduos',
-            'V' => 'Vouchers',
-            'FC' => 'Fluxo de Caixa',
-            'D' => 'Despesas',
+            'SM' => 'Sushiman',
+            'SW' => 'Sushiwoman',
+            'AC' => 'Auxiliar de Cozinha',
+            'R'  => 'Recepcionista',
+            'CO' => 'Cozinheira(o)',
+            'G'  => 'Gerente',
+            'F'  => 'Financeiro',
+            'CT' => 'Contabilidade',
+            'E'  => 'Entregador',
         ];
 
         // Retorna o nome completo do cargo baseado nas iniciais
         return isset($mapaCargos[$value]) ? $mapaCargos[$value] : $value;
     }
+
 }

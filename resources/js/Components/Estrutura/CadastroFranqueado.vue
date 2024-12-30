@@ -1,6 +1,10 @@
 <template>
   <div v-if="isVisible" class="sidebar-container">
-    <div class="w-full h-[525px] bg-white rounded-[20px] p-12">
+    <!-- Animação de Carregamento -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
+    <div v-else class="w-full h-[525px] bg-white rounded-[20px] p-12">
       <form @submit.prevent="submitForm">
         <div class="flex justify-center mb-6 relative group">
           <!-- Quadrado com a imagem ou ícone -->
@@ -58,13 +62,57 @@
           placeholder="000.000.000-00"
         />
 
+        <!-- Novo seletor para unidades -->
+        <LabelModel text="Unidade Responsável" />
+        <div class="w-full relative">
+          <select
+            v-model="selectedUnit"
+            class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+          >
+            <!-- Opção padrão como placeholder -->
+            <option value="" disabled :selected="!selectedUnit">
+              Selecione uma unidade
+            </option>
+            <option v-for="unit in units" :key="unit.id" :value="unit.id">
+              {{ unit.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Novo seletor para cargos -->
+        <LabelModel text="Cargo" />
+        <div class="w-full relative">
+          <select
+            v-model="selectedCargo"
+            class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+          >
+            <!-- Opção padrão como placeholder -->
+            <option value="" disabled :selected="!selectedCargo">
+              Selecione um cargo
+            </option>
+            <option v-for="cargo in cargos" :key="cargo.id" :value="cargo.id">
+              {{ cargo.name }}
+            </option>
+          </select>
+        </div>
+
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
 
+        <ConfirmDialog
+          :isVisible="isConfirmDialogVisible"
+          :motivo="motivo"
+          @confirm="handleConfirm"
+          @cancel="handleCancel"
+        />
+
         <div class="form-buttons">
           <ButtonCancelar text="Cancelar" @click="cancelForm" />
-          <ButtonPrimaryMedio text="Cadastrar" @click="submitForm" />
+          <ButtonPrimaryMedio
+            text="Cadastrar"
+            @click="showConfirmDialog('Criar novo Franqueado?')"
+          />
         </div>
       </form>
     </div>
@@ -81,6 +129,7 @@ import LabelModel from '../Label/LabelModel.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 import { useToast } from 'vue-toastification';
+import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
 
 const toast = useToast();
 
@@ -99,6 +148,47 @@ const cpf = ref('');
 const profilePhotoUrl = ref(''); // Campo para armazenar o caminho da imagem
 const errorMessage = ref('');
 const fileInput = ref(null); // Ref para o input de arquivo
+
+const selectedUnit = ref(null); // Unidade selecionada
+const units = ref([]); // Lista de unidades
+
+const selectedCargo = ref(null); // Cargo selecionado
+const cargos = ref([]); // Lista de cargos
+
+const isLoading = ref(false);
+
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
+
+// Busca unidades da API
+const fetchUnits = async () => {
+  try {
+    const response = await axios.get('/api/unidades'); // Chamada real à API
+    units.value = response.data.map((item) => ({
+      id: item.unidade.id,
+      name: item.unidade.cidade || 'Unidade Sem Nome', // Nome da unidade
+    }));
+  } catch (error) {
+    toast.error('Erro ao carregar unidades.');
+  }
+};
+
+// Busca cargos da API
+const fetchCargos = async () => {
+  try {
+    const response = await axios.get('/api/cargos'); // Chamada real à API
+    cargos.value = response.data.map((item) => ({
+      id: item.id,
+      name: item.name,
+    }));
+  } catch (error) {
+    toast.error('Erro ao carregar cargos.');
+  }
+};
+
+// Chama a função para buscar unidades e cargos
+fetchUnits();
+fetchCargos();
 
 // Manipula a seleção de arquivos
 const openFileSelector = () => {
@@ -134,12 +224,14 @@ const resetForm = () => {
   email.value = '';
   cpf.value = '';
   profilePhotoUrl.value = '';
+  selectedUnit.value = null;
+  selectedCargo.value = null;
   errorMessage.value = '';
 };
 
 // Valida os campos do formulário
 const validateForm = () => {
-  if (!name.value || !email.value || !cpf.value) {
+  if (!name.value || !email.value || !cpf.value || !selectedCargo.value) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -152,21 +244,25 @@ const submitForm = async () => {
   if (!validateForm()) return;
 
   try {
-    const response = await axios.post('/api/unidades', {
+    isLoading.value = true;
+    const response = await axios.post('/api/usuarios', {
       name: name.value,
       email: email.value,
       cpf: cpf.value,
-      profile_photo_url: profilePhotoUrl.value, // Inclui o caminho da imagem no payload
+      profile_photo_url: profilePhotoUrl.value,
+      unidade_id: selectedUnit.value,
+      cargo_id: selectedCargo.value,
     });
-
     console.log('Dados cadastrados com sucesso:', response.data);
     toast.success('Cadastro realizado com sucesso!');
-    Inertia.visit('/unidades');
+    Inertia.visit('/franqueados');
     resetForm();
   } catch (error) {
     toast.error('Erro ao realizar o cadastro.');
     errorMessage.value =
       error.response?.data?.message || 'Erro ao realizar o cadastro.';
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -177,6 +273,20 @@ const applyCpfMask = (event) => {
 
   value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   cpf.value = value;
+};
+
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  submitForm();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
 };
 </script>
 
@@ -204,5 +314,38 @@ const applyCpfMask = (event) => {
   color: red;
   font-size: 14px;
   margin-top: 10px;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Estilos para o spinner */
+.spinner {
+  border: 4px solid #f3f3f3; /* Cor de fundo */
+  border-top: 4px solid #6db631; /* Cor do topo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+/* Animação do spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

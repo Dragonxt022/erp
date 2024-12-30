@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CargoController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -73,7 +74,19 @@ Route::middleware([
 
     // Usuários
     Route::get('/api/usuarios', [UserController::class, 'index'])->name('usuarios.index');
+    Route::post('/api/usuarios', [UserController::class, 'store'])->name('usuarios.store');
 
+    // Cargos
+    Route::get('/api/cargos', [CargoController::class, 'index'])->name('cargos.index');
+
+
+    // Route::get('/email-template', function () {
+    //     // Passar dados fictícios para o template, se necessário
+    //     $name = 'Marina Schultz';
+    //     $resetPasswordUrl = url('/reset-password-link'); // Substitua pelo link de redefinição de senha real
+
+    //     return view('emails.reset-password', compact('name', 'resetPasswordUrl'));
+    // });
 
 
 

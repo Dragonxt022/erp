@@ -31,6 +31,7 @@ class User extends Authenticatable
         'cargo_id',    // Novo campo de cargo
         'pin',         // Novo campo para PIN
         'cpf',         // Novo campo para CPF
+        'profile_photo_path',
     ];
 
     /**

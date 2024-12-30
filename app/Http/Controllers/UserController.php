@@ -4,6 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
 {
@@ -38,4 +44,79 @@ class UserController extends Controller
 
         return response()->json($data);
     }
+
+    public function store(Request $request)
+    {
+        dd($request->all());
+        // Validação dos dados
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'cpf' => 'required|string|size:14|unique:users,cpf',
+            'unidade_id' => 'required|exists:infor_unidade,id',
+            'cargo_id' => 'required|exists:cargos,id',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validação da imagem
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Gerar PIN único de 5 números
+        $pin = $this->generateUniquePin();
+
+        // Senha padrão
+        $password = 'taiksu-123456';
+
+        // Processamento da imagem de perfil, caso exista
+        $profilePhotoPath = null;
+        if ($request->hasFile('profile_photo')) {
+            // Cria o diretório de fotos se não existir
+            $photoDirectory = 'public/images/photo_perfil';
+            if (!Storage::exists($photoDirectory)) {
+                Storage::makeDirectory($photoDirectory);
+            }
+
+            // Armazena a imagem de perfil no diretório
+            $profilePhotoPath = $request->file('profile_photo')->store('images/photo_perfil', 'public');
+        }
+
+        // Criação do usuário
+        try {
+            $user = User::create([
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'password' => Hash::make($password), // Hash da senha padrão
+                'cpf' => $request->input('cpf'),
+                'unidade_id' => $request->input('unidade_id'),
+                'cargo_id' => $request->input('cargo_id'),
+                'pin' => $pin, // Armazenar o PIN gerado
+                'profile_photo_path' => $profilePhotoPath, // Caminho da foto
+            ]);
+
+            // Gerar o token de redefinição de senha
+            $token = Password::createToken($user);
+
+            // Enviar o e-mail com o link para redefinir a senha
+            Mail::to($user->email)->send(new ResetPasswordMail($user, $token));
+
+            return response()->json(['message' => 'Usuário criado com sucesso. Um e-mail para redefinição de senha foi enviado.', 'user' => $user], 201);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao criar o usuário.', 'details' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Gerar um PIN único de 5 números.
+     */
+    private function generateUniquePin()
+    {
+        do {
+            $pin = rand(10000, 99999); // Gera um PIN aleatório de 5 números
+        } while (User::where('pin', $pin)->exists()); // Verifica se o PIN já existe
+
+        return $pin;
+    }
+
+
 }
