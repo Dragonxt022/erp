@@ -55,7 +55,7 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'cpf' => 'required|string|size:14|unique:users,cpf',
             'unidade_id' => 'required|exists:infor_unidade,id',
-            'cargo_id' => 'required|exists:cargos,id',
+            'cargo_id' => 'nullable|exists:cargos,id',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validação da imagem
         ]);
 

@@ -80,14 +80,12 @@
             </select>
           </div>
 
-          <!-- Novo seletor para cargos -->
-          <LabelModel text="Cargo" />
+          <!-- <LabelModel text="Cargo" />
           <div class="w-full relative">
             <select
               v-model="selectedCargo"
               class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
             >
-              <!-- Opção padrão como placeholder -->
               <option value="" disabled :selected="!selectedCargo">
                 Selecione um cargo
               </option>
@@ -95,7 +93,7 @@
                 {{ cargo.name }}
               </option>
             </select>
-          </div>
+          </div> -->
 
           <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
@@ -154,7 +152,7 @@ const fileInput = ref(null); // Ref para o input de arquivo
 const selectedUnit = ref(null); // Unidade selecionada
 const units = ref([]); // Lista de unidades
 
-const selectedCargo = ref(null); // Cargo selecionado
+// const selectedCargo = ref(null); // Cargo selecionado
 const cargos = ref([]); // Lista de cargos
 const selectedFile = ref(null);
 
@@ -177,21 +175,21 @@ const fetchUnits = async () => {
 };
 
 // Busca cargos da API
-const fetchCargos = async () => {
-  try {
-    const response = await axios.get('/api/cargos'); // Chamada real à API
-    cargos.value = response.data.map((item) => ({
-      id: item.id,
-      name: item.name,
-    }));
-  } catch (error) {
-    toast.error('Erro ao carregar cargos.');
-  }
-};
+// const fetchCargos = async () => {
+//   try {
+//     const response = await axios.get('/api/cargos'); // Chamada real à API
+//     cargos.value = response.data.map((item) => ({
+//       id: item.id,
+//       name: item.name,
+//     }));
+//   } catch (error) {
+//     toast.error('Erro ao carregar cargos.');
+//   }
+// };
 
 // Chama a função para buscar unidades e cargos
 fetchUnits();
-fetchCargos();
+// fetchCargos();
 
 // Manipula a seleção de arquivos
 const openFileSelector = () => {
@@ -228,14 +226,14 @@ const resetForm = () => {
   cpf.value = '';
   profilePhotoUrl.value = '';
   selectedUnit.value = null;
-  selectedCargo.value = null;
+  //   selectedCargo.value = null;
   selectedFile.value = null;
   errorMessage.value = '';
 };
 
 // Valida os campos do formulário
 const validateForm = () => {
-  if (!name.value || !email.value || !cpf.value || !selectedCargo.value) {
+  if (!name.value || !email.value || !cpf.value) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -256,7 +254,7 @@ const submitForm = async () => {
     formData.append('email', email.value);
     formData.append('cpf', cpf.value);
     formData.append('unidade_id', selectedUnit.value);
-    formData.append('cargo_id', selectedCargo.value);
+    // formData.append('cargo_id', selectedCargo.value);
 
     // Inclua o arquivo de imagem apenas se ele for selecionado
     if (selectedFile.value) {
