@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
@@ -71,14 +72,8 @@ class UserController extends Controller
         // Processamento da imagem de perfil, caso exista
         $profilePhotoPath = null;
         if ($request->hasFile('profile_photo')) {
-            // Cria o diretório de fotos se não existir
-            $photoDirectory = 'public/images/photo_perfil';
-            if (!Storage::exists($photoDirectory)) {
-                Storage::makeDirectory($photoDirectory);
-            }
-
-            // Armazena a imagem de perfil no diretório
-            $profilePhotoPath = $request->file('profile_photo')->store('images/photo_perfil', 'public');
+            // Armazena a imagem de perfil diretamente na pasta public/images
+            $profilePhotoPath = $request->file('profile_photo')->store('images', 'public');
         }
 
         // Criação do usuário
@@ -117,6 +112,37 @@ class UserController extends Controller
 
         return $pin;
     }
+
+    public function destroy($id)
+    {
+        try {
+            // Obter o usuário autenticado usando Auth
+            $authenticatedUser = Auth::user();
+
+            // Encontrar o usuário pelo ID
+            $user = User::findOrFail($id); // Retorna 404 se não encontrar o usuário
+
+            // Verificar se o usuário autenticado está tentando excluir a si mesmo
+            if ($authenticatedUser->id === $user->id) {
+                return response()->json(['error' => 'Você não pode excluir a si mesmo.'], 403);
+            }
+
+            // Verificar se existe uma imagem de perfil associada e deletá-la
+            if ($user->profile_photo_path) {
+                // Remove a imagem da pasta storage, caso exista
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            // Excluir o usuário
+            $user->delete();
+
+            return response()->json(['message' => 'Usuário deletado com sucesso.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao deletar o usuário.', 'details' => $e->getMessage()], 500);
+        }
+    }
+
+
 
 
 }

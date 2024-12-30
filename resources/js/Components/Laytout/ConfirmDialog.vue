@@ -1,26 +1,28 @@
 <template>
-  <div v-if="isVisible" class="confirm-dialog-overlay">
-    <div class="confirm-dialog">
-      <!-- Ícone de alerta centralizado acima da mensagem -->
-      <div class="alert-icon">
-        <img src="/storage/images/warning.svg" alt="Ícone de alerta" />
-      </div>
+  <transition name="fade">
+    <div v-if="isVisible" class="confirm-dialog-overlay">
+      <div class="confirm-dialog">
+        <!-- Ícone de alerta centralizado acima da mensagem -->
+        <div class="alert-icon">
+          <img src="/storage/images/warning.svg" alt="Ícone de alerta" />
+        </div>
 
-      <div class="confirm-dialog-content">
-        <p>Você tem certeza que deseja {{ motivo }}</p>
-        <div class="confirm-dialog-actions">
-          <!-- Botão Sim -->
-          <!-- Botão Não -->
-          <button @click="cancel" class="btn-cancel">
-            <span>CANCELAR</span>
-          </button>
-          <button @click="confirm" class="btn-confirm">
-            <span>CONFIRMAR</span>
-          </button>
+        <div class="confirm-dialog-content">
+          <p>Você tem certeza que deseja {{ motivo }}</p>
+          <div class="confirm-dialog-actions">
+            <!-- Botão Sim -->
+            <!-- Botão Não -->
+            <button @click="cancel" class="btn-cancel">
+              <span>CANCELAR</span>
+            </button>
+            <button @click="confirm" class="btn-confirm">
+              <span>CONFIRMAR</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
@@ -61,8 +63,11 @@ export default {
 }
 
 .confirm-dialog {
-  background: white;
-  padding: 20px;
+  background: #fff;
+  padding-left: 60px;
+  padding-right: 60px;
+  padding-top: 60px;
+  padding-bottom: 60px;
   border-radius: 8px;
   width: 450px;
   height: auto;
@@ -121,5 +126,13 @@ button:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+  opacity: 0;
 }
 </style>

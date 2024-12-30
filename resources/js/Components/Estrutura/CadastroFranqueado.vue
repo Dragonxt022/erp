@@ -1,122 +1,124 @@
 <template>
-  <div v-if="isVisible" class="sidebar-container">
-    <!-- Animação de Carregamento -->
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="spinner"></div>
-    </div>
-    <div v-else class="w-full h-[525px] bg-white rounded-[20px] p-12">
-      <form @submit.prevent="submitForm">
-        <div class="flex justify-center mb-6 relative group">
-          <!-- Quadrado com a imagem ou ícone -->
-          <div
-            class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
-            @click="openFileSelector"
-          >
-            <template v-if="profilePhotoUrl">
-              <!-- Exibe a imagem selecionada -->
-              <img
-                :src="profilePhotoUrl"
-                alt="Imagem selecionada"
-                class="w-full h-full object-cover"
-              />
-              <!-- Fundo escuro e botão de remoção ao passar o mouse -->
-              <div
-                class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                @click.stop
-              >
-                <button
-                  @click.stop="removeImage"
-                  class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm"
+  <transition name="fade">
+    <div v-if="isVisible" class="sidebar-container">
+      <!-- Animação de Carregamento -->
+      <div v-if="isLoading" class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+      <div v-else class="w-full h-[525px] bg-white rounded-[20px] p-12">
+        <form @submit.prevent="submitForm">
+          <div class="flex justify-center mb-6 relative group">
+            <!-- Quadrado com a imagem ou ícone -->
+            <div
+              class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
+              @click="openFileSelector"
+            >
+              <template v-if="profilePhotoUrl">
+                <!-- Exibe a imagem selecionada -->
+                <img
+                  :src="profilePhotoUrl"
+                  alt="Imagem selecionada"
+                  class="w-full h-full object-cover"
+                />
+                <!-- Fundo escuro e botão de remoção ao passar o mouse -->
+                <div
+                  class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click.stop
                 >
-                  X
-                </button>
-              </div>
-            </template>
-            <template v-else>
-              <!-- Exibe o ícone se nenhuma imagem foi selecionada -->
-              <img
-                src="/storage/images/arrow_upload_ready.svg"
-                alt="Ícone de upload"
-              />
-            </template>
+                  <button
+                    @click.stop="removeImage"
+                    class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm"
+                  >
+                    X
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <!-- Exibe o ícone se nenhuma imagem foi selecionada -->
+                <img
+                  src="/storage/images/arrow_upload_ready.svg"
+                  alt="Ícone de upload"
+                />
+              </template>
+            </div>
+            <input
+              type="file"
+              ref="fileInput"
+              accept="image/*"
+              class="hidden"
+              @change="handleImageUpload"
+            />
           </div>
-          <input
-            type="file"
-            ref="fileInput"
-            accept="image/*"
-            class="hidden"
-            @change="handleImageUpload"
+
+          <LabelModel text="Nome Completo" />
+          <InputModel v-model="name" placeholder="João Silva Souza" />
+
+          <LabelModel text="E-mail" />
+          <InputModel v-model="email" placeholder="usuario@email.com" />
+
+          <LabelModel text="CPF" />
+          <InputModel
+            v-model="cpf"
+            @input="applyCpfMask"
+            placeholder="000.000.000-00"
           />
-        </div>
 
-        <LabelModel text="Nome Completo" />
-        <InputModel v-model="name" placeholder="João Silva Souza" />
+          <!-- Novo seletor para unidades -->
+          <LabelModel text="Unidade Responsável" />
+          <div class="w-full relative">
+            <select
+              v-model="selectedUnit"
+              class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+            >
+              <!-- Opção padrão como placeholder -->
+              <option value="" disabled :selected="!selectedUnit">
+                Selecione uma unidade
+              </option>
+              <option v-for="unit in units" :key="unit.id" :value="unit.id">
+                {{ unit.name }}
+              </option>
+            </select>
+          </div>
 
-        <LabelModel text="E-mail" />
-        <InputModel v-model="email" placeholder="usuario@email.com" />
+          <!-- Novo seletor para cargos -->
+          <LabelModel text="Cargo" />
+          <div class="w-full relative">
+            <select
+              v-model="selectedCargo"
+              class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+            >
+              <!-- Opção padrão como placeholder -->
+              <option value="" disabled :selected="!selectedCargo">
+                Selecione um cargo
+              </option>
+              <option v-for="cargo in cargos" :key="cargo.id" :value="cargo.id">
+                {{ cargo.name }}
+              </option>
+            </select>
+          </div>
 
-        <LabelModel text="CPF" />
-        <InputModel
-          v-model="cpf"
-          @input="applyCpfMask"
-          placeholder="000.000.000-00"
-        />
+          <div v-if="errorMessage" class="error-message">
+            {{ errorMessage }}
+          </div>
 
-        <!-- Novo seletor para unidades -->
-        <LabelModel text="Unidade Responsável" />
-        <div class="w-full relative">
-          <select
-            v-model="selectedUnit"
-            class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
-          >
-            <!-- Opção padrão como placeholder -->
-            <option value="" disabled :selected="!selectedUnit">
-              Selecione uma unidade
-            </option>
-            <option v-for="unit in units" :key="unit.id" :value="unit.id">
-              {{ unit.name }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Novo seletor para cargos -->
-        <LabelModel text="Cargo" />
-        <div class="w-full relative">
-          <select
-            v-model="selectedCargo"
-            class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
-          >
-            <!-- Opção padrão como placeholder -->
-            <option value="" disabled :selected="!selectedCargo">
-              Selecione um cargo
-            </option>
-            <option v-for="cargo in cargos" :key="cargo.id" :value="cargo.id">
-              {{ cargo.name }}
-            </option>
-          </select>
-        </div>
-
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
-        <ConfirmDialog
-          :isVisible="isConfirmDialogVisible"
-          :motivo="motivo"
-          @confirm="handleConfirm"
-          @cancel="handleCancel"
-        />
-
-        <div class="form-buttons">
-          <ButtonCancelar text="Cancelar" @click="cancelForm" />
-          <ButtonPrimaryMedio
-            text="Cadastrar"
-            @click="showConfirmDialog('Criar novo Franqueado?')"
+          <ConfirmDialog
+            :isVisible="isConfirmDialogVisible"
+            :motivo="motivo"
+            @confirm="handleConfirm"
+            @cancel="handleCancel"
           />
-        </div>
-      </form>
+
+          <div class="form-buttons">
+            <ButtonCancelar text="Cancelar" @click="cancelForm" />
+            <ButtonPrimaryMedio
+              text="Cadastrar"
+              @click="showConfirmDialog('Criar novo Franqueado?')"
+            />
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script setup>
@@ -361,5 +363,13 @@ const handleCancel = () => {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from, .fade-leave-to /* .fade-leave-active in <2.1.8 */ {
+  opacity: 0;
 }
 </style>

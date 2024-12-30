@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!isEditMode"
-    class="w-full h-[350px] bg-white rounded-[20px] p-12 relative"
+    class="w-full h-[270px] bg-white rounded-[20px] p-12 relative"
   >
     <div class="relative w-full h-full">
       <!-- Nome do Usuário -->
@@ -27,9 +27,15 @@
         </div>
 
         <div class="w-1/1">
+          <ConfirmDialog
+            :isVisible="isConfirmDialogVisible"
+            :motivo="motivo"
+            @confirm="handleConfirm"
+            @cancel="handleCancel"
+          />
           <div
             class="absolute top-4 right-4 cursor-pointer"
-            @click="deleteUsuario"
+            @click="showConfirmDialog('excluir franqueado')"
           >
             <img
               src="/storage/images/delete.svg"
@@ -42,8 +48,10 @@
 
       <!-- E-mail abaixo das colunas -->
       <div class="mt-4">
-        <p class="p-3">E-mail</p>
-        <div class="flex items-center bg-[#f3f8f3] p-4 rounded-lg">
+        <p class="p-2">E-mail</p>
+        <div
+          class="w-full p-4 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+        >
           <div
             class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
           >
@@ -51,32 +59,20 @@
           </div>
         </div>
       </div>
-
-      <!-- Botão de Edição -->
-      <div v-if="usuario.id" class="absolute bottom-0 right-0">
-        <ButtonEditeMedio
-          text="Editar Usuário"
-          icon-path="/storage/images/border_color.svg"
-          @click="toggleEditMode"
-          class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-        />
-      </div>
     </div>
   </div>
-
-  <!-- Exibe o formulário de edição quando isEditMode é true -->
-  <EditarUnidade
-    v-if="isEditMode"
-    :isVisible="isEditMode"
-    :unidade="usuario"
-    @cancelar="cancelEdit"
-  />
 </template>
 
 <script setup>
 import { defineProps, ref } from 'vue';
-import EditarUnidade from './EditarUnidade.vue';
-import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
+import axios from 'axios';
+import { Inertia } from '@inertiajs/inertia';
+
+import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
+
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
 
 const props = defineProps({
   usuario: {
@@ -85,14 +81,45 @@ const props = defineProps({
   },
 });
 
-const isEditMode = ref(false);
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
 
-const toggleEditMode = () => {
-  isEditMode.value = !isEditMode.value;
+const isEditMode = ref(false);
+const isLoading = ref(false);
+
+const deleteUsuario = async () => {
+  try {
+    isLoading.value = true;
+    const response = await axios.delete(`/api/usuario/${props.usuario.id}`); // URL para deletar o usuário
+    console.log(response.data.message); // Mensagem de sucesso do backend
+    toast.success('Usuário deletado com sucesso!'); // Exibe um toast de sucesso
+    Inertia.visit('/franqueados');
+  } catch (error) {
+    toast.error(
+      'Erro ao deletar o usuário:',
+      error.response?.data?.error || error.message
+    );
+    console.error(
+      'Erro ao deletar o usuário:',
+      error.response?.data?.error || error.message
+    );
+  } finally {
+    isLoading.value = false;
+  }
 };
 
-const cancelEdit = () => {
-  isEditMode.value = false;
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  deleteUsuario();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
 };
 </script>
 
@@ -103,5 +130,38 @@ const cancelEdit = () => {
   font-weight: 500;
   line-height: 18px;
   color: #6d6d6e;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* Estilos para o spinner */
+.spinner {
+  border: 4px solid #f3f3f3; /* Cor de fundo */
+  border-top: 4px solid #6db631; /* Cor do topo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+/* Animação do spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

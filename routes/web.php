@@ -75,6 +75,8 @@ Route::middleware([
     // Usuários
     Route::get('/api/usuarios', [UserController::class, 'index'])->name('usuarios.index');
     Route::post('/api/usuarios', [UserController::class, 'store'])->name('usuarios.store');
+    Route::delete('/api/usuario/{id}', [UserController::class, 'destroy']);
+
 
     // Cargos
     Route::get('/api/cargos', [CargoController::class, 'index'])->name('cargos.index');
