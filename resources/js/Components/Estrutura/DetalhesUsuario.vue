@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="!isEditMode"
-    class="w-full h-[270px] bg-white rounded-[20px] p-12 relative"
+    class="w-full h-[270px] bg-white rounded-[20px] p-12 relative overflow-y-auto scrollbar-hidden"
   >
     <div class="relative w-full h-full">
       <!-- Nome do Usuário -->
@@ -124,6 +124,15 @@ const handleCancel = () => {
 </script>
 
 <style scoped>
+/* Tornando a lista rolável com barra de rolagem invisível */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* Para o IE e Edge */
+  scrollbar-width: none; /* Para o Firefox */
+}
 .owner {
   font-size: 13px;
   font-family: Figtree;
