@@ -3,10 +3,8 @@
         Options -MultiViews -Indexes
     </IfModule>
 
-    RewriteEngine On
 
-    # Adiciona o cabeçalho Content-Security-Policy
-    Header set Content-Security-Policy "default-src 'self'; img-src 'self' https://erp.taiksu.com.br; upgrade-insecure-requests;"
+    RewriteEngine On
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .

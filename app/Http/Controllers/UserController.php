@@ -73,7 +73,7 @@ class UserController extends Controller
 
         if ($request->hasFile('profile_photo')) {
             // Caminho da pasta personalizada de fotos
-            $folderPath = storage_path('app/public/profile-photos');  // Usando storage/app/public/profile-photos
+            $folderPath = storage_path('app/public/images');
 
             // Verificar se a pasta existe, caso contrário, cria ela
             if (!File::exists($folderPath)) {
@@ -84,9 +84,9 @@ class UserController extends Controller
             // Agora podemos salvar a imagem na pasta personalizada
             $profilePhoto = $request->file('profile_photo');
             $fileName = time() . '_' . $profilePhoto->getClientOriginalName(); // Definir um nome único para o arquivo
-            $profilePhotoPath = 'profile-photos/' . $fileName;
+            $profilePhotoPath = 'images/' . $fileName;
 
-            // Mover a imagem para a pasta 'storage/app/public/profile-photos'
+            // Mover a imagem para a pasta 'storage/app/public/images
             $profilePhoto->move($folderPath, $fileName);
 
             // Garantir que o arquivo tenha as permissões corretas
