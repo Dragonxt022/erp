@@ -69,10 +69,8 @@ class UserController extends Controller
         // Senha padrão
         $password = 'taiksu-123456';
 
-        // Processamento da imagem de perfil, caso exista
         $profilePhotoPath = null;
         if ($request->hasFile('profile_photo')) {
-            // Armazena a imagem de perfil diretamente na pasta public/images
             $profilePhotoPath = $request->file('profile_photo')->store('images', 'public');
         }
 
