@@ -12,8 +12,8 @@
   </Link>
 
   <!-- Caso seja logout, trata com POST -->
-  <form v-else @submit.prevent="handleLogout">
-    <button type="submit" class="menu-item">
+  <form v-else @submit.prevent="handleLogout" class="menu-item">
+    <button type="submit" class="w-full h-full flex items-center">
       <div class="icon">
         <img :src="icon" alt="icon" />
       </div>
