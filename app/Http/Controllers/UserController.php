@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
@@ -68,11 +69,30 @@ class UserController extends Controller
 
         // Senha padrão
         $password = 'taiksu-123456';
-
         $profilePhotoPath = null;
+
         if ($request->hasFile('profile_photo')) {
-            $profilePhotoPath = $request->file('profile_photo')->store('images', 'public');
+            // Caminho da pasta personalizada de fotos
+            $folderPath = storage_path('app/public/profile-photos');  // Usando storage/app/public/profile-photos
+
+            // Verificar se a pasta existe, caso contrário, cria ela
+            if (!File::exists($folderPath)) {
+                // Criar a pasta com permissões adequadas
+                File::makeDirectory($folderPath, 0755, true);  // Permissões para leitura, escrita e execução
+            }
+
+            // Agora podemos salvar a imagem na pasta personalizada
+            $profilePhoto = $request->file('profile_photo');
+            $fileName = time() . '_' . $profilePhoto->getClientOriginalName(); // Definir um nome único para o arquivo
+            $profilePhotoPath = 'profile-photos/' . $fileName;
+
+            // Mover a imagem para a pasta 'storage/app/public/profile-photos'
+            $profilePhoto->move($folderPath, $fileName);
+
+            // Garantir que o arquivo tenha as permissões corretas
+            chmod($folderPath . '/' . $fileName, 0644);  // Permissões para leitura e escrita para o proprietário e leitura para outros
         }
+
 
         // Criação do usuário
         try {
