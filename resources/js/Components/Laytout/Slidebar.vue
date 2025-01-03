@@ -112,6 +112,12 @@ const menuCategories = [
     name: 'Parâmetros da franquia',
     items: [
       {
+        label: 'Fornecedores',
+        icon: '/storage/images/handshake_branca.svg',
+        link: 'fornecedores',
+        isLogout: false,
+      },
+      {
         label: 'Insumos',
         icon: '/storage/images/insumos.svg',
         link: 'insumos',

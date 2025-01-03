@@ -51,6 +51,10 @@ Route::middleware([
         return Inertia::render('Unidades/Index');
     })->name('unidades');
 
+    Route::get('/fornecedores', function () {
+        return Inertia::render('Fornecedores/Index');
+    })->name('fornecedores');
+
     Route::get('/insumos', function () {
         return Inertia::render('Insumos/Index');
     })->name('insumos');

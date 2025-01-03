@@ -40,9 +40,9 @@
             <div class="icon-bg"></div>
             <div class="icon-leaf">
               <img
-                :src="usuario.profilePhoto"
+                src="/storage/images/servicos_verde.svg"
                 alt="Foto de perfil"
-                class="w-12 h-12 rounded-lg"
+                class="w-5 h-5 rounded-lg"
               />
             </div>
           </div>
@@ -166,18 +166,18 @@ export default {
 .card-inner {
   display: flex;
   align-items: center;
-  padding: 8px;
+  padding: 13px;
 }
 
 .icon-container {
   position: relative;
-  width: 55px;
-  height: 55px;
+  width: 32px;
+  height: 32px;
 }
 
 .icon-bg {
-  width: 55px;
-  height: 55px;
+  width: 32px;
+  height: 32px;
   position: absolute;
   left: 0;
   top: 1.33px;
