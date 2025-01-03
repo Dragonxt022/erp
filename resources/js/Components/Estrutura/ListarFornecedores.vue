@@ -30,10 +30,10 @@
     <!-- Container de cards -->
     <div class="card-container">
       <div
-        v-for="usuario in filteredUsuarios"
-        :key="usuario.id"
+        v-for="fornecedor in filteredFornecedores"
+        :key="fornecedor.id"
         class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
-        @click="selecionarUsuario(usuario)"
+        @click="selecionarFornecedor(fornecedor)"
       >
         <div class="card-inner">
           <div class="icon-container">
@@ -41,17 +41,17 @@
             <div class="icon-leaf">
               <img
                 src="/storage/images/servicos_verde.svg"
-                alt="Foto de perfil"
+                alt="Ícone do fornecedor"
                 class="w-5 h-5 rounded-lg"
               />
             </div>
           </div>
           <div class="text-container">
-            <!-- Nome do usuário -->
-            <div class="city">{{ usuario.name }}</div>
+            <!-- Nome do fornecedor -->
+            <div class="city">{{ fornecedor.nome_completo }}</div>
 
-            <!-- CPF do usuário -->
-            <div class="owner">{{ usuario.cpf }}</div>
+            <!-- CNPJ do fornecedor -->
+            <div class="owner">{{ fornecedor.cnpj }}</div>
           </div>
           <div class="action-icon"></div>
         </div>
@@ -60,73 +60,44 @@
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted } from 'vue';
+<script setup>
+import { ref, computed } from 'vue';
 import axios from 'axios';
 
-export default {
-  data() {
-    return {
-      usuarios: [], // Armazena os usuários
-      searchQuery: '', // Campo de pesquisa
-    };
-  },
-  mounted() {
-    this.fetchUsuarios(); // Busca os dados da API ao montar o componente
-  },
-  methods: {
-    // Busca os usuários da API
-    async fetchUsuarios() {
-      try {
-        const response = await axios.get('/api/usuarios');
-        this.usuarios = response.data; // Atualiza os dados
-      } catch (error) {
-        console.error('Erro ao carregar usuários:', error);
-      }
-    },
+// Defina os eventos emitidos
+const emit = defineEmits(['fornecedor-selecionado']);
 
-    // Seleciona um usuário e emite o evento para o pai
-    selecionarUsuario(usuario) {
-      this.$emit('usuario-selecionado', usuario);
-    },
+// Dados reativos
+const fornecedores = ref([]);
+const searchQuery = ref('');
 
-    // Gera as iniciais do nome
-    getInitials(name) {
-      if (!name) return 'N/A';
-      const initials = name
-        .split(' ')
-        .map((n) => n[0])
-        .join('');
-      return initials.slice(0, 2).toUpperCase();
-    },
-  },
-  computed: {
-    // Computed para cada usuário para verificar e definir a foto de perfil
-    usuariosComFotos() {
-      return this.usuarios.map((usuario) => {
-        return {
-          ...usuario,
-          profilePhoto:
-            usuario.profile_photo_url ||
-            `https://ui-avatars.com/api/?name=${this.getInitials(
-              usuario.name
-            )}&color=7F9CF5&background=EBF4FF&size=55`,
-        };
-      });
-    },
-
-    // Filtra usuários com base em nome ou CPF
-    filteredUsuarios() {
-      return this.usuariosComFotos.filter((usuario) => {
-        const query = this.searchQuery.toLowerCase();
-        return (
-          usuario.name.toLowerCase().includes(query) ||
-          usuario.cpf.toLowerCase().includes(query)
-        );
-      });
-    },
-  },
+// Função para buscar fornecedores
+const fetchFornecedores = async () => {
+  try {
+    const response = await axios.get('/api/fornecedores');
+    fornecedores.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao carregar fornecedores:', error);
+  }
 };
+
+// Função para selecionar fornecedor
+const selecionarFornecedor = (fornecedor) => {
+  emit('fornecedor-selecionado', fornecedor);
+};
+
+// Computed para filtrar fornecedores
+const filteredFornecedores = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  return fornecedores.value.filter(
+    (fornecedor) =>
+      fornecedor.nome_completo.toLowerCase().includes(query) ||
+      fornecedor.cnpj.toLowerCase().includes(query)
+  );
+});
+
+// Chamar fetchFornecedores ao montar o componente
+fetchFornecedores();
 </script>
 
 <style scoped>

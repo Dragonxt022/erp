@@ -6,19 +6,20 @@
     <!-- Container principal da grade com 2 colunas -->
     <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
       <div>
+        <!-- Componente de listagem de fornecedores -->
         <ListarFornecedores
-          ref="listarUnidades"
-          @unidade-cadastrada="fetchUnidades"
-          @usuario-selecionado="usuarioSelecionado"
+          ref="listarFornecedores"
+          @fornecedor-cadastrado="fetchFornecedores"
+          @fornecedor-selecionado="fornecedorSelecionadoHandler"
         />
       </div>
 
       <!-- Coluna 2: Alternar entre Detalhes e Cadastro -->
       <div class="flex flex-col gap-4">
-        <template v-if="!showCadastroUsuario">
-          <!-- Passa os dados do usuário selecionado apenas se existirem -->
-          <template v-if="usuarioSelecionada">
-            <DetalhesUsuario :usuario="usuarioSelecionada" />
+        <template v-if="!showCadastroFornecedor">
+          <!-- Passa os dados do fornecedor selecionado apenas se existirem -->
+          <template v-if="fornecedorSelecionado">
+            <DetalhesFornecedor :fornecedor="fornecedorSelecionado" />
           </template>
 
           <div class="absolute bottom-4 right-4">
@@ -32,8 +33,8 @@
         <template v-else>
           <div class="mt-4">
             <CadastroFornecedor
-              :isVisible="showCadastroUsuario"
-              @unidade-cadastrada="handleCadastro"
+              :isVisible="showCadastroFornecedor"
+              @fornecedor-cadastrado="handleCadastro"
               @cancelar="toggleCadastro"
             />
           </div>
@@ -45,43 +46,43 @@
 
 <script setup>
 import { ref } from 'vue';
-import DetalhesUsuario from '@/Components/Estrutura/DetalhesUsuario.vue';
+import DetalhesFornecedor from '@/Components/Estrutura/DetalhesFornecedor.vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import CadastroFornecedor from '@/Components/Estrutura/CadastroFornecedor.vue';
 import ListarFornecedores from '@/Components/Estrutura/ListarFornecedores.vue';
 
-// Dados do usuário selecionado
-const usuarioSelecionada = ref(null);
+// Dados do fornecedor selecionado
+const fornecedorSelecionado = ref(null);
 
-const showCadastroUsuario = ref(false);
+const showCadastroFornecedor = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
 const toggleCadastro = () => {
-  showCadastroUsuario.value = !showCadastroUsuario.value;
+  showCadastroFornecedor.value = !showCadastroFornecedor.value;
 };
 
-// Atualiza a lista de unidades após o cadastro
+// Atualiza a lista de fornecedores após o cadastro
 const handleCadastro = () => {
-  fetchUnidades();
-  showCadastroUsuario.value = false;
+  fetchFornecedores();
+  showCadastroFornecedor.value = false;
 };
 
-// Atualiza a lista de unidades
-const fetchUnidades = () => {
-  const listarUnidades = ref('listarUnidades');
-  listarUnidades.value?.fetchUnidades();
+// Atualiza a lista de fornecedores
+const fetchFornecedores = () => {
+  const listarFornecedores = ref('listarFornecedores');
+  listarFornecedores.value?.fetchFornecedores();
 };
 
-// Define os dados da unidade selecionada
-const usuarioSelecionado = (usuario) => {
-  if (usuario && typeof usuario === 'object') {
-    usuarioSelecionada.value = usuario;
+// Define os dados do fornecedor selecionado
+const fornecedorSelecionadoHandler = (fornecedor) => {
+  if (fornecedor && typeof fornecedor === 'object') {
+    fornecedorSelecionado.value = fornecedor;
   } else {
     console.warn(
-      'Dados inválidos recebidos no evento usuario-selecionado:',
-      usuario
+      'Dados inválidos recebidos no evento fornecedor-selecionado:',
+      fornecedor
     );
   }
 };

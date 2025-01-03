@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CargoController;
+use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -84,6 +85,12 @@ Route::middleware([
 
     // Cargos
     Route::get('/api/cargos', [CargoController::class, 'index'])->name('cargos.index');
+
+    // Fornecedores
+    Route::post('/api/fornecedores', [FornecedorController::class, 'store'])->name('fornecedores.store');
+    Route::get('/api/fornecedores', [FornecedorController::class, 'index'])->name('fornecedores.index');
+    Route::put('/api/fornecedores/{id}', [FornecedorController::class, 'update'])->name('fornecedores.update');
+
 
 
     // Route::get('/email-template', function () {

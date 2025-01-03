@@ -20,7 +20,6 @@
             placeholder="000.000.000/0000-00"
           />
 
-          <!-- Novo seletor para unidades -->
           <LabelModel text="WhatsApp" />
           <InputModel v-model="whatsapp" placeholder="(00) 00000-0000" />
 
@@ -42,7 +41,7 @@
             <ButtonCancelar text="Cancelar" @click="cancelForm" />
             <ButtonPrimaryMedio
               text="Cadastrar"
-              @click="showConfirmDialog('Criar novo Franqueado?')"
+              @click="showConfirmDialog('Criar novo Fornecedor?')"
             />
           </div>
         </form>
@@ -54,7 +53,6 @@
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
-import { Inertia } from '@inertiajs/inertia';
 import { defineProps, defineEmits } from 'vue';
 import InputModel from '../Inputs/InputModel.vue';
 import LabelModel from '../Label/LabelModel.vue';
@@ -80,58 +78,10 @@ const cnpj = ref('');
 const whatsapp = ref('');
 const estado = ref('');
 const errorMessage = ref('');
-const fileInput = ref(null); // Ref para o input de arquivo
-
-const selectedUnit = ref(null); // Unidade selecionada
-const units = ref([]); // Lista de unidades
-
-// const selectedCargo = ref(null); // Cargo selecionado
-const selectedFile = ref(null);
-
 const isLoading = ref(false);
-
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
 
-// Busca unidades da API
-const fetchUnits = async () => {
-  try {
-    const response = await axios.get('/api/unidades'); // Chamada real à API
-    units.value = response.data.map((item) => ({
-      id: item.unidade.id,
-      name: item.unidade.cidade || 'Unidade Sem Nome', // Nome da unidade
-    }));
-  } catch (error) {
-    toast.error('Erro ao carregar unidades.');
-  }
-};
-
-// Chama a função para buscar unidades e cargos
-fetchUnits();
-// fetchCargos();
-
-// Manipula a seleção de arquivos
-const openFileSelector = () => {
-  fileInput.value?.click(); // Garante que fileInput seja o input de arquivo
-};
-
-const removeImage = () => {
-  profilePhotoUrl.value = ''; // Remove a imagem selecionada
-  toast.info('Imagem removida.'); // Mensagem de confirmação
-};
-
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    selectedFile.value = file; // Armazena o arquivo original
-    const reader = new FileReader();
-    reader.onload = () => {
-      profilePhotoUrl.value = reader.result; // Armazena o caminho base64 (para exibição, se necessário)
-      toast.success('Imagem carregada com sucesso!');
-    };
-    reader.readAsDataURL(file);
-  }
-};
 // Cancela e reseta o formulário
 const cancelForm = () => {
   resetForm();
@@ -142,17 +92,15 @@ const cancelForm = () => {
 const resetForm = () => {
   name.value = '';
   email.value = '';
-  cpf.value = '';
-  profilePhotoUrl.value = '';
-  selectedUnit.value = null;
-  //   selectedCargo.value = null;
-  selectedFile.value = null;
+  cnpj.value = '';
+  whatsapp.value = '';
+  estado.value = '';
   errorMessage.value = '';
 };
 
 // Valida os campos do formulário
 const validateForm = () => {
-  if (!name.value || !email.value || !cpf.value) {
+  if (!name.value || !email.value || !cnpj.value) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -167,29 +115,18 @@ const submitForm = async () => {
   try {
     isLoading.value = true;
 
-    // Cria o objeto FormData
-    const formData = new FormData();
-    formData.append('name', name.value);
-    formData.append('email', email.value);
-    formData.append('cpf', cpf.value);
-    formData.append('unidade_id', selectedUnit.value);
-    // formData.append('cargo_id', selectedCargo.value);
-
-    // Inclua o arquivo de imagem apenas se ele for selecionado
-    if (selectedFile.value) {
-      formData.append('profile_photo', selectedFile.value); // Envia o arquivo real
-    }
-
-    const response = await axios.post('/api/usuarios', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const response = await axios.post('/api/fornecedores', {
+      nome_completo: name.value,
+      email: email.value,
+      cnpj: cnpj.value,
+      whatsapp: whatsapp.value,
+      estado: estado.value,
     });
 
-    console.log('Dados cadastrados com sucesso:', response.data);
-    toast.success('Cadastro realizado com sucesso!');
-    Inertia.visit('/franqueados');
+    console.log('Fornecedor cadastrado com sucesso:', response.data);
+    toast.success('Fornecedor cadastrado com sucesso!');
     resetForm();
+    emit('cancelar');
   } catch (error) {
     toast.error('Erro ao realizar o cadastro.');
     errorMessage.value =
@@ -199,25 +136,31 @@ const submitForm = async () => {
   }
 };
 
-// Aplica máscara ao CPF
+// Aplica máscara ao CNPJ
 const applyCpfMask = (event) => {
   let value = event.target.value.replace(/\D/g, '');
-  if (value.length > 11) value = value.slice(0, 11);
+  if (value.length > 14) value = value.slice(0, 14);
 
-  value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  cpf.value = value;
+  value = value.replace(
+    /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+    '$1.$2.$3/$4-$5'
+  );
+  cnpj.value = value;
 };
 
+// Exibe o diálogo de confirmação
 const showConfirmDialog = (motivoParam) => {
-  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
-  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+  motivo.value = motivoParam;
+  isConfirmDialogVisible.value = true;
 };
 
+// Manipula a confirmação
 const handleConfirm = () => {
   submitForm();
   isConfirmDialogVisible.value = false;
 };
 
+// Manipula o cancelamento do diálogo
 const handleCancel = () => {
   isConfirmDialogVisible.value = false;
 };

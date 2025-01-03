@@ -11,10 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('fornecedores', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
+        {
+            Schema::create('fornecedores', function (Blueprint $table) {
+                $table->id();
+                $table->string('nome_completo');
+                $table->string('email')->unique();
+                $table->string('cnpj')->unique();
+                $table->string('whatsapp')->nullable();
+                $table->string('estado')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
