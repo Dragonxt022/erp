@@ -71,21 +71,19 @@
             <template v-else>Sem informações</template>
           </div>
         </div>
-
-        <!-- Exibe o botão de edição apenas se uma unidade for selecionada -->
-        <div v-if="unidade.unidade.id" class="mt-4">
-          <ButtonEditeMedio
-            text="Editar Unidade"
-            icon-path="/storage/images/border_color.svg"
-            @click="toggleEditMode"
-            class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-          />
-        </div>
       </div>
     </div>
   </div>
 
   <!-- Exibe o formulário de edição quando isEditMode é true -->
+  <div v-if="unidade.unidade.id && !isEditMode" class="mt-4">
+    <ButtonEditeMedio
+      text="Editar Unidade"
+      icon-path="/storage/images/border_color.svg"
+      @click="toggleEditMode"
+      class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
+    />
+  </div>
   <EditarUnidade
     v-if="isEditMode"
     ref="dadosUnidade"

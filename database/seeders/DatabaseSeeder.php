@@ -23,5 +23,7 @@ class DatabaseSeeder extends Seeder
 
         // Chama o seeder de empresa e usuário
         $this->call(UserAndCompanySeeder::class);
+
+        // $this->call(ListaProdutoSeeder::class);
     }
 }

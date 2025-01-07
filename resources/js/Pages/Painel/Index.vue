@@ -7,6 +7,9 @@
     </div>
 
     <!-- Conteúdo da página -->
+    <!-- <div class="mt-5 col-span-3">
+      <Calendario />
+    </div> -->
     <div class="mt-5">
       <div class="grid grid-cols-3 grid-rows-1 gap-4">
         <!-- Primeira coluna -->
@@ -112,7 +115,6 @@
             </div>
           </div>
         </div>
-
         <!-- Segunda coluna -->
         <div class="bg-white rounded-lg p-7 shadow-md">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Faturamento</h3>
@@ -234,6 +236,7 @@ import { Head } from '@inertiajs/vue3';
 
 import { ref, onMounted } from 'vue';
 import { Chart, registerables } from 'chart.js';
+import Calendario from '@/Components/Estrutura/Calendario.vue';
 
 // Registrar todos os componentes necessários do Chart.js
 Chart.register(...registerables);

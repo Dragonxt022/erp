@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CargoController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -91,17 +92,8 @@ Route::middleware([
     Route::get('/api/fornecedores', [FornecedorController::class, 'index'])->name('fornecedores.index');
     Route::put('/api/fornecedores/{id}', [FornecedorController::class, 'update'])->name('fornecedores.update');
 
-
-
-    // Route::get('/email-template', function () {
-    //     // Passar dados fictícios para o template, se necessário
-    //     $name = 'Marina Schultz';
-    //     $resetPasswordUrl = url('/reset-password-link'); // Substitua pelo link de redefinição de senha real
-
-    //     return view('emails.reset-password', compact('name', 'resetPasswordUrl'));
-    // });
-
-
-
-
+    // Lista de Produtos
+    Route::get('/api/lista-produtos', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
+    Route::post('/api/cadastar-produtos', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
+    Route::delete('/api/excluir-produto/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.destroy');
 });
