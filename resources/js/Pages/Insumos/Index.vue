@@ -22,7 +22,7 @@
         <template v-if="!showCadastroProduto">
           <!-- Passa os dados do usuário selecionado apenas se existirem -->
           <template v-if="produtoSelecionado">
-            <Detalhesproduto :produto="produtoSelecionado" />
+            <DetalhesProduto :produto="produtoSelecionado" />
           </template>
 
           <div class="absolute bottom-4 right-4">
@@ -53,8 +53,9 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import ListarInsumos from '@/Components/Estrutura/ListarInsumos.vue';
-import Detalhesproduto from '@/Components/Estrutura/Detalhesproduto.vue';
+
 import CadastroProduto from '@/Components/Estrutura/CadastroProduto.vue';
+import DetalhesProduto from '@/Components/Estrutura/DetalhesProduto.vue';
 
 // Dados do usuário selecionado
 const produtoSelecionado = ref(null);

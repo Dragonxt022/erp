@@ -95,5 +95,7 @@ Route::middleware([
     // Lista de Produtos
     Route::get('/api/lista-produtos', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
     Route::post('/api/cadastar-produtos', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
+    Route::post('/api/atualizar-produtos', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
+
     Route::delete('/api/excluir-produto/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.destroy');
 });

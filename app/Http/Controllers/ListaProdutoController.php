@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ListaProduto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class ListaProdutoController extends Controller
@@ -101,10 +102,82 @@ class ListaProdutoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+
+    public function update(Request $request)
     {
-        //
+        // Registrar o início da atualização
+        Log::info('Iniciando atualização do produto', ['produto_id' => $request->id]);
+
+        // Registrar dados da requisição
+        Log::info('Dados recebidos para atualização', ['nome' => $request->nome, 'profile_photo' => $request->profile_photo]);
+
+        // Validação dos dados
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
+            'nome' => 'required|string|max:255',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        ]);
+
+        // Verifica falha na validação
+        if ($validator->fails()) {
+            Log::warning('Validação falhou', ['errors' => $validator->errors()]);
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Buscar o produto pelo ID
+        $produto = ListaProduto::find($request->id);
+
+        if (!$produto) {
+            Log::error('Produto não encontrado', ['produto_id' => $request->id]);
+            return response()->json(['message' => 'Produto não encontrado'], 404);
+        }
+
+        // Atualizar o nome
+        $produto->nome = $request->nome;
+
+        // Processar a nova imagem, se enviada
+        if ($request->has('profile_photo') && $request->profile_photo) {
+            // Log para indicar que está tratando a imagem
+            Log::info('Processando a imagem do produto', ['produto_id' => $request->id]);
+
+            // Remover a imagem antiga, se existir
+            if ($produto->profile_photo && file_exists(public_path($produto->profile_photo))) {
+                unlink(public_path($produto->profile_photo));  // Remove a imagem antiga
+            }
+
+            // Salvar a nova imagem
+            $profilePhoto = $request->file('profile_photo');
+            $fileName = time() . '_' . $profilePhoto->getClientOriginalName();
+
+            // Definir o caminho da pasta de armazenamento
+            $folderPath = public_path('storage/images');
+
+            // Verificar se a pasta existe, se não, criar a pasta
+            if (!file_exists($folderPath)) {
+                mkdir($folderPath, 0755, true);
+            }
+
+            // Mover a imagem para o diretório público
+            $profilePhoto->move($folderPath, $fileName);
+
+            // Atualizar o caminho da imagem no banco de dados
+            $produto->profile_photo = 'storage/images/' . $fileName;
+        }
+
+        // Salvar as alterações
+        $produto->save();
+
+        // Registrar o sucesso da atualização
+        Log::info('Produto atualizado com sucesso', ['produto_id' => $request->id]);
+
+        return response()->json([
+            'message' => 'Produto atualizado com sucesso!',
+            'produto' => $produto
+        ], 200);
     }
+
+
+
 
     /**
      * Remove the specified resource from storage.

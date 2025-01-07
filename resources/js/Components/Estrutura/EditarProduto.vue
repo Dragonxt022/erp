@@ -49,7 +49,7 @@
 
           <!-- Campo Nome -->
           <LabelModel text="Nome" />
-          <InputModel v-model="nome" placeholder="Shoyu Premium Sakaki" />
+          <InputModel v-model="nome" placeholder="" />
 
           <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
@@ -63,13 +63,29 @@
             />
           </div>
         </form>
+        <ConfirmDialog
+          :isVisible="isConfirmDialogVisible"
+          :motivo="motivo"
+          @confirm="handleConfirm"
+          @cancel="handleCancel"
+        />
+        <div
+          class="absolute top-4 right-4 cursor-pointer"
+          @click="showConfirmDialog('Excluir esse produto?')"
+        >
+          <img
+            src="/storage/images/delete.svg"
+            alt="Deletar Usuário"
+            class="w-6 h-6"
+          />
+        </div>
       </div>
     </div>
   </transition>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import axios from 'axios';
 import { defineProps, defineEmits } from 'vue';
 import InputModel from '../Inputs/InputModel.vue';
@@ -77,6 +93,7 @@ import LabelModel from '../Label/LabelModel.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 import { useToast } from 'vue-toastification';
+import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
 
 const toast = useToast();
 
@@ -85,18 +102,97 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  produto: {
+    type: Object,
+    required: true,
+  },
 });
 
 const emit = defineEmits(['cancelar']);
 
-const name = ref('');
+const nome = ref('');
 const profilePhotoUrl = ref('');
 const selectedFile = ref(null);
 const errorMessage = ref('');
 const fileInput = ref(null);
 const isLoading = ref(false);
 
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
+
+watch(
+  () => props.produto,
+  (novoProduto) => {
+    if (novoProduto) {
+      nome.value = novoProduto.nome || '';
+      profilePhotoUrl.value = novoProduto.profile_photo || '';
+    }
+  },
+  { immediate: true } // Executa imediatamente ao montar o componente
+);
+
 // Funções
+import { Inertia } from '@inertiajs/inertia';
+
+const submitForm = async () => {
+  if (!nome.value) {
+    toast.error('O campo nome é obrigatório.');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+    // Criar uma nova instância de FormData
+    const formData = new FormData();
+
+    // Passando os dados do produto (nome e id)
+    formData.append('id', props.produto.id);
+    formData.append('nome', nome.value);
+
+    // Gerar o nome para a imagem (pode ser um nome único)
+    if (selectedFile.value) {
+      const imageName = `${Date.now()}_${selectedFile.value.name}`;
+      formData.append('profile_photo_name', imageName);
+      formData.append('profile_photo', selectedFile.value);
+    }
+
+    // Enviar os dados para o backend
+    const response = await axios.post(`/api/atualizar-produtos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    // Atualizar a página sem perder o estado, mantendo os dados atualizados
+    Inertia.replace(route('insumos'), {
+      produto: response.data.produto, // Atualize os dados do produto com a resposta
+      preserveState: true, // Preserve o estado atual da página
+    });
+
+    toast.success('Produto atualizado com sucesso!');
+  } catch (error) {
+    toast.error('Erro ao atualizar o produto.');
+    errorMessage.value = error.response?.data?.message || 'Erro inesperado.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  submitForm();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
+};
+
 const openFileSelector = () => {
   fileInput.value?.click();
 };
@@ -120,49 +216,7 @@ const handleImageUpload = (event) => {
 };
 
 const cancelForm = () => {
-  resetForm();
   emit('cancelar');
-};
-
-const resetForm = () => {
-  name.value = '';
-  profilePhotoUrl.value = '';
-  selectedFile.value = null;
-  errorMessage.value = '';
-};
-
-const validateForm = () => {
-  if (!name.value || !selectedFile.value) {
-    toast.error('Por favor, preencha todos os campos obrigatórios.');
-    errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
-    return false;
-  }
-  return true;
-};
-
-const submitForm = async () => {
-  if (!validateForm()) return;
-
-  try {
-    isLoading.value = true;
-    const formData = new FormData();
-    formData.append('name', name.value);
-    formData.append('image', selectedFile.value);
-
-    const response = await axios.post('/api/produtos', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    toast.success('Produto cadastrado com sucesso!');
-    resetForm();
-  } catch (error) {
-    toast.error('Erro ao cadastrar o produto.');
-    errorMessage.value = error.response?.data?.message || 'Erro inesperado.';
-  } finally {
-    isLoading.value = false;
-  }
 };
 </script>
 

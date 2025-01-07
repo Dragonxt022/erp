@@ -58,7 +58,7 @@
     v-if="isEditMode"
     ref="dadosProduto"
     :isVisible="isEditMode"
-    :unidade="unidade"
+    :produto="produto"
     @dadosProduto="fetchProdutos"
     @cancelar="cancelEdit"
   />
@@ -84,7 +84,7 @@ const props = defineProps({
 
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
-const showCadastroUnidade = ref(false);
+const showCadastroProduto = ref(false);
 
 const isEditMode = ref(false);
 const isLoading = ref(false);
@@ -119,7 +119,7 @@ const deleteProduto = async () => {
 
 const toggleEditMode = () => {
   isEditMode.value = !isEditMode.value;
-  showCadastroUnidade.value = false;
+  showCadastroProduto.value = false;
 };
 
 const showConfirmDialog = (motivoParam) => {
@@ -134,6 +134,11 @@ const handleConfirm = () => {
 
 const handleCancel = () => {
   isConfirmDialogVisible.value = false;
+};
+
+const cancelEdit = () => {
+  isEditMode.value = false;
+  showCadastroProduto.value = true;
 };
 </script>
 
