@@ -121,15 +121,14 @@ const submitForm = async () => {
     formData.append('estado', estado.value);
 
     // Enviar os dados para o backend
-    const response = await axios.post(
-      `/api/atualizar-fornecedores/`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    const response = await axios({
+      method: 'post',
+      url: '/api/atualizar-fornecedores',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     // Atualizar a página sem perder o estado, mantendo os dados atualizados
     Inertia.replace(route('fornecedores'), {
@@ -158,28 +157,6 @@ const handleConfirm = () => {
 
 const handleCancel = () => {
   isConfirmDialogVisible.value = false;
-};
-
-const openFileSelector = () => {
-  fileInput.value?.click();
-};
-
-const removeImage = () => {
-  profilePhotoUrl.value = '';
-  toast.info('Imagem removida.');
-};
-
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    selectedFile.value = file;
-    const reader = new FileReader();
-    reader.onload = () => {
-      profilePhotoUrl.value = reader.result;
-      toast.success('Imagem carregada com sucesso!');
-    };
-    reader.readAsDataURL(file);
-  }
 };
 
 const cancelForm = () => {
