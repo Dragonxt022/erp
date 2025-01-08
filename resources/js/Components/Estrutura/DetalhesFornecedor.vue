@@ -9,7 +9,9 @@
         <div
           class="absolute left-0 top-0 text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[50px] tracking-tight"
         >
-          {{ fornecedorData?.estado || fornecedorData.estado || 'N/A' }}
+          {{
+            fornecedorData?.razao_social || fornecedorData.razao_social || 'N/A'
+          }}
         </div>
         <div class="w-1/1">
           <ConfirmDialog
@@ -142,6 +144,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import { Inertia } from '@inertiajs/inertia';
 
 import { useToast } from 'vue-toastification';
 import LabelModel from '../Label/LabelModel.vue';
@@ -168,25 +171,19 @@ const props = defineProps({
 // Dados do fornecedor em modo editável
 const fornecedorData = ref({ ...props.fornecedor });
 
-// Funções
 const deleteFornecedor = async () => {
   try {
     isLoading.value = true;
-    const response = await axios.delete(
-      `/api/excluir-fornecedor/${props.fornecedor.id}`
-    ); // URL para deletar o fornecedor
-    console.log(response.data.message); // Mensagem de sucesso do backend
-    toast.success('fornecedor deletado com sucesso!'); // Exibe um toast de sucesso
-    Inertia.visit('/insumos');
+
+    await axios.delete(`/api/excluir-fornecedor/${props.fornecedor.id}`);
+
+    Inertia.replace(route('fornecedores'), {
+      preserveState: true,
+    });
+
+    toast.success('Fornecedor deletado com sucesso!');
   } catch (error) {
-    toast.error(
-      'Erro ao deletar o fornecedor:',
-      error.response?.data?.error || error.message
-    );
-    console.error(
-      'Erro ao deletar o fornecedor:',
-      error.response?.data?.error || error.message
-    );
+    toast.error(`Erro ao deletar o fornecedor: ${error.message}`);
   } finally {
     isLoading.value = false;
   }

@@ -63,6 +63,8 @@
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
+import { Inertia } from '@inertiajs/inertia';
+
 import { defineProps, defineEmits } from 'vue';
 import InputModel from '../Inputs/InputModel.vue';
 import LabelModel from '../Label/LabelModel.vue';
@@ -144,10 +146,12 @@ const submitForm = async () => {
       estado: estado.value,
     });
 
-    console.log('Fornecedor cadastrado com sucesso:', response.data);
+    Inertia.replace(route('fornecedores'), {
+      fornecedor: response.data.fornecedor, // Atualiza os dados do fornecedor com a resposta
+      preserveState: true, // Preserva o estado atual da página
+    });
+
     toast.success('Fornecedor cadastrado com sucesso!');
-    resetForm();
-    emit('cancelar');
   } catch (error) {
     toast.error('Erro ao realizar o cadastro.');
     errorMessage.value =

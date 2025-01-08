@@ -19,30 +19,14 @@
         <LabelModel text="Razão Social" />
         <InputModel v-model="razao_social" placeholder="" />
 
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
         <LabelModel text="E-mail" />
         <InputModel v-model="email" placeholder="" />
-
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
 
         <LabelModel text="WhatsApp" />
         <InputModel v-model="whatsapp" placeholder="" />
 
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
         <LabelModel text="Estado" />
         <InputModel v-model="estado" placeholder="" />
-
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
 
         <!-- fim dos campos de formularios -->
 
@@ -94,7 +78,6 @@ const email = ref('');
 const whatsapp = ref('');
 const estado = ref('');
 
-const errorMessage = ref('');
 const isLoading = ref(false);
 
 const isConfirmDialogVisible = ref(false);

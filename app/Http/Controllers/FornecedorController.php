@@ -108,7 +108,8 @@ class FornecedorController extends Controller
         $fornecedor->delete();
 
         return response()->json([
-            'message' => 'fornecedor excluído com sucesso!'
+            'message' => 'Fornecedor Excluido com sucesso!',
+            'data' => $fornecedor
         ], 200);
     }
 }
