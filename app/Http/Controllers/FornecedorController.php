@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Fornecedor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class FornecedorController extends Controller
 {
@@ -13,11 +15,11 @@ class FornecedorController extends Controller
     {
         // Validação dos dados
         $validated = $request->validate([
-            'nome_completo' => 'required|string|max:255',
-            'email' => 'required|email|unique:fornecedores,email',
-            'cnpj' => 'required|string|unique:fornecedores,cnpj',
-            'whatsapp' => 'nullable|string',
-            'estado' => 'nullable|string',
+            'cnpj' => 'required|string|max:18',  // Ajuste conforme o formato do CNPJ
+            'razao_social' => 'required|string|max:255',
+            'whatsapp' => 'nullable|string|max:15',
+            'estado' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255', // Exemplo de validação para e-mail
         ]);
 
         // Criação do fornecedor
@@ -35,12 +37,12 @@ class FornecedorController extends Controller
         $fornecedores = Fornecedor::all();
 
         // Usando o map para selecionar os dados desejados
-        $fornecedoresData = $fornecedores->map(function($fornecedor) {
+        $fornecedoresData = $fornecedores->map(function ($fornecedor) {
             return [
                 'id' => $fornecedor->id,
-                'nome_completo' => $fornecedor->nome_completo,
-                'email' => $fornecedor->email,
                 'cnpj' => $fornecedor->cnpj,
+                'razao_social' => $fornecedor->razao_social,
+                'email' => $fornecedor->email,
                 'whatsapp' => $fornecedor->whatsapp,
                 'estado' => $fornecedor->estado,
             ];
@@ -51,30 +53,62 @@ class FornecedorController extends Controller
         ], 200);
     }
 
-     // Atualiza um campo específico do fornecedor
-     public function update(Request $request, $id)
-     {
-         // Busca o fornecedor pelo ID
-         $fornecedor = Fornecedor::findOrFail($id);
+    // Atualiza um campo específico do fornecedor
+    public function update(Request $request)
+    {
 
-         // Validação de todos os campos do fornecedor
-         $validated = $request->validate([
-             'nome_completo' => 'required|string|max:255',
-             'cnpj' => 'required|string|max:18',  // Ajuste conforme o formato do CNPJ
-             'whatsapp' => 'nullable|string|max:15',
-             'estado' => 'nullable|string|max:255',
-             'email' => 'required|email|max:255', // Exemplo de validação para e-mail
-         ]);
+        // Validação condicional, apenas para os campos presentes
+        $validator = Validator::make($request->all(), [
+            'razao_social' => 'nullable|string|max:255',
+            'whatsapp' => 'nullable|string|max:15',
+            'estado' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+        ]);
 
-         // Atualiza todos os campos do fornecedor
-         $fornecedor->update($validated);
+        // Verifica falha na validação
+        if ($validator->fails()) {
+            Log::warning('Validação falhou', ['errors' => $validator->errors()]);
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-         // Retorna a resposta com o fornecedor atualizado
-         return response()->json([
-             'message' => 'Fornecedor atualizado com sucesso!',
-             'data' => $fornecedor
-         ], 200);
-     }
+        // Buscar o produto pelo ID
+        $fornecedor = Fornecedor::find($request->id);
 
+        if (!$fornecedor) {
+            Log::error('Produto não encontrado', ['produto_id' => $request->id]);
+            return response()->json(['message' => 'Produto não encontrado'], 404);
+        }
 
+        $fornecedor->razao_social = $request->razao_social;
+        $fornecedor->whatsapp = $request->whatsapp;
+        $fornecedor->estado = $request->estado;
+        $fornecedor->email = $request->email;
+
+        // Salvar as alterações
+        $fornecedor->save();
+
+        // Retorna a resposta com o fornecedor atualizado
+        return response()->json([
+            'message' => 'Fornecedor atualizado com sucesso!',
+            'data' => $fornecedor
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+
+        // Buscar   ID
+        $fornecedor = Fornecedor::find($id);
+
+        if (!$fornecedor) {
+            return response()->json(['error' => 'fornecedor não encontrado!'], 404);
+        }
+
+        // Excluir o fornecedor
+        $fornecedor->delete();
+
+        return response()->json([
+            'message' => 'fornecedor excluído com sucesso!'
+        ], 200);
+    }
 }

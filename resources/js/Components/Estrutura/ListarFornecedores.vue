@@ -48,10 +48,12 @@
           </div>
           <div class="text-container">
             <!-- Nome do fornecedor -->
-            <div class="city">{{ fornecedor.nome_completo }}</div>
+            <div class="city">{{ fornecedor.razao_social }}</div>
 
             <!-- CNPJ do fornecedor -->
-            <div class="owner">{{ fornecedor.cnpj }}</div>
+            <div class="owner">
+              {{ fornecedor.cnpj }} / {{ fornecedor.estado }}
+            </div>
           </div>
           <div class="action-icon"></div>
         </div>
@@ -91,7 +93,7 @@ const filteredFornecedores = computed(() => {
   const query = searchQuery.value.toLowerCase();
   return fornecedores.value.filter(
     (fornecedor) =>
-      fornecedor.nome_completo.toLowerCase().includes(query) ||
+      fornecedor.razao_social.toLowerCase().includes(query) ||
       fornecedor.cnpj.toLowerCase().includes(query)
   );
 });

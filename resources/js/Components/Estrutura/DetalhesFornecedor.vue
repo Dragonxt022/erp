@@ -1,66 +1,162 @@
 <template>
-  <div class="w-full h-[400px] bg-white rounded-[20px] p-7 relative">
+  <div
+    v-if="!isEditMode"
+    class="w-full h-[530px] bg-white rounded-[20px] p-7 relative"
+  >
     <div class="relative w-full h-full">
       <div class="flex items-center">
         <!-- Informações principais do Fornecedor -->
-        <div class="w-full">
-          <div class="text-[#262a27] text-[28px] font-['Figtree']">
-            <LabelModel text="Fornecedor" />
-            <input
-              v-model="fornecedorData.nome_completo"
-              class="w-full text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Nome Completo"
-            />
-          </div>
-          <div class="text-sm text-gray-500">
-            <LabelModel text="CNPJ" />
-            <input
-              v-model="fornecedorData.cnpj"
-              class="w-full text-center py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="CNPJ"
-            />
-          </div>
-          <div class="text-sm text-gray-500">
-            <LabelModel text="WhatsApp" />
-            <input
-              v-model="fornecedorData.whatsapp"
-              class="w-full text-center py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="WhatsApp"
-            />
-          </div>
-          <div class="text-sm text-gray-500">
-            <LabelModel text="Estado" />
-            <input
-              v-model="fornecedorData.estado"
-              class="w-full text-center py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="Estado"
-            />
-          </div>
-          <LabelModel text="E-mail" />
-          <input
-            v-model="fornecedorData.email"
-            class="w-full text-center py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            placeholder="E-mail"
+        <div
+          class="absolute left-0 top-0 text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[50px] tracking-tight"
+        >
+          {{ fornecedorData?.estado || fornecedorData.estado || 'N/A' }}
+        </div>
+        <div class="w-1/1">
+          <ConfirmDialog
+            :isVisible="isConfirmDialogVisible"
+            :motivo="motivo"
+            @confirm="handleConfirm"
+            @cancel="handleCancel"
           />
+          <div
+            class="absolute top-3 right-4 cursor-pointer"
+            @click="showConfirmDialog('Excluir esse Fornecedor?')"
+          >
+            <img
+              src="/storage/images/delete.svg"
+              alt="Deletar Usuário"
+              class="w-6 h-6"
+            />
+          </div>
+        </div>
+        <div class="relative w-full h-full">
+          <!-- Exibe o ID e CNPJ -->
+          <div
+            class="flex justify-between items-center absolute left-0 top-[50px] w-full"
+          >
+            <div
+              class="w-[150px] h-[43px] px-2.5 py-3 bg-[#f3f8f3] rounded-lg flex justify-between items-center"
+            >
+              <div class="w-6 h-6 rounded-full">
+                <img
+                  src="/storage/images/storefront-bleck.svg"
+                  alt=""
+                  class="inline-block"
+                />
+              </div>
+              <div
+                class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
+              >
+                ID# {{ (fornecedorData?.id ?? 0).toString().padStart(4, '0') }}
+              </div>
+            </div>
+            <div
+              class="w-[219px] h-[43px] px-2.5 py-3 bg-[#f3f8f3] rounded-lg flex justify-between items-center"
+            >
+              <div class="w-6 h-6 rounded-full">
+                <img
+                  src="/storage/images/assured_workload.svg"
+                  alt=""
+                  class="inline-block"
+                />
+              </div>
+              <div
+                class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
+              >
+                {{ fornecedorData?.cnpj || 'N/A' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-[130px]">
+        <LabelModel text="Razão Social" />
+        <div
+          class="w-full p-4 bg-transparent border border-gray-300 rounded-lg outline-none text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+        >
+          <div
+            class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
+          >
+            {{ fornecedorData.razao_social || 'N/A' }}
+          </div>
         </div>
       </div>
 
-      <!-- Botão de atualização, exibido somente se houver alterações -->
-      <div class="mt-4 text-right" v-if="isChanged">
-        <ButtonPrimaryMedio text="Atualizar" @click="updateFornecedor" />
+      <div class="mt-4">
+        <LabelModel text="E-mail" />
+        <div
+          class="w-full p-4 bg-transparent border border-gray-300 rounded-lg outline-none text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+        >
+          <div
+            class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
+          >
+            {{ fornecedorData.email || 'N/A' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <LabelModel text="WhatsApp" />
+        <div
+          class="w-full p-4 bg-transparent border border-gray-300 rounded-lg outline-none text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+        >
+          <div
+            class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
+          >
+            {{ fornecedorData.whatsapp || 'N/A' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <LabelModel text="Estado" />
+        <div
+          class="w-full p-4 bg-transparent border border-gray-300 rounded-lg outline-none text-center text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+        >
+          <div
+            class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
+          >
+            {{ fornecedorData.estado || 'N/A' }}
+          </div>
+        </div>
       </div>
     </div>
+    <div v-if="fornecedor.id && !isEditMode" class="mt-7">
+      <ButtonEditeMedio
+        text="Editar insumos"
+        icon-path="/storage/images/border_color.svg"
+        @click="toggleEditMode"
+        class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
+      />
+    </div>
   </div>
+  <EditarFornecedor
+    v-if="isEditMode"
+    ref="dadosfornecedor"
+    :isVisible="isEditMode"
+    :fornecedor="fornecedor"
+    @dadosfornecedor="fetchfornecedors"
+    @cancelar="cancelEdit"
+  />
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
-import axios from 'axios';
+import { ref } from 'vue';
+
 import { useToast } from 'vue-toastification';
 import LabelModel from '../Label/LabelModel.vue';
-import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
+import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
+import EditarFornecedor from './EditarFornecedor.vue';
+import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
 
-const notify = useToast();
+const toast = useToast();
+
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
+const showCadastrofornecedor = ref(false);
+
+const isEditMode = ref(false);
+const isLoading = ref(false);
 
 const props = defineProps({
   fornecedor: {
@@ -72,38 +168,59 @@ const props = defineProps({
 // Dados do fornecedor em modo editável
 const fornecedorData = ref({ ...props.fornecedor });
 
-// Computed para verificar se houve alguma alteração
-const isChanged = computed(() => {
-  // Compara os dados originais com os dados editados
-  return (
-    JSON.stringify(fornecedorData.value) !== JSON.stringify(props.fornecedor)
-  );
-});
-
-// Atualiza os dados do fornecedor
-const updateFornecedor = async () => {
+// Funções
+const deleteFornecedor = async () => {
   try {
-    // Envia os dados para o controller com PUT
-    const response = await axios.put(
-      `/api/fornecedores/${fornecedorData.value.id}`,
-      fornecedorData.value
-    );
-    // Atualiza os dados do fornecedor no componente após sucesso
-    Object.assign(props.fornecedor, response.data.data);
-    notify.success('Fornecedor atualizado com sucesso!');
+    isLoading.value = true;
+    const response = await axios.delete(
+      `/api/excluir-fornecedor/${props.fornecedor.id}`
+    ); // URL para deletar o fornecedor
+    console.log(response.data.message); // Mensagem de sucesso do backend
+    toast.success('fornecedor deletado com sucesso!'); // Exibe um toast de sucesso
+    Inertia.visit('/insumos');
   } catch (error) {
-    notify.error('Erro ao atualizar fornecedor.');
-    console.error(error);
+    toast.error(
+      'Erro ao deletar o fornecedor:',
+      error.response?.data?.error || error.message
+    );
+    console.error(
+      'Erro ao deletar o fornecedor:',
+      error.response?.data?.error || error.message
+    );
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Sincroniza fornecedorData com props.fornecedor
-watch(
-  () => props.fornecedor,
-  (newVal) => {
-    fornecedorData.value = { ...newVal };
-  }
-);
+const fetchfornecedors = () => {
+  const dadosfornecedor = ref.dadosfornecedor;
+  dadosfornecedor.fetchfornecedor();
+};
+
+const toggleEditMode = () => {
+  isEditMode.value = !isEditMode.value;
+  console.log('isEditMode:', isEditMode.value); // Para depuração
+  showCadastrofornecedor.value = false;
+};
+
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  deleteFornecedor();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
+};
+
+const cancelEdit = () => {
+  isEditMode.value = false;
+  showCadastrofornecedor.value = true;
+};
 </script>
 
 <style scoped>

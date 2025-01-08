@@ -69,16 +69,6 @@
           @confirm="handleConfirm"
           @cancel="handleCancel"
         />
-        <div
-          class="absolute top-4 right-4 cursor-pointer"
-          @click="showConfirmDialog('Excluir esse produto?')"
-        >
-          <img
-            src="/storage/images/delete.svg"
-            alt="Deletar Usuário"
-            class="w-6 h-6"
-          />
-        </div>
       </div>
     </div>
   </transition>

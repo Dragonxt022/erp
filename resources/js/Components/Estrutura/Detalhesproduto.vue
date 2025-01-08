@@ -48,7 +48,7 @@
   </div>
   <div v-if="produto.id && !isEditMode" class="mt-4">
     <ButtonEditeMedio
-      text="Editar Unidade"
+      text="Editar insumos"
       icon-path="/storage/images/border_color.svg"
       @click="toggleEditMode"
       class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"

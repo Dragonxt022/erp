@@ -90,12 +90,13 @@ Route::middleware([
     // Fornecedores
     Route::post('/api/fornecedores', [FornecedorController::class, 'store'])->name('fornecedores.store');
     Route::get('/api/fornecedores', [FornecedorController::class, 'index'])->name('fornecedores.index');
-    Route::put('/api/fornecedores/{id}', [FornecedorController::class, 'update'])->name('fornecedores.update');
+    Route::post('/api/atualizar-fornecedores', [FornecedorController::class, 'update'])->name('fornecedores.update');
+    Route::delete('/api/excluir-fornecedor/{id}', [FornecedorController::class, 'destroy'])->name('excluir.fornecedor');
 
     // Lista de Produtos
     Route::get('/api/lista-produtos', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
     Route::post('/api/cadastar-produtos', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
     Route::post('/api/atualizar-produtos', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
 
-    Route::delete('/api/excluir-produto/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.destroy');
+    Route::delete('/api/excluir-produto/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
 });

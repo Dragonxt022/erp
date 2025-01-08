@@ -5,14 +5,12 @@
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
+
       <div v-else class="w-full h-[525px] bg-white rounded-[20px] p-12">
+        <div class="painel-title">
+          <p>Novo fornecedor</p>
+        </div>
         <form @submit.prevent="submitForm">
-          <LabelModel text="Nome Completo" />
-          <InputModel v-model="name" placeholder="João Silva Souza" />
-
-          <LabelModel text="E-mail" />
-          <InputModel v-model="email" placeholder="usuario@email.com" />
-
           <LabelModel text="CNPJ" />
           <InputModel
             v-model="cnpj"
@@ -20,11 +18,23 @@
             placeholder="000.000.000/0000-00"
           />
 
+          <LabelModel text="Razão Social" />
+          <InputModel
+            v-model="razao_social"
+            placeholder="Silva Moura Pescados"
+          />
+
+          <LabelModel text="E-mail" />
+          <InputModel
+            v-model="email"
+            placeholder="contato@nobrezasdomar.com.br"
+          />
+
           <LabelModel text="WhatsApp" />
           <InputModel v-model="whatsapp" placeholder="(00) 00000-0000" />
 
           <LabelModel text="Estado" />
-          <InputModel v-model="estado" placeholder="ex.São Paulo" />
+          <InputModel v-model="estado" placeholder="Mato Grosso" />
 
           <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
@@ -60,6 +70,7 @@ import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 import { useToast } from 'vue-toastification';
 import ConfirmDialog from '../Laytout/ConfirmDialog.vue';
+import { watch } from 'vue';
 
 const toast = useToast();
 
@@ -72,15 +83,25 @@ const props = defineProps({
 
 const emit = defineEmits(['cancelar']);
 
-const name = ref('');
-const email = ref('');
 const cnpj = ref('');
+const razao_social = ref('');
+const email = ref('');
 const whatsapp = ref('');
 const estado = ref('');
 const errorMessage = ref('');
 const isLoading = ref(false);
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
+
+// Watcher para o campo de CNPJ
+watch(cnpj, async (newCnpj) => {
+  const cnpjLimpo = newCnpj.replace(/\D/g, '');
+
+  // Verifica se o CNPJ tem 14 dígitos
+  if (cnpjLimpo.length === 14) {
+    await consultarCNPJ(cnpjLimpo);
+  }
+});
 
 // Cancela e reseta o formulário
 const cancelForm = () => {
@@ -90,9 +111,9 @@ const cancelForm = () => {
 
 // Reseta os valores do formulário
 const resetForm = () => {
-  name.value = '';
-  email.value = '';
   cnpj.value = '';
+  razao_social.value = '';
+  email.value = '';
   whatsapp.value = '';
   estado.value = '';
   errorMessage.value = '';
@@ -100,7 +121,7 @@ const resetForm = () => {
 
 // Valida os campos do formulário
 const validateForm = () => {
-  if (!name.value || !email.value || !cnpj.value) {
+  if (!cnpj.value) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -116,9 +137,9 @@ const submitForm = async () => {
     isLoading.value = true;
 
     const response = await axios.post('/api/fornecedores', {
-      nome_completo: name.value,
-      email: email.value,
+      razao_social: razao_social.value,
       cnpj: cnpj.value,
+      email: email.value,
       whatsapp: whatsapp.value,
       estado: estado.value,
     });
@@ -146,6 +167,38 @@ const applyCpfMask = (event) => {
     '$1.$2.$3/$4-$5'
   );
   cnpj.value = value;
+};
+
+// Função para consultar dados de CNPJ
+const consultarCNPJ = async () => {
+  if (!cnpj.value || cnpj.value.length < 14) {
+    toast.error('Por favor, insira um CNPJ válido.');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+
+    // Remove os caracteres especiais do CNPJ
+    const cnpjLimpo = cnpj.value.replace(/\D/g, '');
+
+    // Consulta a API pública de CNPJ
+    const response = await axios.get(
+      `https://publica.cnpj.ws/cnpj/${cnpjLimpo}`
+    );
+    const empresa = response.data;
+
+    // Preenche os campos automaticamente
+    razao_social.value = empresa.razao_social || '';
+    estado.value = empresa.estabelecimento.estado.nome || '';
+    whatsapp.value = empresa.estabelecimento.telefone1 || '';
+    email.value = empresa.estabelecimento.email || '';
+  } catch (error) {
+    errorMessage.value =
+      error.response?.data?.message || 'Erro ao consultar o CNPJ.';
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // Exibe o diálogo de confirmação

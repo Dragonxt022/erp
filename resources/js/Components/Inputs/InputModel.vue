@@ -17,6 +17,7 @@ import { defineProps } from 'vue';
 defineProps({
   modelValue: {
     type: String,
+    disabled: Boolean,
     default: '',
   },
   placeholder: {

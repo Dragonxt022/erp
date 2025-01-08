@@ -14,11 +14,10 @@ class Fornecedor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nome_completo',
-        'email',
         'cnpj',
+        'razao_social',
+        'email',
         'whatsapp',
         'estado',
     ];
 }
-
