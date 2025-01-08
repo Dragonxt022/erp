@@ -14,7 +14,7 @@
       <div class="grid grid-cols-3 grid-rows-1 gap-4">
         <!-- Primeira coluna -->
         <div class="row-span-2">
-          <div class="bg-white rounded-lg p-7 shadow-md">
+          <div class="bg-white rounded-lg p-7">
             <h3 class="text-lg font-semibold text-gray-700 mb-4">
               Compromissos
             </h3>
@@ -116,7 +116,7 @@
           </div>
         </div>
         <!-- Segunda coluna -->
-        <div class="bg-white rounded-lg p-7 shadow-md">
+        <div class="bg-white rounded-lg p-7">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Faturamento</h3>
 
           <div
@@ -141,7 +141,7 @@
           </div>
         </div>
 
-        <div class="bg-white rounded-lg p-7 shadow-md">
+        <div class="bg-white rounded-lg p-7">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">CMV</h3>
 
           <div
@@ -167,7 +167,7 @@
         </div>
 
         <!-- Terceira coluna -->
-        <div class="bg-white rounded-lg p-7 shadow-md">
+        <div class="bg-white rounded-lg p-7">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Ticket médio</h3>
 
           <div
@@ -191,7 +191,7 @@
             </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg p-4 shadow-md">
+        <div class="bg-white rounded-lg p-4">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Pedidos</h3>
 
           <div
@@ -217,7 +217,7 @@
         </div>
 
         <!-- Quarta coluna -->
-        <div class="bg-white rounded-lg p-4 shadow-md col-span-3">
+        <div class="bg-white rounded-lg p-4 col-span-3">
           <h3 class="text-lg font-semibold text-gray-700">
             Faturamento diário
           </h3>
