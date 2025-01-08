@@ -49,6 +49,10 @@
           <div class="text-container">
             <!-- Nome do fornecedor -->
             <div class="city">{{ produto.nome }}</div>
+
+            <div class="owner">
+              {{ produto.categoria }}
+            </div>
           </div>
           <div class="action-icon"></div>
         </div>

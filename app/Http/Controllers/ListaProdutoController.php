@@ -24,6 +24,7 @@ class ListaProdutoController extends Controller
             return [
                 'id' => $produtos->id,
                 'nome' => $produtos->nome,
+                'categoria' => $produtos->categoria,
                 'profile_photo' => $produtos->profile_photo ?? null, // Verifica se cidade é null e substitui
             ];
         });
@@ -40,6 +41,7 @@ class ListaProdutoController extends Controller
         // Validação dos dados
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
+            'categoria' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -74,6 +76,7 @@ class ListaProdutoController extends Controller
         // Criar o produto
         $produto = ListaProduto::create([
             'nome' => $request->nome,
+            'categoria' => $request->categoria,
             'profile_photo' => $profilePhotoPath,
         ]);
 
@@ -115,6 +118,7 @@ class ListaProdutoController extends Controller
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
             'nome' => 'required|string|max:255',
+            'categoria' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
@@ -134,6 +138,7 @@ class ListaProdutoController extends Controller
 
         // Atualizar o nome
         $produto->nome = $request->nome;
+        $produto->categoria = $request->categoria;
 
         // Processar a nova imagem, se enviada
         if ($request->has('profile_photo') && $request->profile_photo) {

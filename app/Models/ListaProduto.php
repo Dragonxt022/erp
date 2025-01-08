@@ -9,5 +9,7 @@ class ListaProduto extends Model
     protected $fillable = [
         'nome',
         'profile_photo',
+        'categoria',
+
     ];
 }
