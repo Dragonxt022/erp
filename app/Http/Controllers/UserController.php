@@ -57,7 +57,7 @@ class UserController extends Controller
             'cpf' => 'required|string|size:14|unique:users,cpf',
             'unidade_id' => 'required|exists:infor_unidade,id',
             'cargo_id' => 'nullable|exists:cargos,id',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validação da imagem
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Validação da imagem
         ]);
 
         if ($validator->fails()) {
@@ -162,8 +162,4 @@ class UserController extends Controller
             return response()->json(['error' => 'Erro ao deletar o usuário.', 'details' => $e->getMessage()], 500);
         }
     }
-
-
-
-
 }

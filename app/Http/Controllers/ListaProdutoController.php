@@ -15,22 +15,23 @@ class ListaProdutoController extends Controller
      */
     public function index()
     {
-
         // Recupera todas as unidades
         $produtos = ListaProduto::orderBy('id', 'desc')->get();
 
-        // Para cada unidade, recupera os usuários relacionados
-        $resultados = $produtos->map(function ($produtos) {
+        // Para cada unidade, recupera os dados necessários e adiciona a lógica da estrela
+        $resultados = $produtos->map(function ($produto) {
             return [
-                'id' => $produtos->id,
-                'nome' => $produtos->nome,
-                'categoria' => $produtos->categoria,
-                'profile_photo' => $produtos->profile_photo ?? null, // Verifica se cidade é null e substitui
+                'id' => $produto->id,
+                'nome' => $produto->nome,
+                'categoria' => $produto->categoria,
+                'profile_photo' => $produto->profile_photo ?? null, // Verifica se profile_photo é null e substitui
+                'estrela' => $produto->categoria === 'principal' ? '★' : null, // Adiciona estrela para categoria 'Principal'
             ];
         });
 
         return response()->json($resultados);
     }
+
 
 
     /**
@@ -42,7 +43,7 @@ class ListaProdutoController extends Controller
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         if ($validator->fails()) {
@@ -119,7 +120,7 @@ class ListaProdutoController extends Controller
             'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
         // Verifica falha na validação

@@ -48,7 +48,10 @@
           </div>
           <div class="text-container">
             <!-- Nome do fornecedor -->
-            <div class="city">{{ produto.nome }}</div>
+            <div class="city">
+              {{ produto.nome }}
+              <span v-if="produto.estrela" class="estrela">★</span>
+            </div>
 
             <div class="owner">
               {{ produto.categoria }}
@@ -101,6 +104,11 @@ export default {
 </script>
 
 <style scoped>
+.estrela {
+  color: gold;
+  font-size: 20px;
+  margin-left: 15px;
+}
 .painel-title {
   font-size: 34px;
   font-weight: 700;

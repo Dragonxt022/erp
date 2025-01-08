@@ -119,7 +119,7 @@ const menuCategories = [
       },
       {
         label: 'Insumos',
-        icon: '/storage/images/insumos.svg',
+        icon: '/storage/images/insumos_nova.svg',
         link: 'insumos',
         isLogout: false,
       },

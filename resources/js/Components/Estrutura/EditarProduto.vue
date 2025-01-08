@@ -55,6 +55,44 @@
             {{ errorMessage }}
           </div>
 
+          <div class="flex items-center space-x-4 mt-5">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                v-model="categoria"
+                value="principal"
+                class="hidden"
+              />
+              <div
+                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+              >
+                <div
+                  v-if="categoria === 'principal'"
+                  class="w-3 h-3 rounded-full bg-green-500"
+                ></div>
+              </div>
+              <span>Principal</span>
+            </label>
+
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                v-model="categoria"
+                value="secundario"
+                class="hidden"
+              />
+              <div
+                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+              >
+                <div
+                  v-if="categoria === 'secundario'"
+                  class="w-3 h-3 rounded-full bg-green-500"
+                ></div>
+              </div>
+              <span>Secundário</span>
+            </label>
+          </div>
+
           <div class="flex justify-start space-x-1 mt-5">
             <ButtonCancelar text="Cancelar" @click="cancelForm" />
             <ButtonPrimaryMedio
@@ -101,6 +139,9 @@ const props = defineProps({
 const emit = defineEmits(['cancelar']);
 
 const nome = ref('');
+
+const categoria = ref('');
+
 const profilePhotoUrl = ref('');
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -115,6 +156,7 @@ watch(
   (novoProduto) => {
     if (novoProduto) {
       nome.value = novoProduto.nome || '';
+      categoria.value = novoProduto.categoria || '';
       profilePhotoUrl.value = novoProduto.profile_photo || '';
     }
   },
@@ -139,6 +181,7 @@ const submitForm = async () => {
     // Passando os dados do produto (nome e id)
     formData.append('id', props.produto.id);
     formData.append('nome', nome.value);
+    formData.append('categoria', categoria.value);
 
     // Gerar o nome para a imagem (pode ser um nome único)
     if (selectedFile.value) {
@@ -211,6 +254,22 @@ const cancelForm = () => {
 </script>
 
 <style scoped>
+/* Customiza as opções de rádio */
+.w-5 {
+  width: 1.25rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.rounded-full {
+  border-radius: 50%;
+}
+.border-2 {
+  border-width: 2px;
+}
+.bg-green-500 {
+  background-color: #22c55e; /* Verde */
+}
 /* Estilos mantidos */
 .loading-overlay {
   position: fixed;
