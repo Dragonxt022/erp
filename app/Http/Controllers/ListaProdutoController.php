@@ -15,23 +15,38 @@ class ListaProdutoController extends Controller
      */
     public function index()
     {
-        // Recupera todas as unidades
-        $produtos = ListaProduto::orderBy('id', 'desc')->get();
+        // Recupera todos os produtos
+        $produtos = ListaProduto::all();
 
-        // Para cada unidade, recupera os dados necessários e adiciona a lógica da estrela
-        $resultados = $produtos->map(function ($produto) {
+        // Classifica os produtos: "principal" no topo e ordem alfabética para cada grupo
+        $produtosOrdenados = $produtos->sort(function ($a, $b) {
+            // Primeiro, coloca "principal" no topo
+            if ($a->categoria === 'principal' && $b->categoria !== 'principal') {
+                return -1;
+            }
+            if ($a->categoria !== 'principal' && $b->categoria === 'principal') {
+                return 1;
+            }
+
+            // Se as categorias forem iguais, ordena alfabeticamente (locale-aware)
+            return strcoll($a->nome, $b->nome);
+        });
+
+        // Mapeia os dados e converte para array
+        $resultados = $produtosOrdenados->map(function ($produto) {
             return [
                 'id' => $produto->id,
                 'nome' => $produto->nome,
                 'categoria' => $produto->categoria,
                 'unidadeDeMedida' => $produto->unidadeDeMedida,
-                'profile_photo' => $produto->profile_photo ?? null, // Verifica se profile_photo é null e substitui
-                'estrela' => $produto->categoria === 'principal' ? '★' : null, // Adiciona estrela para categoria 'Principal'
+                'profile_photo' => $produto->profile_photo ?? null,
+                'estrela' => $produto->categoria === 'principal' ? '★' : null,
             ];
-        });
+        })->values()->toArray(); // Reorganiza os índices e converte para array
 
         return response()->json($resultados);
     }
+
 
 
 
