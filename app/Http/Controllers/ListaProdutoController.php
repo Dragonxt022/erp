@@ -24,6 +24,7 @@ class ListaProdutoController extends Controller
                 'id' => $produto->id,
                 'nome' => $produto->nome,
                 'categoria' => $produto->categoria,
+                'unidadeDeMedida' => $produto->unidadeDeMedida,
                 'profile_photo' => $produto->profile_photo ?? null, // Verifica se profile_photo é null e substitui
                 'estrela' => $produto->categoria === 'principal' ? '★' : null, // Adiciona estrela para categoria 'Principal'
             ];
@@ -43,6 +44,7 @@ class ListaProdutoController extends Controller
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
+            'unidadeDeMedida' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
@@ -78,6 +80,7 @@ class ListaProdutoController extends Controller
         $produto = ListaProduto::create([
             'nome' => $request->nome,
             'categoria' => $request->categoria,
+            'unidadeDeMedida' => $request->unidadeDeMedida,
             'profile_photo' => $profilePhotoPath,
         ]);
 
@@ -120,6 +123,7 @@ class ListaProdutoController extends Controller
             'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
+            'unidadeDeMedida' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
         ]);
 
@@ -140,6 +144,7 @@ class ListaProdutoController extends Controller
         // Atualizar o nome
         $produto->nome = $request->nome;
         $produto->categoria = $request->categoria;
+        $produto->unidadeDeMedida = $request->unidadeDeMedida;
 
         // Processar a nova imagem, se enviada
         if ($request->has('profile_photo') && $request->profile_photo) {

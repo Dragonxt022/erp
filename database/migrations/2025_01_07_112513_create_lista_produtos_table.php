@@ -19,6 +19,7 @@ class CreateListaProdutosTable extends Migration
             $table->string('nome'); // Nome do produto
             $table->string('profile_photo')->nullable(); // Foto do produto (pode ser nula)
             $table->string('categoria')->nullable(); // Categoria do produto (pode ser nula)
+            $table->string('unidadeDeMedida')->nullable();
             $table->timestamps(); // Colunas created_at e updated_at
         });
     }

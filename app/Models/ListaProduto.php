@@ -10,6 +10,6 @@ class ListaProduto extends Model
         'nome',
         'profile_photo',
         'categoria',
-
+        'unidadeDeMedida',
     ];
 }

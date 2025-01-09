@@ -52,10 +52,6 @@
               {{ produto.nome }}
               <span v-if="produto.estrela" class="estrela">★</span>
             </div>
-
-            <div class="owner">
-              {{ produto.categoria }}
-            </div>
           </div>
           <div class="action-icon"></div>
         </div>

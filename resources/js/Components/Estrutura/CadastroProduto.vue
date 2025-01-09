@@ -5,7 +5,7 @@
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
-      <div v-else class="w-full h-[400px] bg-white rounded-[20px] p-12">
+      <div v-else class="w-full h-[80%] bg-white rounded-[20px] p-12">
         <form @submit.prevent="submitForm">
           <!-- Upload de Imagem -->
           <div class="flex justify-center mb-6 relative group">
@@ -55,7 +55,12 @@
             {{ errorMessage }}
           </div>
 
-          <div class="flex items-center space-x-4 mt-5">
+          <!-- Prioridade -->
+          <LabelModel
+            class="font-semibold text-gray-800 mt-8"
+            text="Prioridade"
+          />
+          <div class="flex items-center space-x-4 mt-2">
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="radio"
@@ -93,7 +98,50 @@
             </label>
           </div>
 
-          <div class="flex justify-start space-x-1 mt-5">
+          <!-- Unidade de medida -->
+          <LabelModel
+            class="font-semibold text-gray-800 mt-8"
+            text="Unidade de medida"
+          />
+          <div class="flex items-center space-x-4 mt-2">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                v-model="unidadeDeMedida"
+                value="a_granel"
+                class="hidden"
+              />
+              <div
+                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+              >
+                <div
+                  v-if="unidadeDeMedida === 'a_granel'"
+                  class="w-3 h-3 rounded-full bg-green-500"
+                ></div>
+              </div>
+              <span>A granel</span>
+            </label>
+
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                v-model="unidadeDeMedida"
+                value="unitario"
+                class="hidden"
+              />
+              <div
+                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+              >
+                <div
+                  v-if="unidadeDeMedida === 'unitario'"
+                  class="w-3 h-3 rounded-full bg-green-500"
+                ></div>
+              </div>
+              <span>Unitário</span>
+            </label>
+          </div>
+
+          <div class="flex justify-start space-x-1 mt-[15%]">
             <ButtonCancelar text="Cancelar" @click="cancelForm" />
             <ButtonPrimaryMedio
               text="Cadastrar"
@@ -137,7 +185,8 @@ const emit = defineEmits(['cancelar']);
 
 const nome = ref('');
 const profilePhotoUrl = ref('');
-const categoria = ref('secundario');
+const categoria = ref('');
+const unidadeDeMedida = ref('');
 
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -192,13 +241,14 @@ const cancelForm = () => {
 const resetForm = () => {
   nome.value = '';
   categoria.value = '';
+  unidadeDeMedida.value = '';
   profilePhotoUrl.value = '';
   selectedFile.value = null;
   errorMessage.value = '';
 };
 
 const validateForm = () => {
-  if (!nome.value || !selectedFile.value) {
+  if (!nome.value || !selectedFile.value || !unidadeDeMedida || !categoria) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -214,6 +264,7 @@ const submitForm = async () => {
     const formData = new FormData();
     formData.append('nome', nome.value);
     formData.append('categoria', categoria.value);
+    formData.append('unidadeDeMedida', unidadeDeMedida.value);
     formData.append('profile_photo', selectedFile.value);
 
     const response = await axios.post('/api/cadastar-produtos', formData, {

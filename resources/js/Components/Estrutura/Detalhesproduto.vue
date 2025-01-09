@@ -21,6 +21,10 @@
             class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
           >
             {{ produto.nome || 'N/A' }}
+
+            <div class="owner">
+              {{ produto.categoria }} / {{ produto.unidadeDeMedida }}
+            </div>
           </div>
         </div>
 
