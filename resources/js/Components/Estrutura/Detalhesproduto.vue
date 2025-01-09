@@ -1,71 +1,73 @@
 <template>
-  <div
-    v-if="!isEditMode"
-    class="w-full h-[200px] bg-white rounded-[20px] p-12 relative overflow-y-auto scrollbar-hidden"
-  >
-    <div class="relative w-full h-full">
-      <!-- Container das colunas -->
-      <div class="flex items-center">
-        <!-- Coluna da Imagem -->
-        <div class="w-1/1 flex justify-center">
-          <img
-            :src="produto.profile_photo || '/storage/images/no_imagem.svg'"
-            alt="Foto do Usuário"
-            class="w-20 h-20 rounded-md shadow-lg"
-          />
-        </div>
+  <div class="elemento-fixo">
+    <div
+      v-if="!isEditMode"
+      class="w-full h-[200px] bg-white rounded-[20px] p-12"
+    >
+      <div class="relative w-full h-full">
+        <!-- Container das colunas -->
+        <div class="flex items-center">
+          <!-- Coluna da Imagem -->
+          <div class="w-1/1 flex justify-center">
+            <img
+              :src="produto.profile_photo || '/storage/images/no_imagem.svg'"
+              alt="Foto do Usuário"
+              class="w-20 h-20 rounded-md shadow-lg"
+            />
+          </div>
 
-        <!-- Coluna do Nome -->
-        <div class="w-2/3 pl-5">
-          <div
-            class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
-          >
-            {{ produto.nome || 'N/A' }}
+          <!-- Coluna do Nome -->
+          <div class="w-2/3 pl-5">
+            <div
+              class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
+            >
+              {{ produto.nome || 'N/A' }}
 
-            <div class="owner">
-              {{ produto.categoria }} / {{ produto.unidadeDeMedida }}
+              <div class="owner">
+                {{ produto.categoria }} / {{ produto.unidadeDeMedida }}
+              </div>
+            </div>
+          </div>
+
+          <div class="w-1/1">
+            <ConfirmDialog
+              :isVisible="isConfirmDialogVisible"
+              :motivo="motivo"
+              @confirm="handleConfirm"
+              @cancel="handleCancel"
+            />
+            <div
+              class="absolute top-4 right-4 cursor-pointer"
+              @click="showConfirmDialog('Excluir esse produto?')"
+            >
+              <img
+                src="/storage/images/delete.svg"
+                alt="Deletar Usuário"
+                class="w-6 h-6"
+              />
             </div>
           </div>
         </div>
-
-        <div class="w-1/1">
-          <ConfirmDialog
-            :isVisible="isConfirmDialogVisible"
-            :motivo="motivo"
-            @confirm="handleConfirm"
-            @cancel="handleCancel"
-          />
-          <div
-            class="absolute top-4 right-4 cursor-pointer"
-            @click="showConfirmDialog('Excluir esse produto?')"
-          >
-            <img
-              src="/storage/images/delete.svg"
-              alt="Deletar Usuário"
-              class="w-6 h-6"
-            />
-          </div>
-        </div>
+        <!-- Exibe o botão de edição apenas se uma unidade for selecionada -->
       </div>
-      <!-- Exibe o botão de edição apenas se uma unidade for selecionada -->
     </div>
-  </div>
-  <div v-if="produto.id && !isEditMode" class="mt-4">
-    <ButtonEditeMedio
-      text="Editar insumos"
-      icon-path="/storage/images/border_color.svg"
-      @click="toggleEditMode"
-      class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
+    <div v-if="produto.id && !isEditMode" class="mt-4">
+      <ButtonEditeMedio
+        text="Editar insumos"
+        icon-path="/storage/images/border_color.svg"
+        @click="toggleEditMode"
+        class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
+      />
+    </div>
+    <EditarProduto
+      v-if="isEditMode"
+      ref="dadosProduto"
+      :isVisible="isEditMode"
+      :produto="produto"
+      @dadosProduto="fetchProdutos"
+      @cancelar="cancelEdit"
     />
   </div>
-  <EditarProduto
-    v-if="isEditMode"
-    ref="dadosProduto"
-    :isVisible="isEditMode"
-    :produto="produto"
-    @dadosProduto="fetchProdutos"
-    @cancelar="cancelEdit"
-  />
 </template>
 
 <script setup>
@@ -147,6 +149,12 @@ const cancelEdit = () => {
 </script>
 
 <style scoped>
+.elemento-fixo {
+  position: -webkit-sticky; /* Para navegadores que exigem o prefixo */
+  position: sticky;
+  top: 0; /* Defina o valor para o topo de onde o elemento ficará fixo */
+  z-index: 10; /* Para garantir que o elemento fique sobre outros */
+}
 /* Tornando a lista rolável com barra de rolagem invisível */
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
