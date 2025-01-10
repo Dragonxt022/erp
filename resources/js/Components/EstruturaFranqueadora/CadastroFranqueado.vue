@@ -95,9 +95,9 @@
             </select>
           </div> -->
 
-          <div v-if="errorMessage" class="error-message">
+          <!-- <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
-          </div>
+          </div> -->
 
           <ConfirmDialog
             :isVisible="isConfirmDialogVisible"
@@ -254,9 +254,13 @@ const submitForm = async () => {
       },
     });
 
-    console.log('Dados cadastrados com sucesso:', response.data);
+    Inertia.replace(route('franqueadora.franqueados'), {
+      franqueado: response.data.franqueado, // Atualize os dados do produto com a resposta
+      preserveState: true, // Preserve o estado atual da página
+    });
+
     toast.success('Cadastro realizado com sucesso!');
-    Inertia.visit('/franqueados');
+
     resetForm();
   } catch (error) {
     toast.error('Erro ao realizar o cadastro.');

@@ -124,7 +124,7 @@ const submitForm = async () => {
     // Enviar os dados para o backend
     const response = await axios({
       method: 'post',
-      url: '/api/atualizar-fornecedores',
+      url: '/api/fornecedores/atualizar',
       data: formData,
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -132,7 +132,7 @@ const submitForm = async () => {
     });
 
     // Atualizar a página sem perder o estado, mantendo os dados atualizados
-    Inertia.replace(route('fornecedores'), {
+    Inertia.replace(route('franqueadora.fornecedores'), {
       fornecedor: response.data.fornecedor, // Atualiza os dados do fornecedor com a resposta
       preserveState: true, // Preserva o estado atual da página
     });

@@ -253,7 +253,7 @@ const submitForm = async () => {
     });
 
     // Atualizar a página sem perder o estado, mantendo os dados atualizados
-    Inertia.replace(route('insumos'), {
+    Inertia.replace(route('franqueadora.insumos'), {
       produto: response.data.produto, // Atualize os dados do produto com a resposta
       preserveState: true, // Preserve o estado atual da página
     });

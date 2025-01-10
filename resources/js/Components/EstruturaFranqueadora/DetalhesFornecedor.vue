@@ -174,9 +174,9 @@ const deleteFornecedor = async () => {
   try {
     isLoading.value = true;
 
-    await axios.delete(`/api/excluir-fornecedor/${props.fornecedor.id}`);
+    await axios.delete(`/api/fornecedores/${props.fornecedor.id}`);
 
-    Inertia.replace(route('fornecedores'), {
+    Inertia.replace(route('franqueadora.fornecedores'), {
       preserveState: true,
     });
 

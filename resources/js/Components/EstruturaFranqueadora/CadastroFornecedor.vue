@@ -146,7 +146,7 @@ const submitForm = async () => {
       estado: estado.value,
     });
 
-    Inertia.replace(route('fornecedores'), {
+    Inertia.replace(route('franqueadora.fornecedores'), {
       fornecedor: response.data.fornecedor, // Atualiza os dados do fornecedor com a resposta
       preserveState: true, // Preserva o estado atual da página
     });

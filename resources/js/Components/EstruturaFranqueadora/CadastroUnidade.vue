@@ -34,9 +34,9 @@
         <LabelModel text="Bairro" />
         <InputModel v-model="bairro" placeholder="Bairro" />
 
-        <div v-if="errorMessage" class="error-message">
+        <!-- <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
-        </div>
+        </div> -->
 
         <!-- Componente de confirmação -->
         <ConfirmDialog
@@ -136,9 +136,13 @@ const submitForm = async () => {
       numero: numero.value,
     });
 
-    console.log('Unidade cadastrada com sucesso:', response.data);
+    Inertia.replace(route('franqueadora.unidades'), {
+      unidades: response.data.unidades,
+      preserveState: true, // Preserve o estado atual da página
+    });
+
     toast.success('Unidade cadastrada com sucesso!');
-    Inertia.visit('/unidades');
+
     resetForm();
   } catch (error) {
     toast.error('Erro ao cadastrar unidade.');

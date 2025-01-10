@@ -88,10 +88,13 @@ const isLoading = ref(false);
 const deleteUsuario = async () => {
   try {
     isLoading.value = true;
-    const response = await axios.delete(`/api/usuario/${props.usuario.id}`); // URL para deletar o usuário
+    const response = await axios.delete(`/api/usuarios/${props.usuario.id}`); // URL para deletar o usuário
     console.log(response.data.message); // Mensagem de sucesso do backend
     toast.success('Usuário deletado com sucesso!'); // Exibe um toast de sucesso
-    Inertia.visit('/franqueados');
+
+    Inertia.replace(route('franqueadora.franqueados'), {
+      preserveState: true, // Preserve o estado atual da página
+    });
   } catch (error) {
     toast.error(
       'Erro ao deletar o usuário:',
