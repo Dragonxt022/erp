@@ -29,12 +29,12 @@ class UserAndCompanySeeder extends Seeder
         ]);
 
         // Buscando o cargo pelo nome (exemplo: 'Gerente')
-        $cargo = Cargo::where('name', 'G')->first();  // 'G' é o nome do cargo, pode ser alterado conforme sua tabela
+        $cargo = Cargo::where('name', 'AD')->first();  // 'G' é o nome do cargo, pode ser alterado conforme sua tabela
 
         // Verificando se o cargo existe antes de criar o usuário
         if (!$cargo) {
             // Caso o cargo não exista, você pode lançar uma exceção ou criar um fallback
-            $cargo = Cargo::create(['name' => 'G']);  // Criando o cargo caso não tenha sido encontrado
+            $cargo = Cargo::create(['name' => 'AD']);  // Criando o cargo caso não tenha sido encontrado
         }
 
         // Criando o usuário

@@ -22,6 +22,7 @@ class CargoSeeder extends Seeder
             'R',   // recepcionista
             'CO',  // cozinheira(o)
             'G',   // gerente
+            'AD',  // Administrador
             'F',   // financeiro
             'CT',  // contabilidade
             'E'    // entregador

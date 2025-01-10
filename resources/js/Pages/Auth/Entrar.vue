@@ -94,15 +94,48 @@ const form = useForm({
   errors: {},
 });
 
-const submit = () => {
-  form
-    .transform((data) => ({
-      ...data,
-      remember: form.remember ? 'on' : '',
-    }))
-    .post(route('entrar.painal'), {
-      onFinish: () => form.reset('password'),
-    });
+const submit = async () => {
+  // Transforma os dados antes de enviar
+  form.transform((data) => ({
+    ...data,
+    remember: form.remember ? 'on' : '',
+  }));
+
+  // Envia a requisição de login
+  form.post(route('entrar.painal'), {
+    onFinish: async () => {
+      form.reset('password');
+
+      // Chama a função fetchToken após o login
+      const fetchToken = async () => {
+        try {
+          // Faça uma requisição para a rota que retorna o token
+          const response = await axios.get('/get-token', {
+            withCredentials: true,
+          });
+
+          if (response.data.status === 'success') {
+            const token = response.data.token;
+
+            // Armazene o token no localStorage
+            localStorage.setItem('auth_token', token);
+
+            // Configure o Axios para usar o token em futuras requisições
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+            console.log('Token obtido com sucesso!');
+          } else {
+            console.error('Erro ao obter o token:', response.data);
+          }
+        } catch (error) {
+          console.error('Erro na requisição para obter o token:', error);
+        }
+      };
+
+      // Chama a função fetchToken após a requisição de login
+      await fetchToken();
+    },
+  });
 };
 
 const applyCpfMask = (event) => {

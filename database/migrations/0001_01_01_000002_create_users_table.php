@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('pin')->unique()->nullable();  // Alterando o campo para aceitar valores nulos
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+
             $table->rememberToken();
 
             // Nova coluna de chave estrangeira para unidade

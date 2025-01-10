@@ -30,6 +30,7 @@ class Cargo extends Model
             'R'  => 'Recepcionista',
             'CO' => 'Cozinheira(o)',
             'G'  => 'Gerente',
+            'AD' => 'Administrador',
             'F'  => 'Financeiro',
             'CT' => 'Contabilidade',
             'E'  => 'Entregador',
@@ -38,5 +39,4 @@ class Cargo extends Model
         // Retorna o nome completo do cargo baseado nas iniciais
         return isset($mapaCargos[$value]) ? $mapaCargos[$value] : $value;
     }
-
 }

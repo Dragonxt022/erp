@@ -11,7 +11,7 @@ export const useUserStore = defineStore('user', {
     async fetchUserProfile() {
       if (this.user) return; // Se já existe, não faz a requisição novamente
       try {
-        const response = await axios.get('/api/profile');
+        const response = await axios.get('/api/navbar-profile');
         if (response.data.status === 'success') {
           this.user = response.data.data; // Armazena os dados do usuário diretamente
         } else {
