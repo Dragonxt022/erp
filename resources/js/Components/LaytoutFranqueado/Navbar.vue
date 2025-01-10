@@ -57,7 +57,7 @@
 
 <script lang="js">
 import { ref, onMounted, computed } from 'vue';
-import { useUserStore } from '@/stores/user'; // Importando o store
+import { useUserStore } from '@/stores/user';
 
 export default {
   setup() {

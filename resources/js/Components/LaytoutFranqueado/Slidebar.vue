@@ -21,8 +21,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import MenuItem from './MenuItem.vue';
 
 // Referência da sidebar
 const sidebar = ref(null);
@@ -57,83 +55,8 @@ const menuCategories = [
       {
         label: 'Visão Geral',
         icon: '/storage/images/insert_chart.svg',
-        link: 'painel',
+        link: 'franqueado.painel',
         isLogout: false,
-      },
-    ],
-  },
-  {
-    name: 'Painel',
-    items: [
-      {
-        label: 'E-mail',
-        icon: '/storage/images/email.svg',
-        link: 'email',
-        isLogout: false,
-      },
-      {
-        label: 'Comunidade',
-        icon: '/storage/images/diversity_4.svg',
-        link: 'comunidade',
-        isLogout: false,
-      },
-      {
-        label: 'Mídias',
-        icon: '/storage/images/perm_media.svg',
-        link: 'midias',
-        isLogout: false,
-      },
-    ],
-  },
-  {
-    name: 'Gestão da rede',
-    items: [
-      {
-        label: 'Megafone',
-        icon: '/storage/images/campaign.svg',
-        link: 'megafone',
-        isLogout: false,
-      },
-      {
-        label: 'Franqueados',
-        icon: '/storage/images/person.svg',
-        link: 'franqueados',
-        isLogout: false,
-      },
-      {
-        label: 'Unidades',
-        icon: '/storage/images/storefront.svg',
-        link: 'unidades',
-        isLogout: false,
-      },
-    ],
-  },
-  {
-    name: 'Parâmetros da franquia',
-    items: [
-      {
-        label: 'Fornecedores',
-        icon: '/storage/images/handshake_branca.svg',
-        link: 'fornecedores',
-        isLogout: false,
-      },
-      {
-        label: 'Insumos',
-        icon: '/storage/images/insumos_nova.svg',
-        link: 'insumos',
-        isLogout: false,
-      },
-      {
-        label: 'Inspetor',
-        icon: '/storage/images/inspecionador.svg',
-        link: 'inspetor',
-        isLogout: false,
-      },
-      {
-        label: 'Sair',
-        icon: '/storage/images/log-out.png',
-        link: 'logout',
-        isLogout: true,
       },
     ],
   },

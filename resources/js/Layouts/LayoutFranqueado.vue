@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import Navbar from '@/Components/LaytoutFranqueadora/Navbar.vue';
-import Slidebar from '@/Components/LaytoutFranqueadora/Slidebar.vue';
+import Navbar from '@/Components/LaytoutFranqueado/Navbar.vue';
+import Slidebar from '@/Components/LaytoutFranqueado/Slidebar.vue';
 
 defineProps({
   title: String,
