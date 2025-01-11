@@ -1,13 +1,35 @@
 <template>
   <LayoutFranqueado>
     <Head title="Controle de estoque" />
-    <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
-      Controle de estoque
-    </div>
-    <div class="painel-subtitle">
-      <p class="text-sm sm:text-base md:text-lg">
-        Acompanhe seu negócio em tempo real
-      </p>
+    <div class="flex justify-between items-center mb-4">
+      <!-- Coluna 1: Título e subtítulo -->
+      <div>
+        <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
+          Controle de estoque
+        </div>
+        <div class="painel-subtitle">
+          <p class="text-sm sm:text-base md:text-lg">
+            Acompanhe seu negócio em tempo real
+          </p>
+        </div>
+      </div>
+
+      <!-- Coluna 2: Data -->
+      <div
+        class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
+      >
+        <div class="flex items-center space-x-2">
+          <img
+            src="/storage/images/calendar_month.svg"
+            alt="Filtro"
+            class="w-5 h-5"
+          />
+          <!-- Ajuste o tamanho do ícone conforme necessário -->
+          <span class="text-gray-900 text-[17px] font-semibold">
+            01/09/2024 - 30/09/2024
+          </span>
+        </div>
+      </div>
     </div>
     <div class="mt-5">
       <!-- Ajuste do grid para ser responsivo -->
@@ -49,6 +71,102 @@
         </div>
       </div>
     </div>
+
+    <!-- Histórico de Movimentações -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h3
+          class="text-[#262a27] text-[17px] mb-[-13px] font-semibold font-['Figtree'] leading-snug"
+        >
+          Histórico de Movimentações
+        </h3>
+        <div class="flex items-center space-x-2">
+          <img
+            src="/storage/images/filter_alt.svg"
+            alt="Filtro"
+            class="w-5 h-5"
+          />
+          <!-- Ajuste o tamanho do ícone conforme necessário -->
+          <span class="text-gray-900 text-[17px] font-semibold">
+            Filtrar resultados
+          </span>
+        </div>
+      </div>
+
+      <table class="min-w-full table-auto">
+        <thead>
+          <tr>
+            <th
+              class="px-6 py-3 text-center text-xs font-medium text-gray-500 TrRedonEsquerda"
+            >
+              OPERAÇÃO
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              QTD.
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Item
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Quando
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
+            >
+              Responsável
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Dados de exemplo -->
+          <tr>
+            <td
+              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex items-center"
+            >
+              <img
+                src="/storage/images/arrow_back_red.svg"
+                alt="icon indicativo"
+                class="mr-5"
+              />
+              Retirada
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
+              10
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-500">Produto A</td>
+            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
+              10/01/2025 às 18:15
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-500">João</td>
+          </tr>
+          <tr>
+            <td
+              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex items-center"
+            >
+              <img
+                src="/storage/images/arrow_back_verde.svg"
+                alt="icon indicativo"
+                class="mr-5"
+              />
+              Entrada
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">5</td>
+            <td class="px-6 py-4 text-[16px] text-gray-500">Produto B</td>
+            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
+              09/01/2025 às 14:55
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-500">Maria</td>
+          </tr>
+          <!-- Adicione mais linhas conforme necessário -->
+        </tbody>
+      </table>
+    </div>
   </LayoutFranqueado>
 </template>
 
@@ -69,5 +187,42 @@ import { Head } from '@inertiajs/vue3';
   font-size: 17px;
   color: #6d6d6e; /* Cor secundária */
   max-width: 600px; /* Limita a largura do subtítulo */
+}
+
+/* Estilizando a tabela */
+table {
+  width: 100%;
+  margin-top: 20px;
+
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+  text-align: center;
+}
+
+th {
+  background-color: #164110;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.TrRedonEsquerda {
+  border-radius: 20px 0px 0px 0px;
+}
+
+.TrRedonDireita {
+  border-radius: 0px 20px 0px 0px;
+}
+
+tr:nth-child(even) {
+  background-color: #f4f5f3;
+}
+
+tr:hover {
+  background-color: #dededea9;
+  cursor: pointer;
 }
 </style>
