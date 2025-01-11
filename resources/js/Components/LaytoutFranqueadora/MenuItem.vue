@@ -68,7 +68,7 @@ const handleLogout = () => {
 
 .menu-item .label {
   color: white;
-  font-size: 17px;
+  font-size: 15px;
   font-family: Figtree;
   font-weight: 600;
   line-height: 22px;

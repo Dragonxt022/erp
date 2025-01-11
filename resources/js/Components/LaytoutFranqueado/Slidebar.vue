@@ -1,29 +1,125 @@
 <template>
-  <div class="sidebar" ref="sidebar" @scroll="saveScrollPosition">
+  <div>
+    <!-- Sidebar -->
     <div
-      v-for="category in menuCategories"
-      :key="category.name"
-      class="menu-category"
+      class="sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-4 overflow-y-auto h-full sm:w-64 md:w-72 lg:w-80 xl:w-80"
+      ref="sidebar"
+      @scroll="saveScrollPosition"
     >
-      <div class="category-title">{{ category.name }}</div>
-      <MenuItem
-        v-for="item in category.items"
-        :key="item.link"
-        :label="item.label"
-        :icon="item.icon"
-        :link="route(item.link)"
-        :isActive="isActive(route(item.link))"
-        :isLogout="item.isLogout"
-      />
+      <div
+        v-for="category in menuCategories"
+        :key="category.name"
+        class="menu-category mb-6"
+      >
+        <!-- Categoria de menu (Título escondido em telas pequenas) -->
+        <div
+          class="category-title menu-categorias text-sm sm:text-base font-medium text-[#87ba73] mb-3 pl-4"
+        >
+          {{ category.name }}
+        </div>
+
+        <!-- Itens do menu (Mostrar apenas os ícones em telas pequenas) -->
+        <MenuItem
+          v-for="item in category.items"
+          :key="item.link"
+          :label="item.label"
+          :icon="item.icon"
+          :link="route(item.link)"
+          :submenuItems="item.submenuItems"
+          :isActive="isActive(route(item.link))"
+          :isLogout="item.isLogout"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import MenuItem from './MenuItem.vue';
 
 // Referência da sidebar
 const sidebar = ref(null);
+
+// Definindo as categorias de menu
+const menuCategories = [
+  {
+    name: '',
+    items: [
+      {
+        label: 'Inicio',
+        icon: '/storage/images/inicio.svg',
+        link: 'franqueado.painel',
+        isLogout: false,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    name: 'Ferramentas',
+    items: [
+      {
+        label: 'E-mail',
+        icon: '/storage/images/email.svg',
+        link: 'franqueado.email',
+        isLogout: false,
+        isActive: false,
+      },
+      {
+        label: 'Comunidade',
+        icon: '/storage/images/diversity_4.svg',
+        link: 'franqueado.comunidade',
+        isLogout: false,
+        isActive: false,
+      },
+      {
+        label: 'Mídias',
+        icon: '/storage/images/perm_media.svg',
+        link: 'franqueado.midias',
+        isLogout: false,
+        isActive: false,
+      },
+    ],
+  },
+  {
+    name: 'Gestão da loja',
+    items: [
+      {
+        label: 'Controle de estoque',
+        icon: '/storage/images/estoque.svg',
+        link: 'franqueado.estoque',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Inventário',
+            icon: '/storage/images/add_product.svg',
+            link: 'franqueado.inventario',
+          },
+          {
+            label: 'Fornecedores',
+            link: 'franqueado.fornecedores',
+          },
+          {
+            label: 'Pedidos',
+            link: 'franqueado.pedidos',
+          },
+        ],
+        isActive: false,
+      },
+    ],
+  },
+  {
+    name: 'Parâmetros da Franquia',
+    items: [
+      {
+        label: 'Sair',
+        icon: '/storage/images/log-out.png',
+        link: 'logout',
+        isLogout: true,
+      },
+    ],
+  },
+];
 
 // Recuperar a posição da rolagem do localStorage
 onMounted(() => {
@@ -46,42 +142,24 @@ const isActive = (link) => {
   const resolvedPath = new URL(link, window.location.origin).pathname;
   return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
 };
-
-// Definindo as categorias de menu
-const menuCategories = [
-  {
-    name: '',
-    items: [
-      {
-        label: 'Visão Geral',
-        icon: '/storage/images/insert_chart.svg',
-        link: 'franqueado.painel',
-        isLogout: false,
-      },
-    ],
-  },
-];
 </script>
 
 <style scoped>
 .sidebar {
-  width: 249px;
-  padding: 10px;
-  height: calc(100% - 70px);
-  position: fixed;
-  top: 70px;
-  left: 0;
+  height: calc(100% - 70px); /* Ajuste para ocupar toda a altura restante */
+  width: 250px; /* Largura padrão para telas grandes */
+  padding-top: 27px;
+  padding-bottom: 27px;
   background-color: #164110;
   display: flex;
   flex-direction: column;
-  padding-top: 27px;
-  padding-bottom: 27px;
   color: white;
   overflow-y: scroll;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
 
+/* Personalizando a barra de rolagem */
 .sidebar::-webkit-scrollbar {
   width: 8px;
 }
@@ -94,17 +172,37 @@ const menuCategories = [
   background: transparent;
 }
 
-.menu-category {
-  margin-bottom: 20px;
-}
+/* Ajuste para tornar a sidebar responsiva */
+@media (max-width: 640px) {
+  .sidebar {
+    height: calc(100% - 11%); /* Ajuste para ocupar toda a altura restante */
+    width: 15%;
+    padding-top: none;
+    padding-bottom: none;
+    background-color: #164110;
+  }
 
-.category-title {
-  color: #87ba73;
-  font-size: 14px;
-  font-family: Figtree, sans-serif;
-  font-weight: 500;
-  word-wrap: break-word;
-  margin-bottom: 10px;
-  padding-left: 14px;
+  /* Ocultar as categorias e títulos em telas pequenas */
+  .menu-categorias {
+    display: none;
+  }
+
+  /* Ocultar os itens de menu em telas pequenas e exibir somente os ícones */
+  .menu-category {
+    display: block;
+  }
+
+  .menu-item {
+    justify-content: center; /* Centralizar os ícones */
+  }
+
+  .menu-item .label {
+    display: none; /* Esconder o texto da label */
+  }
+
+  .menu-item .icon {
+    width: 30px;
+    height: 30px;
+  }
 }
 </style>

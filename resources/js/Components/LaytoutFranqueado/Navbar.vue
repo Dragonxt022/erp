@@ -18,7 +18,7 @@
             </a>
           </div>
           <div>
-            <a :href="route('painel')">
+            <a :href="route('franqueado.painel')">
               <img
                 src="/storage/images/logo_tipo_verde.svg"
                 alt="logo tipo verde"
@@ -82,7 +82,7 @@ export default {
 
     // Função para pegar as iniciais do nome
     function getInitials(name) {
-      if (!name) return 'NN'; // Se não houver nome, retorna NN
+      if (!name) return '*'; // Se não houver nome, retorna NN
       const nameParts = name.split(' ');
       const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join('');
       return initials;
