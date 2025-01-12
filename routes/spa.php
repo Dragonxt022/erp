@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CargoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\ListaProdutoController;
+use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 
@@ -53,5 +54,28 @@ Route::prefix('api')->middleware([
         Route::post('/cadastrar', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
         Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
         Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
+    });
+});
+
+// Rotas protegidas por autenticação Usuarios
+Route::prefix('api')->middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+
+    // Lista de Produtos
+    Route::prefix('estoque')->group(function () {
+        Route::get('/lista', [UnidadeEstoqueController::class, 'index'])->name('listaEstoque.index');
+        // Route::post('/cadastrar', [UnidadeEstoqueController::class, 'store'])->name('cadastrar.store');
+        // Route::post('/atualizar', [UnidadeEstoqueController::class, 'update'])->name('atualizarProdutos.update');
+        // Route::delete('/excluir/{id}', [UnidadeEstoqueController::class, 'destroy'])->name('excluir.produto');
+    });
+
+    Route::prefix('produtos')->group(function () {
+        Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
+        // Route::post('/cadastrar', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
+        // Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
+        // Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
     });
 });
