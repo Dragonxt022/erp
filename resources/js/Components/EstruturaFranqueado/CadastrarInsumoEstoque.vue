@@ -4,7 +4,7 @@
     class="w-[100%] h-full flex flex-col p-4 bg-gray-50"
   >
     <h3 class="text-xl font-bold mb-4 text-gray-500">
-      Estou recebendo todos os itens de
+      Estou recebendo os itens de
     </h3>
 
     <!-- Selecionar Fornecedor -->
