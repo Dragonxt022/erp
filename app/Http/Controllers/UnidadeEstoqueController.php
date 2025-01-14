@@ -74,19 +74,20 @@ class UnidadeEstoqueController extends Controller
             $primeiroLote = $lotes->first();
             $insumo = $primeiroLote->insumo;
 
-            // Calcular a soma do valor total do lote
+            // Calcular a soma do valor total do lote (valor unitário * quantidade)
             $valorTotalLotes = $lotes->sum(function ($lote) {
                 return ($lote->preco_insumo / 100) * $lote->quantidade;
             });
 
-            // Verificar se o produto é por kg e calcular o valor por quilo
-            $valorPorQuilo = null;
-            if ($insumo->unidadeDeMedida === 'kg') {
-                // Calcular o valor por quilo para os produtos que são vendidos por kg
-                $valorPorQuilo = $lotes->sum(function ($lote) {
-                    return ($lote->preco_insumo / 100) / $lote->quantidade;
+            // Calcular a soma do valor pago por quilo para os produtos 'a_granel'
+            $valorPagoPorQuiloLote = null;
+            if ($insumo->unidadeDeMedida === 'a_granel') {
+                $valorPagoPorQuiloLote = $lotes->sum(function ($lote) {
+                    return ($lote->preco_insumo / 100); // Soma apenas o valor unitário (não multiplicado pela quantidade)
                 });
             }
+
+
 
             return [
                 'id' => $insumo->id,
@@ -94,13 +95,22 @@ class UnidadeEstoqueController extends Controller
                 'profile_photo' => $insumo->profile_photo,
                 'categoria' => $insumo->categoria,
                 'unidadeDeMedida' => $insumo->unidadeDeMedida,
-                'lotes' => $lotes->map(function ($lote) {
+                'lotes' => $lotes->map(function ($lote) use ($insumo) {
+                    // Calcular o valor unitário
+                    $valorUnitario = $lote->preco_insumo / 100;
+                    $valorTotal = $valorUnitario * $lote->quantidade; // Valor total do lote
+
+                    // Calcular o valor pago por quilo, se for 'a_granel'
+                    $valorPagoPorQuilo = $insumo->unidadeDeMedida === 'a_granel'
+                        ? 'R$ ' . number_format($valorUnitario, 2, ',', '.') // Apenas o valor unitário
+                        : null;
+
                     return [
                         'data' => $lote->created_at->format('d/m/Y'),
                         'fornecedor' => $lote->fornecedor->razao_social,
                         'quantidade' => $lote->quantidade,
-                        'preco_unitario' => 'R$ ' . number_format($lote->preco_insumo / 100, 2, ',', '.'),
-                        'valor_total' => 'R$ ' . number_format(($lote->preco_insumo / 100) * $lote->quantidade, 2, ',', '.'),
+                        'preco_unitario' => 'R$ ' . number_format($valorUnitario, 2, ',', '.'),
+                        'valor_total' => 'R$ ' . number_format($valorTotal, 2, ',', '.'),
                         // Adicionando cálculo do valor pago por quilo para produtos 'kg'
                         'valor_pago_por_quilo' => $lote->unidade === 'kg'
                             ? 'R$ ' . number_format(($lote->preco_insumo / 100) / $lote->quantidade, 2, ',', '.')
@@ -109,8 +119,9 @@ class UnidadeEstoqueController extends Controller
                 }),
                 // Soma o valor total de todos os lotes do insumo
                 'valor_total_lote' => 'R$ ' . number_format($valorTotalLotes, 2, ',', '.'),
-                // Adiciona o valor pago por quilo, se aplicável
-                'valor_pago_por_quilo' => $valorPorQuilo !== null ? 'R$ ' . number_format($valorPorQuilo, 2, ',', '.') : null,
+                // Soma do valor pago por quilo de todos os lotes do insumo
+                'valor_pago_por_quilo_lote' => $valorPagoPorQuiloLote !== null
+                    ? 'R$ ' . number_format($valorPagoPorQuiloLote, 2, ',', '.') : null,
             ];
         });
 
