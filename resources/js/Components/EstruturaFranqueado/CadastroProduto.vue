@@ -1,78 +1,113 @@
 <template>
   <transition name="fade">
-    <div v-if="isVisible" class="sidebar-container">
-      <!-- Animação de Carregamento -->
-      <div v-if="isLoading" class="loading-overlay">
-        <div class="spinner"></div>
-      </div>
-      <div v-else>
-        <div>
-          <!-- Título principal -->
-          <div class="painel-title">Nova entrada</div>
+    <div v-if="!mostrarResumo">
+      <div v-if="isVisible" class="sidebar-container">
+        <!-- Animação de Carregamento -->
+        <div v-if="isLoading" class="loading-overlay">
+          <div class="spinner"></div>
+        </div>
 
-          <!-- Subtítulo da página -->
-          <div class="painel-subtitle">
-            <p>Adicione os itens que você recebeu ao estoque</p>
-          </div>
+        <!-- Conteúdo principal -->
+        <div v-else class="flex">
+          <!-- Coluna da esquerda (Lista de produtos) -->
+          <div class="flex-1 p-4">
+            <!-- Título principal -->
+            <div class="painel-title">Nova entrada</div>
 
-          <!-- Campo de pesquisa -->
-          <div class="search-container relative flex items-center w-full mb-4">
-            <!-- Ícone de pesquisa -->
-            <div class="absolute left-3">
-              <img
-                src="/storage/images/search.svg"
-                alt="Ícone de pesquisa"
-                class="w-5 h-5 text-gray-500"
+            <!-- Subtítulo da página -->
+            <div class="painel-subtitle">
+              <p>Adicione os itens que você recebeu ao estoque</p>
+            </div>
+
+            <!-- Campo de pesquisa -->
+            <div class="relative flex items-center w-full mb-4">
+              <div class="absolute left-3">
+                <img
+                  src="/storage/images/search.svg"
+                  alt="Ícone de pesquisa"
+                  class="w-5 h-5 text-gray-500"
+                />
+              </div>
+              <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="Buscar um produto"
+                class="pl-10 w-full py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
-            <!-- Campo de pesquisa -->
-            <input
-              type="text"
-              v-model="searchQuery"
-              placeholder="Buscar um produto"
-              class="search-input pl-10 w-full py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
 
-          <!-- Container de cards -->
-          <div class="card-container">
-            <div
-              v-for="produto in filteredProdutos"
-              :key="produto.id"
-              class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
-              @click="selecionarProduto(produto)"
-            >
-              <div class="card-inner">
-                <div class="icon-container">
-                  <div class="icon-bg"></div>
-                  <div class="icon-leaf">
-                    <img
-                      :src="getProfilePhotoUrl(produto.profile_photo)"
-                      alt="Imagem do produto"
-                      class="w-12 h-12 rounded-lg"
-                    />
-                  </div>
+            <!-- Container de cards -->
+            <div class="space-y-4">
+              <div
+                v-for="produto in filteredProdutos"
+                :key="produto.id"
+                class="flex items-center p-4 bg-white rounded-lg cursor-pointer"
+                @click="selecionarProduto(produto)"
+              >
+                <div class="flex-shrink-0">
+                  <img
+                    :src="getProfilePhotoUrl(produto.profile_photo)"
+                    alt="Imagem do produto"
+                    class="w-12 h-12 rounded-lg"
+                  />
                 </div>
-                <div class="text-container">
-                  <!-- Nome do fornecedor -->
-                  <div class="city">
+                <div class="ml-4 flex-1">
+                  <div class="text-lg font-semibold flex items-center">
                     {{ produto.nome }}
-                    <span v-if="produto.estrela" class="estrela">★</span>
+
+                    <span
+                      v-if="quantidadeNoCarrinho(produto.id) > 0"
+                      class="ml-5 text-xs bg-green-100 text-green-600 font-bold rounded-full px-2 py-1"
+                    >
+                      {{ quantidadeNoCarrinho(produto.id) }}
+                    </span>
+
+                    <span
+                      v-if="produto.estrela"
+                      class="mr-2 ml-5 text-yellow-500"
+                      title="Essa estrela sigifinica que esse insumo e um produto princial"
+                    >
+                      ★
+                    </span>
                   </div>
                 </div>
-                <div class="action-icon"></div>
               </div>
             </div>
+          </div>
+          <!-- Botão para finalizar a entrada e exibir a modal de revisão -->
+          <div class="absolute bottom-4 right-4 mt-5 botao-container">
+            <ButtonPrimaryMedio
+              text="Finalizar"
+              @click="mostrarResumo = true"
+              iconPath="/storage/images/arrow_left_alt.svg"
+            />
+          </div>
+          <!-- Coluna da direita (Formulário) -->
+          <div class="flex-1 p-4">
+            <CadastrarInsumoEstoque
+              :produtoSelecionado="produtoSelecionado"
+              @adicionarAoCarrinho="adicionarAoCarrinho"
+            />
           </div>
         </div>
       </div>
     </div>
   </transition>
+  <!-- Exibir o componente de resumo quando 'mostrarResumo' for true -->
+  <ResumoCarrinho
+    v-if="mostrarResumo"
+    :carrinho="carrinho"
+    @confirmar="confirmarEntrada"
+    @cancelar="mostrarResumo = false"
+  />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import CadastrarInsumoEstoque from './CadastrarInsumoEstoque.vue';
+import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
+import ResumoCarrinho from './ResumoCarrinho.vue';
 
 // Props
 defineProps({
@@ -86,8 +121,19 @@ defineProps({
 const produtos = ref([]);
 const searchQuery = ref('');
 const isLoading = ref(false);
+const produtoSelecionado = ref(null);
+const carrinho = ref([]);
+
+const mostrarResumo = ref(false);
 
 // Métodos
+const confirmarEntrada = () => {
+  // Lógica para confirmar a entrada no banco de dados
+  console.log('Entrada confirmada', carrinho.value);
+  mostrarModalRevisao.value = false;
+  carrinho.value = []; // Limpar carrinho após confirmação
+};
+
 const fetchProdutos = async () => {
   isLoading.value = true;
   try {
@@ -107,7 +153,16 @@ const getProfilePhotoUrl = (profilePhoto) => {
 };
 
 const selecionarProduto = (produto) => {
-  console.log('Produto selecionado:', produto);
+  produtoSelecionado.value = produto;
+};
+
+const quantidadeNoCarrinho = (produtoId) => {
+  return carrinho.value.filter((item) => item.id === produtoId).length;
+};
+
+const adicionarAoCarrinho = (produto) => {
+  carrinho.value.push(produto);
+  produtoSelecionado.value = null; // Fecha o formulário após adicionar
 };
 
 // Computados
@@ -122,6 +177,13 @@ onMounted(fetchProdutos);
 </script>
 
 <style scoped>
+.botao-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
 .estrela {
   color: gold;
   font-size: 20px;

@@ -22,7 +22,7 @@ defineProps({
   },
   placeholder: {
     type: String,
-    default: 'Digite aqui...',
+    default: '',
   },
 });
 </script>

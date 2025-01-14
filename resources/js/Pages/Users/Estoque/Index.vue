@@ -42,7 +42,7 @@
           <div
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 217.113,95
+            R$ {{ valorInicial }}
           </div>
         </div>
 
@@ -54,7 +54,7 @@
           <div
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 65.113,90
+            R$ {{ valorInsumos }}
           </div>
         </div>
 
@@ -66,7 +66,7 @@
           <div
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 154,30
+            {{ itensNoEstoque }}
           </div>
         </div>
       </div>
@@ -86,7 +86,6 @@
             alt="Filtro"
             class="w-5 h-5"
           />
-          <!-- Ajuste o tamanho do ícone conforme necessário -->
           <span class="text-gray-900 text-[17px] font-semibold">
             Filtrar resultados
           </span>
@@ -97,12 +96,12 @@
         <thead>
           <tr>
             <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 TrRedonEsquerda"
+              class="px-6 py-3 text-xs font-semibold text-gray-500 TrRedonEsquerda"
             >
               OPERAÇÃO
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               QTD.
             </th>
@@ -112,58 +111,53 @@
               Item
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               Quando
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
+              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
             >
               Responsável
             </th>
           </tr>
         </thead>
         <tbody>
-          <!-- Dados de exemplo -->
-          <tr>
+          <tr
+            v-for="(movimentacao, index) in historicoMovimentacoes"
+            :key="index"
+          >
             <td
-              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex items-center"
+              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex text-center"
             >
               <img
-                src="/storage/images/arrow_back_red.svg"
+                :src="
+                  movimentacao.operacao === 'Entrada'
+                    ? '/storage/images/arrow_back_verde.svg'
+                    : '/storage/images/arrow_back_red.svg'
+                "
                 alt="icon indicativo"
-                class="mr-5"
+                class="mr-5 text-center"
               />
-              Retirada
+              {{ movimentacao.operacao === 'Entrada' ? 'Entrada' : 'Retirada' }}
             </td>
-            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
-              10
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500">Produto A</td>
-            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
-              10/01/2025 às 18:15
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500">João</td>
-          </tr>
-          <tr>
             <td
-              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex items-center"
+              class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
             >
-              <img
-                src="/storage/images/arrow_back_verde.svg"
-                alt="icon indicativo"
-                class="mr-5"
-              />
-              Entrada
+              {{ movimentacao.quantidade }}
             </td>
-            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">5</td>
-            <td class="px-6 py-4 text-[16px] text-gray-500">Produto B</td>
             <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
-              09/01/2025 às 14:55
+              {{ movimentacao.item }}
             </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500">Maria</td>
+            <td
+              class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
+            >
+              {{ movimentacao.data }}
+            </td>
+            <td class="px-6 py-4 text-[16px] text-gray-500 text-center">
+              {{ movimentacao.responsavel }}
+            </td>
           </tr>
-          <!-- Adicione mais linhas conforme necessário -->
         </tbody>
       </table>
     </div>
@@ -171,8 +165,27 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
+
+const valorInicial = ref('0.00');
+const valorInsumos = ref('');
+const itensNoEstoque = ref('');
+const historicoMovimentacoes = ref([]);
+
+onMounted(async () => {
+  try {
+    const { data } = await axios.get('/api/estoque/incial'); // Ajuste a rota conforme necessário
+    // valorInicial.value = data.valorInicial;
+    valorInsumos.value = data.valorInsumos;
+    itensNoEstoque.value = data.itensNoEstoque;
+    historicoMovimentacoes.value = data.historicoMovimentacoes;
+  } catch (error) {
+    console.error('Erro ao carregar dados do painel:', error);
+  }
+});
 </script>
 
 <style lang="css" scoped>
@@ -200,7 +213,6 @@ table {
 th,
 td {
   padding: 12px;
-  text-align: center;
 }
 
 th {

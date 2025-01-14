@@ -3,10 +3,18 @@
     <!-- Cabeçalho da página -->
     <Head title="Insumos" />
 
-    <!-- Container principal da grade com 2 colunas -->
+    <!-- Container de novos produtos -->
+    <div v-if="showCadastroProduto" class="mt-6">
+      <CadastroProduto
+        :isVisible="showCadastroProduto"
+        @unidade-cadastrada="handleCadastro"
+        @cancelar="toggleCadastro"
+      />
+    </div>
+
+    <!-- Container principal -->
     <div
-      class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2 overflow-hidden card-container h-full overflow-y-scroll"
-      @scroll.passive
+      class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
     >
       <!-- Coluna 1: Listar Unidades -->
       <div v-if="!showCadastroProduto">
@@ -20,25 +28,14 @@
       <!-- Coluna 2: Alternar entre Detalhes e Cadastro -->
       <div class="flex flex-col gap-4">
         <template v-if="!showCadastroProduto">
-          <!-- Passa os dados do usuário selecionado apenas se existirem -->
           <template v-if="produtoSelecionado">
             <DetalhesProduto :produto="produtoSelecionado" />
           </template>
-
-          <div class="absolute bottom-4 right-4">
+          <div class="absolute bottom-4 right-4 botao-container">
             <ButtonPrimaryMedio
               text="Nova entrada"
               iconPath="/storage/images/arrow_left_alt.svg"
               @click="toggleCadastro"
-            />
-          </div>
-        </template>
-        <template v-else>
-          <div class="mt-4">
-            <CadastroProduto
-              :isVisible="showCadastroProduto"
-              @unidade-cadastrada="handleCadastro"
-              @cancelar="toggleCadastro"
             />
           </div>
         </template>
@@ -92,6 +89,13 @@ const ProdutoSelecionado = (produto) => {
 </script>
 
 <style lang="css" scoped>
+.botao-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
 .painel-title {
   font-size: 34px;
   font-weight: 700;

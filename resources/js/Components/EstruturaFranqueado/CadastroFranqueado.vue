@@ -5,7 +5,7 @@
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
-      <div v-else class="w-full h-[525px] bg-white rounded-[20px] p-12">
+      <div v-else class="w-full h-[200px] bg-white rounded-[20px] p-8">
         <form @submit.prevent="submitForm">
           <div class="flex justify-center mb-6 relative group">
             <!-- Quadrado com a imagem ou ícone -->

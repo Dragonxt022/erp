@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Fornecedor;
 use App\Models\UnidadeEstoque;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class UnidadeEstoqueController extends Controller
 {
@@ -13,11 +15,15 @@ class UnidadeEstoqueController extends Controller
         // Obtém a unidade do usuário autenticado
         $unidadeId = Auth::user()->unidade_id;
 
-        // Filtra os estoques pela unidade e formata os dados
+        // Filtra os estoques pela unidade, ordena por 'created_at' em ordem decrescente e formata os dados
         $estoques = UnidadeEstoque::with(['insumo', 'fornecedor', 'usuario', 'unidade'])
             ->where('unidade_id', $unidadeId)
+            ->orderBy('id', 'desc') // Ordena em ordem decrescente pela data de criação
             ->get()
             ->map(function ($estoque) {
+                // Calcula o valor total do insumo (preço * quantidade)
+                $valorTotal = ($estoque->preco_insumo / 100) * $estoque->quantidade;
+
                 return [
                     'id' => $estoque->id,
                     'insumo' => [
@@ -35,12 +41,11 @@ class UnidadeEstoqueController extends Controller
                         'id' => $estoque->usuario->id,
                         'nome' => $estoque->usuario->name,
                     ],
-                    'unidade' => [
-                        'id' => $estoque->unidade->id,
-                        'cidade' => $estoque->unidade->cidade,
-                    ],
                     'quantidade' => $estoque->quantidade,
-                    'preco_insumo' => $estoque->preco_insumo,
+                    // Converte 'preco_insumo' de centavos para reais e formata como moeda brasileira
+                    'preco_insumo' => 'R$ ' . number_format($estoque->preco_insumo / 100, 2, ',', '.'),
+                    // Valor total do insumo (preço * quantidade)
+                    'valor_total' => 'R$ ' . number_format($valorTotal, 2, ',', '.'),
                     'operacao' => $estoque->operacao,
                     'data_criacao' => $estoque->created_at->format('d/m/Y H:i'),
                 ];
@@ -50,59 +55,111 @@ class UnidadeEstoqueController extends Controller
         return response()->json($estoques);
     }
 
-    public function create()
+
+
+    public function painelInicialEstoque()
     {
-        return view('unidade_estoque.create');
+        $unidadeId = Auth::user()->unidade_id;
+
+        // Calcula o valor inicial do estoque e converte para reais
+        $valorInicial = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+
+        // Valor total em insumos, convertido para reais
+        $valorInsumos = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+
+        // Quantidade total de itens no estoque
+        $itensNoEstoque = UnidadeEstoque::where('unidade_id', $unidadeId)->sum('quantidade');
+
+        // Histórico de movimentações
+        $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
+            ->where('unidade_id', $unidadeId)
+            ->orderBy('id', 'desc')
+            ->take(10) // Limita a 10 registros
+            ->get()
+            ->map(function ($estoque) {
+                return [
+                    'operacao' => $estoque->operacao, // 'entrada' ou 'retirada'
+                    'quantidade' => $estoque->quantidade,
+                    'item' => $estoque->insumo->nome,
+                    'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
+                    'responsavel' => $estoque->usuario->name,
+                ];
+            });
+
+        return response()->json([
+            // 'valorInicial' => number_format($valorInicial, 2, ',', '.'),
+            'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
+            'itensNoEstoque' => $itensNoEstoque,
+            'historicoMovimentacoes' => $historicoMovimentacoes,
+        ]);
     }
 
-    public function store(Request $request)
+    public function unidadeForencedores()
     {
-        $validated = $request->validate([
-            'insumo_id' => 'required|exists:lista_produtos,id',
-            'fornecedor_id' => 'required|exists:fornecedores,id',
-            'usuario_id' => 'required|exists:users,id',
-            'quantidade' => 'required|integer',
-            'preco_insumo' => 'required|numeric',
-            'operacao' => 'required|in:Retirada,Entrada,Saida',
-            'unidade_id' => 'required|exists:infor_unidade,id',
+        // Recupera todos os fornecedores
+        $fornecedores = Fornecedor::all();
+
+        // Usando o map para selecionar os dados desejados
+        $fornecedoresData = $fornecedores->map(function ($fornecedor) {
+            return [
+                'id' => $fornecedor->id,
+                // 'cnpj' => $fornecedor->cnpj,
+                'razao_social' => $fornecedor->razao_social,
+                // 'email' => $fornecedor->email,
+                // 'whatsapp' => $fornecedor->whatsapp,
+                // 'estado' => $fornecedor->estado,
+            ];
+        });
+
+        return response()->json([
+            'data' => $fornecedoresData
+        ], 200);
+    }
+
+    // Adiciona os produtos a unidade selecionada
+    public function armazenarEntrada(Request $request)
+    {
+        // Validação dos dados recebidos
+        $validatedData = $request->validate([
+            'fornecedor_id' => 'nullable|integer|exists:fornecedores,id',
+            'itens' => 'required|array',
+            'itens.*.id' => 'required|integer|exists:lista_produtos,id',
+            'itens.*.quantidade' => 'required|numeric|min:0',
+            'itens.*.valorUnitario' => 'required|numeric|min:0',
+            'itens.*.unidadeDeMedida' => 'required|string|in:a_granel,unitario',
         ]);
 
-        UnidadeEstoque::create($validated);
+        DB::beginTransaction(); // Inicia uma transação
 
-        return redirect()->route('unidade_estoque.index')->with('success', 'Entrada de estoque registrada com sucesso!');
-    }
+        try {
+            foreach ($validatedData['itens'] as $item) {
+                // Adicionando a verificação para garantir que a quantidade seja numérica
+                $quantidade = floatval($item['quantidade']);
 
-    public function show(UnidadeEstoque $unidadeEstoque)
-    {
-        return view('unidade_estoque.show', compact('unidadeEstoque'));
-    }
+                DB::table('unidade_estoque')->insert([
+                    'insumo_id' => $item['id'],
+                    'fornecedor_id' => $validatedData['fornecedor_id'] ?? null, // Usando o fornecedor_id do JSON ou null
+                    'usuario_id' => Auth::id(), // ID do usuário autenticado
+                    'unidade_id' => Auth::user()->unidade_id, // Referência ao unidade_id do usuário autenticado
 
-    public function edit(UnidadeEstoque $unidadeEstoque)
-    {
-        return view('unidade_estoque.edit', compact('unidadeEstoque'));
-    }
+                    'quantidade' => $quantidade,
+                    'preco_insumo' => $item['valorUnitario'], // Valor já validado no frontend
+                    'operacao' => 'Entrada',
+                    'unidade' => $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
 
-    public function update(Request $request, UnidadeEstoque $unidadeEstoque)
-    {
-        $validated = $request->validate([
-            'insumo_id' => 'required|exists:lista_produtos,id',
-            'fornecedor_id' => 'required|exists:fornecedores,id',
-            'usuario_id' => 'required|exists:users,id',
-            'quantidade' => 'required|integer',
-            'preco_insumo' => 'required|numeric',
-            'operacao' => 'required|in:Retirada,Entrada,Saida',
-            'unidade_id' => 'required|exists:infor_unidade,id',
-        ]);
+            DB::commit(); // Confirma a transação
 
-        $unidadeEstoque->update($validated);
+            return response()->json(['message' => 'Itens armazenados com sucesso!'], 201);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Reverte a transação em caso de erro
 
-        return redirect()->route('unidade_estoque.index')->with('success', 'Entrada de estoque atualizada com sucesso!');
-    }
-
-    public function destroy(UnidadeEstoque $unidadeEstoque)
-    {
-        $unidadeEstoque->delete();
-
-        return redirect()->route('unidade_estoque.index')->with('success', 'Entrada de estoque excluída com sucesso!');
+            return response()->json(['error' => 'Erro ao armazenar itens: ' . $e->getMessage()], 500);
+        }
     }
 }

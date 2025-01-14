@@ -23,8 +23,14 @@
             >
               {{ produto.insumo.nome || 'N/A' }}
 
+              <div
+                class="text-[#6db631] text-xl font-bold font-['Figtree'] leading-[30px] tracking-tight cursor-pointer"
+                title="Soma do valor total de todos os produtos."
+              >
+                {{ produto.valor_total }}
+              </div>
               <!-- <div class="owner">
-                {{ produto.categoria }} / {{ produto.unidadeDeMedida }}
+                {{ produto.valor_total }}
               </div> -->
             </div>
           </div>
@@ -36,7 +42,7 @@
               @confirm="handleConfirm"
               @cancel="handleCancel"
             />
-            <div
+            <!-- <div
               class="absolute top-4 right-4 cursor-pointer"
               @click="showConfirmDialog('Excluir esse produto?')"
             >
@@ -45,20 +51,20 @@
                 alt="Deletar Usuário"
                 class="w-6 h-6"
               />
-            </div>
+            </div> -->
           </div>
         </div>
         <!-- Exibe o botão de edição apenas se uma unidade for selecionada -->
       </div>
     </div>
-    <div v-if="produto.id && !isEditMode" class="mt-4">
+    <!-- <div v-if="produto.id && !isEditMode" class="mt-4">
       <ButtonEditeMedio
         text="Editar insumos"
         icon-path="/storage/images/border_color.svg"
         @click="toggleEditMode"
         class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
       />
-    </div>
+    </div> -->
     <EditarProduto
       v-if="isEditMode"
       ref="dadosProduto"

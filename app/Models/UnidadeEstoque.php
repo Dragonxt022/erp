@@ -19,6 +19,7 @@ class UnidadeEstoque extends Model
         'preco_insumo',
         'operacao',
         'unidade_id',
+        'unidade',
     ];
 
     // Relacionamento com insumos (produtos)

@@ -7,7 +7,7 @@
 <style css>
 .login-btn-text {
   width: 100%;
-  height: 50px;
+  height: 47px;
   background: #6db631;
   border-radius: 10px;
   color: white;
