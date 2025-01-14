@@ -40,7 +40,7 @@
             <div class="icon-bg"></div>
             <div class="icon-leaf">
               <img
-                :src="getProfilePhotoUrl(produto.insumo.profile_photo)"
+                :src="getProfilePhotoUrl(produto.profile_photo)"
                 alt="Imagem do produto"
                 class="w-12 h-12 rounded-lg"
               />
@@ -49,11 +49,13 @@
           <div class="text-container flex justify-between items-center p-2">
             <!-- Nome do insumo -->
             <div class="city">
-              {{ produto.insumo.nome }}
+              {{ produto.nome }}
             </div>
             <!-- Quantidade -->
             <div class="quantidade text-gray-600 font-semibold">
-              {{ produto.quantidade }}
+              <div class="text-gray-600 font-semibold">
+                {{ getQuantidadeTotal(produto.lotes) }}
+              </div>
             </div>
           </div>
         </div>
@@ -81,7 +83,7 @@ export default {
       try {
         const response = await axios.get('/api/estoque/lista');
         console.log('Produtos carregados:', response.data);
-        this.produtos = response.data; // Atualiza os dados
+        this.produtos = Object.values(response.data); // Converte o objeto em array
       } catch (error) {
         console.error('Erro ao carregar os produtos:', error);
       }
@@ -97,12 +99,17 @@ export default {
     selecionarProduto(produto) {
       this.$emit('produto-selecionado', produto);
     },
+
+    // Calcula a quantidade total de todos os lotes de um produto
+    getQuantidadeTotal(lotes) {
+      return lotes.reduce((total, lote) => total + lote.quantidade, 0);
+    },
   },
   computed: {
     filteredProdutos() {
       const query = this.searchQuery.toLowerCase();
       return this.produtos.filter((produto) =>
-        produto.insumo.nome.toLowerCase().includes(query)
+        produto.nome.toLowerCase().includes(query)
       );
     },
   },

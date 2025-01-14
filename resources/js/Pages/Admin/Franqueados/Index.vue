@@ -4,7 +4,7 @@
     <Head title="Franqueados" />
 
     <!-- Container principal da grade com 2 colunas -->
-    <div class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2">
+    <div class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2">
       <!-- Coluna 1: Listar Unidades -->
       <div>
         <ListarUsuarios

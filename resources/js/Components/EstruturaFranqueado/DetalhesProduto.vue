@@ -10,7 +10,7 @@
           <!-- Coluna da Imagem -->
           <div class="w-1/1 flex justify-center">
             <img
-              :src="getProfilePhotoUrl(produto.insumo.profile_photo)"
+              :src="getProfilePhotoUrl(produto.profile_photo)"
               alt="Foto do Usuário"
               class="w-20 h-20 rounded-md shadow-lg"
             />
@@ -21,13 +21,13 @@
             <div
               class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
             >
-              {{ produto.insumo.nome || 'N/A' }}
+              {{ produto.nome || 'N/A' }}
 
               <div
                 class="text-[#6db631] text-xl font-bold font-['Figtree'] leading-[30px] tracking-tight cursor-pointer"
                 title="Soma do valor total de todos os produtos."
               >
-                {{ produto.valor_total }}
+                <!-- {{ produto.valor_total }} -->
               </div>
               <!-- <div class="owner">
                 {{ produto.valor_total }}
@@ -65,6 +65,39 @@
         class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
       />
     </div> -->
+    <!-- Tabela de Lotes -->
+    <div class="mt-8">
+      <table class="w-full border-collapse border border-gray-300">
+        <thead>
+          <tr>
+            <th class="border border-gray-300 p-2">Data</th>
+            <th class="border border-gray-300 p-2">Fornecedor</th>
+            <th class="border border-gray-300 p-2">Quantidade</th>
+            <th class="border border-gray-300 p-2">Preço Unitário</th>
+            <th class="border border-gray-300 p-2">Valor Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(lote, index) in produto.lotes" :key="index">
+            <td class="border border-gray-300 p-2 text-center">
+              {{ lote.data }}
+            </td>
+            <td class="border border-gray-300 p-2 text-center">
+              {{ lote.fornecedor }}
+            </td>
+            <td class="border border-gray-300 p-2 text-center">
+              {{ lote.quantidade }}
+            </td>
+            <td class="border border-gray-300 p-2 text-center">
+              {{ lote.preco_unitario }}
+            </td>
+            <td class="border border-gray-300 p-2 text-center">
+              {{ lote.valor_total }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <EditarProduto
       v-if="isEditMode"
       ref="dadosProduto"

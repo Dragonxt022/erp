@@ -5,7 +5,7 @@
 
     <!-- Container principal da grade com 2 colunas -->
     <div
-      class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2 overflow-hidden card-container h-full overflow-y-scroll"
+      class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 overflow-hidden card-container h-full overflow-y-scroll"
       @scroll.passive
     >
       <!-- Coluna 1: Listar Unidades -->

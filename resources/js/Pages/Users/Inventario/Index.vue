@@ -14,7 +14,7 @@
 
     <!-- Container principal -->
     <div
-      class="grid grid-cols-1 gap-4 mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
+      class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
     >
       <!-- Coluna 1: Listar Unidades -->
       <div v-if="!showCadastroProduto">
