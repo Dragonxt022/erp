@@ -158,7 +158,7 @@ const formatarValor = () => {
 const resetForm = () => {
   quantidade.value = '';
   valor.value = '';
-  fornecedorSelecionado.value = '';
+  //   fornecedorSelecionado.value = '';
 };
 
 // Busca Fornecedores da API
