@@ -128,7 +128,7 @@ class UnidadeEstoqueController extends Controller
             'itens.*.id' => 'required|integer|exists:lista_produtos,id',
             'itens.*.quantidade' => 'required|numeric|min:0',
             'itens.*.valorUnitario' => 'required|numeric|min:0',
-            'itens.*.unidadeDeMedida' => 'required|string|in:a_granel,unitario',
+            'itens.*.unidadeDeMedida' => 'nullable|string|in:a_granel,unitario',
         ]);
 
         DB::beginTransaction(); // Inicia uma transação
@@ -147,7 +147,7 @@ class UnidadeEstoqueController extends Controller
                     'quantidade' => $quantidade,
                     'preco_insumo' => $item['valorUnitario'], // Valor já validado no frontend
                     'operacao' => 'Entrada',
-                    'unidade' => $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade',
+                    'unidade' => empty($item['unidadeDeMedida']) ? 'kg' : ($item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade'),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
