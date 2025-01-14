@@ -10,49 +10,51 @@ use Illuminate\Support\Facades\DB;
 
 class UnidadeEstoqueController extends Controller
 {
+
     // public function index()
     // {
     //     // Obtém a unidade do usuário autenticado
     //     $unidadeId = Auth::user()->unidade_id;
 
-    //     // Filtra os estoques pela unidade, ordena por 'created_at' em ordem decrescente e formata os dados
-    //     $estoques = UnidadeEstoque::with(['insumo', 'fornecedor', 'usuario', 'unidade'])
+    //     // Filtra os estoques pela unidade
+    //     $estoques = UnidadeEstoque::with(['insumo', 'fornecedor'])
     //         ->where('unidade_id', $unidadeId)
-    //         ->orderBy('id', 'desc') // Ordena em ordem decrescente pela data de criação
-    //         ->get()
-    //         ->map(function ($estoque) {
-    //             // Calcula o valor total do insumo (preço * quantidade)
-    //             $valorTotal = ($estoque->preco_insumo / 100) * $estoque->quantidade;
+    //         ->orderBy('created_at', 'desc')
+    //         ->get();
 
-    //             return [
-    //                 'id' => $estoque->id,
-    //                 'insumo' => [
-    //                     'id' => $estoque->insumo->id,
-    //                     'nome' => $estoque->insumo->nome,
-    //                     'profile_photo' => $estoque->insumo->profile_photo,
-    //                     'categoria' => $estoque->insumo->categoria,
-    //                     'unidadeDeMedida' => $estoque->insumo->unidadeDeMedida,
-    //                 ],
-    //                 'fornecedor' => [
-    //                     'id' => $estoque->fornecedor->id,
-    //                     'razao_social' => $estoque->fornecedor->razao_social,
-    //                 ],
-    //                 'usuario' => [
-    //                     'id' => $estoque->usuario->id,
-    //                     'nome' => $estoque->usuario->name,
-    //                 ],
-    //                 'quantidade' => $estoque->quantidade,
-    //                 // Converte 'preco_insumo' de centavos para reais e formata como moeda brasileira
-    //                 'preco_insumo' => 'R$ ' . number_format($estoque->preco_insumo / 100, 2, ',', '.'),
-    //                 // Valor total do insumo (preço * quantidade)
-    //                 'valor_total' => 'R$ ' . number_format($valorTotal, 2, ',', '.'),
-    //                 'operacao' => $estoque->operacao,
-    //                 'data_criacao' => $estoque->created_at->format('d/m/Y H:i'),
-    //             ];
+    //     // Agrupa os estoques pelo insumo
+    //     $produtosAgrupados = $estoques->groupBy('insumo_id')->map(function ($lotes) {
+    //         // Pega o primeiro lote para obter informações do produto
+    //         $primeiroLote = $lotes->first();
+    //         $insumo = $primeiroLote->insumo;
+
+    //         // Calcular a soma do valor total do lote
+    //         $valorTotalLotes = $lotes->sum(function ($lote) {
+    //             return ($lote->preco_insumo / 100) * $lote->quantidade;
     //         });
 
+    //         return [
+    //             'id' => $insumo->id,
+    //             'nome' => $insumo->nome,
+    //             'profile_photo' => $insumo->profile_photo,
+    //             'categoria' => $insumo->categoria,
+    //             'unidadeDeMedida' => $insumo->unidadeDeMedida,
+    //             'lotes' => $lotes->map(function ($lote) {
+    //                 return [
+    //                     'data' => $lote->created_at->format('d/m/Y'),
+    //                     'fornecedor' => $lote->fornecedor->razao_social,
+    //                     'quantidade' => $lote->quantidade,
+    //                     'preco_unitario' => 'R$ ' . number_format($lote->preco_insumo / 100, 2, ',', '.'),
+    //                     'valor_total' => 'R$ ' . number_format(($lote->preco_insumo / 100) * $lote->quantidade, 2, ',', '.'),
+    //                 ];
+    //             }),
+    //             // Soma o valor total de todos os lotes do insumo
+    //             'valor_total_lote' => 'R$ ' . number_format($valorTotalLotes, 2, ',', '.'),
+    //         ];
+    //     });
+
     //     // Retorna os dados no formato JSON
-    //     return response()->json($estoques);
+    //     return response()->json($produtosAgrupados);
     // }
 
     public function index()
@@ -72,6 +74,20 @@ class UnidadeEstoqueController extends Controller
             $primeiroLote = $lotes->first();
             $insumo = $primeiroLote->insumo;
 
+            // Calcular a soma do valor total do lote
+            $valorTotalLotes = $lotes->sum(function ($lote) {
+                return ($lote->preco_insumo / 100) * $lote->quantidade;
+            });
+
+            // Verificar se o produto é por kg e calcular o valor por quilo
+            $valorPorQuilo = null;
+            if ($insumo->unidadeDeMedida === 'kg') {
+                // Calcular o valor por quilo para os produtos que são vendidos por kg
+                $valorPorQuilo = $lotes->sum(function ($lote) {
+                    return ($lote->preco_insumo / 100) / $lote->quantidade;
+                });
+            }
+
             return [
                 'id' => $insumo->id,
                 'nome' => $insumo->nome,
@@ -85,16 +101,22 @@ class UnidadeEstoqueController extends Controller
                         'quantidade' => $lote->quantidade,
                         'preco_unitario' => 'R$ ' . number_format($lote->preco_insumo / 100, 2, ',', '.'),
                         'valor_total' => 'R$ ' . number_format(($lote->preco_insumo / 100) * $lote->quantidade, 2, ',', '.'),
+                        // Adicionando cálculo do valor pago por quilo para produtos 'kg'
+                        'valor_pago_por_quilo' => $lote->unidade === 'kg'
+                            ? 'R$ ' . number_format(($lote->preco_insumo / 100) / $lote->quantidade, 2, ',', '.')
+                            : null,
                     ];
                 }),
+                // Soma o valor total de todos os lotes do insumo
+                'valor_total_lote' => 'R$ ' . number_format($valorTotalLotes, 2, ',', '.'),
+                // Adiciona o valor pago por quilo, se aplicável
+                'valor_pago_por_quilo' => $valorPorQuilo !== null ? 'R$ ' . number_format($valorPorQuilo, 2, ',', '.') : null,
             ];
         });
 
         // Retorna os dados no formato JSON
         return response()->json($produtosAgrupados);
     }
-
-
 
 
     public function painelInicialEstoque()

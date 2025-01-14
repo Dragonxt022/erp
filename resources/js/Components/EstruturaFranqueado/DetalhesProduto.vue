@@ -24,10 +24,9 @@
               {{ produto.nome || 'N/A' }}
 
               <div
-                class="text-[#6db631] text-xl font-bold font-['Figtree'] leading-[30px] tracking-tight cursor-pointer"
-                title="Soma do valor total de todos os produtos."
+                class="text-[#6db631] text-[25px] font-bold font-['Figtree'] mt-3 tracking-tight"
               >
-                <!-- {{ produto.valor_total }} -->
+                {{ produto.valor_total_lote }}
               </div>
               <!-- <div class="owner">
                 {{ produto.valor_total }}
@@ -67,31 +66,62 @@
     </div> -->
     <!-- Tabela de Lotes -->
     <div class="mt-8">
-      <table class="w-full border-collapse border border-gray-300">
+      <table class="min-w-full table-auto">
         <thead>
           <tr>
-            <th class="border border-gray-300 p-2">Data</th>
-            <th class="border border-gray-300 p-2">Fornecedor</th>
-            <th class="border border-gray-300 p-2">Quantidade</th>
-            <th class="border border-gray-300 p-2">Preço Unitário</th>
-            <th class="border border-gray-300 p-2">Valor Total</th>
+            <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonEsquerda"
+            >
+              entrada
+            </th>
+            <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Fornecedor
+            </th>
+            <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              qtd
+            </th>
+            <!-- Título da coluna, que muda dinamicamente -->
+
+            <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              {{ produto.unidadeDeMedida === 'unitario' ? 'v. unit' : 'v. kg' }}
+            </th>
+
+            <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonDireita"
+            >
+              total
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(lote, index) in produto.lotes" :key="index">
-            <td class="border border-gray-300 p-2 text-center">
+          <tr
+            v-for="(lote, index) in produto.lotes"
+            :key="index"
+            class="text-center"
+          >
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
               {{ lote.data }}
             </td>
-            <td class="border border-gray-300 p-2 text-center">
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
               {{ lote.fornecedor }}
             </td>
-            <td class="border border-gray-300 p-2 text-center">
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
               {{ lote.quantidade }}
             </td>
-            <td class="border border-gray-300 p-2 text-center">
-              {{ lote.preco_unitario }}
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+              {{
+                lote.valor_pago_por_quilo
+                  ? lote.valor_pago_por_quilo
+                  : lote.preco_unitario
+              }}
             </td>
-            <td class="border border-gray-300 p-2 text-center">
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
               {{ lote.valor_total }}
             </td>
           </tr>
@@ -195,6 +225,42 @@ const cancelEdit = () => {
 </script>
 
 <style scoped>
+/* Estilizando a tabela */
+table {
+  width: 100%;
+  margin-top: 20px;
+
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+}
+
+th {
+  background-color: #f3f8f3;
+  color: #262a27;
+  margin-bottom: 10px;
+}
+
+.TrRedonEsquerda {
+  border-radius: 20px 0px 0px 0px;
+}
+
+.TrRedonDireita {
+  border-radius: 0px 20px 0px 0px;
+}
+
+tr:nth-child(even) {
+  background-color: #f4f5f3;
+}
+
+tr:hover {
+  background-color: #dededea9;
+  cursor: pointer;
+}
+
 .elemento-fixo {
   position: -webkit-sticky; /* Para navegadores que exigem o prefixo */
   position: sticky;
@@ -216,38 +282,5 @@ const cancelEdit = () => {
   font-weight: 500;
   line-height: 18px;
   color: #6d6d6e;
-}
-
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* Estilos para o spinner */
-.spinner {
-  border: 4px solid #f3f3f3; /* Cor de fundo */
-  border-top: 4px solid #6db631; /* Cor do topo */
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  animation: spin 2s linear infinite;
-}
-
-/* Animação do spinner */
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
 }
 </style>

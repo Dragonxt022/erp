@@ -1,5 +1,8 @@
 <template>
   <div class="flex gap-5">
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
     <!-- Coluna da esquerda -->
     <div class="flex-1">
       <!-- Título principal -->
@@ -42,47 +45,98 @@
               V. UN/KG
             </th>
             <th
-              class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
+              class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               TOTAL
+            </th>
+            <th
+              class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
+            >
+              AÇÃO
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in carrinho" :key="item.id">
+          <tr
+            v-for="(item, index) in carrinho"
+            :key="item.id"
+            @dblclick="ativarEdicao(index)"
+          >
+            <!-- Nome do Item -->
             <td
               class="px-6 py-4 text-[16px] text-left text-gray-900 font-semibold"
             >
               {{ item.nome }}
             </td>
+
+            <!-- Quantidade -->
             <td
               class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
             >
-              {{ item.quantidade }}
+              <input
+                v-if="indexEditavel === index"
+                type="number"
+                v-model.number="item.quantidade"
+                class="border border-gray-300 rounded px-2 py-1 w-16"
+              />
+              <span v-else>
+                {{ item.quantidade }}
+                {{ item.unidadeDeMedida === 'a_granel' ? 'KG' : 'UN' }}
+              </span>
             </td>
+
+            <!-- Valor Unitário ou Valor por Quilo -->
             <td
               class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-left"
             >
-              {{
-                item.unidadeDeMedida === 'a_granel'
-                  ? `${valorPorQuilo(item).toFixed(2)} /kg`
-                  : item.valor
-              }}
+              <span v-if="item.unidadeDeMedida === 'a_granel'">
+                R$ {{ valorPorQuilo(item).toFixed(2) }}
+              </span>
+              <input
+                v-else-if="indexEditavel === index"
+                type="text"
+                v-model="item.valor"
+                class="border border-gray-300 rounded px-2 py-1 w-20"
+              />
+              <span v-else>
+                {{ item.valor }}
+              </span>
             </td>
+
+            <!-- Valor Total -->
             <td class="px-6 py-4 text-[16px] text-gray-500 text-center">
-              {{
-                calcularTotal(item).toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })
-              }}
+              <input
+                v-if="
+                  indexEditavel === index && item.unidadeDeMedida === 'a_granel'
+                "
+                type="number"
+                v-model.number="item.valorTotal"
+                class="border border-gray-300 rounded px-2 py-1 w-20"
+              />
+              <span v-else>
+                {{
+                  calcularTotal(item).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })
+                }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <button @click="removerItem(index)" class="w-[16] h-[16]">
+                <img
+                  src="/storage/images/delete.svg"
+                  alt="icone de excluir"
+                  class="w-[16px] h-[16px]"
+                />
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div class="botao-container">
-        <ButtonCancelar text="Cancelar" @click="cancelarResumo" />
+      <div v-if="!isSending" class="botao-container">
+        <ButtonCancelar text="Voltar" @click="cancelarResumo" />
         <ButtonPrimaryMedio text="Confirmar" @click="enviarEntrada" />
       </div>
     </div>
@@ -90,11 +144,11 @@
 </template>
 
 <script setup>
-import axios from 'axios';
+import { ref } from 'vue';
+import { useToast } from 'vue-toastification';
+import { Inertia } from '@inertiajs/inertia';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
-import { Inertia } from '@inertiajs/inertia';
-import { useToast } from 'vue-toastification';
 
 const toast = useToast();
 
@@ -107,31 +161,46 @@ const props = defineProps({
 
 const emit = defineEmits(['confirmar', 'cancelar']);
 
-// Função para calcular o valor por quilo
+const isLoading = ref(false);
+const isSending = ref(false);
+
+const indexEditavel = ref(null);
+
+const removerItem = (index) => {
+  props.carrinho.splice(index, 1); // Remove o item do carrinho
+  toast.info('Item removido com sucesso!');
+};
+
+const ativarEdicao = (index) => {
+  indexEditavel.value = index;
+};
+
 const valorPorQuilo = (item) => {
+  const valorTotal = parseFloat(
+    (item.valor || '0').replace('R$', '').replace(',', '.')
+  );
+  return item.quantidade > 0 ? valorTotal / item.quantidade : 0;
+};
+
+const calcularTotal = (item) => {
   if (item.unidadeDeMedida === 'a_granel') {
+    const valorPorKG = valorPorQuilo(item);
+    return valorPorKG * item.quantidade;
+  } else {
     return (
-      parseFloat(item.valor.replace('R$', '').replace(',', '.')) /
-      item.quantidade
+      item.quantidade *
+      parseFloat(item.valor.replace('R$', '').replace(',', '.'))
     );
   }
-  return parseFloat(item.valor.replace('R$', '').replace(',', '.'));
 };
 
-// Função para calcular o total
-const calcularTotal = (item) => {
-  return item.unidadeDeMedida === 'a_granel'
-    ? valorPorQuilo(item) * item.quantidade
-    : item.quantidade *
-        parseFloat(item.valor.replace('R$', '').replace(',', '.'));
-};
-
-// Função para enviar os dados ao controlador
 const enviarEntrada = async () => {
+  isLoading.value = true;
+  isSending.value = true;
   try {
-    // Acessar a prop `carrinho` diretamente
+    // Organizando os dados para enviar
     const dadosEntrada = {
-      fornecedor_id: props.carrinho[0]?.fornecedor_id || null, // Usar `props.carrinho` diretamente
+      fornecedor_id: props.carrinho[0]?.fornecedor_id || null,
       itens: props.carrinho.map((item) => ({
         id: item.id,
         nome: item.nome,
@@ -146,21 +215,32 @@ const enviarEntrada = async () => {
 
     console.log('Dados enviados:', JSON.stringify(dadosEntrada, null, 2));
 
-    // Envio para o backend
+    // Enviar os dados para o backend
     const response = await axios.post(
       '/api/estoque/armazenar-entrada',
       dadosEntrada
     );
-    console.log('Resposta da API:', response.data);
-    Inertia.visit(route('franqueado.inventario'));
-    toast.success('Lista de insumos salvas em seu estoque.');
-    // emit('confirmar'); // Emite evento de confirmação
+
+    // Verifique a resposta da API antes de continuar
+    if (response.status === 201) {
+      console.log('Resposta da API:', response.data);
+
+      // Redirecionando para a rota de inventário
+      Inertia.visit(route('franqueado.inventario'));
+
+      // Notificando o sucesso
+      toast.success('Lista de insumos salvas em seu estoque.');
+    } else {
+      // Caso a resposta da API não seja bem-sucedida
+      toast.error('Erro ao salvar no estoque, tente novamente.');
+    }
   } catch (error) {
-    toast.error('Ouve um erro, tente novamente ou chame o suporte.');
-    console.error(
-      'Erro ao enviar entrada:',
-      error.response?.data || error.message
+    console.error('Erro ao enviar entrada:', error);
+    toast.error(
+      'Erro ao confirmar entrada. Tente novamente ou chame o suporte.'
     );
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -232,5 +312,49 @@ tr:hover {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para o spinner */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  position: relative; /* Necessário para centralizar a imagem dentro */
+  border: 4px solid #f3f3f3; /* Cor de fundo */
+  border-top: 4px solid #6db631; /* Cor do topo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+/* Animação do spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilo para a imagem centralizada */
+.spinner img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Centraliza a imagem */
+  width: 32px;
+  height: 32px;
 }
 </style>
