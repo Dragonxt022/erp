@@ -135,6 +135,13 @@ const menuCategories = [
         link: 'logout',
         isLogout: true,
       },
+      {
+        label: 'Taiksu IA',
+        icon: '/storage/images/TAIKSU_IA_ICONE.svg',
+        link: 'franqueado.midias',
+        isLogout: false,
+        isActive: false,
+      },
     ],
   },
 ];

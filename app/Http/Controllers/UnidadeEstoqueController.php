@@ -100,8 +100,10 @@ class UnidadeEstoqueController extends Controller
     {
         $unidadeId = Auth::user()->unidade_id;
 
-        // Obtém todos os itens do estoque da unidade
-        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->get();
+        // Obtém todos os itens do estoque da unidade, mas filtra os itens com quantidade > 0
+        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)  // Filtra os itens com quantidade maior que 0
+            ->get();
 
         // Calcula o valor total dos insumos considerando a unidade de medida
         $valorInsumos = $estoque->reduce(function ($total, $item) {
@@ -118,18 +120,24 @@ class UnidadeEstoqueController extends Controller
             return $total;
         }, 0);
 
-        // Quantidade total de itens no estoque
-        $itensNoEstoque = $estoque->sum('quantidade');
+        // Quantidade total de itens no estoque (contando "kg" como 1 item)
+        $itensNoEstoque = $estoque->reduce(function ($total, $item) {
+            if ($item->unidade === 'kg') {
+                return $total + 1; // Conta cada 'kg' como 1 item
+            }
+            return $total + $item->quantidade; // Conta as unidades normalmente
+        }, 0);
 
-        // Histórico de movimentações
         $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)  // Filtra itens com quantidade maior que 0 no histórico também
             ->orderBy('id', 'desc')
             ->take(10)
             ->get()
             ->map(function ($estoque) {
                 return [
                     'operacao' => $estoque->operacao,
+                    'unidade' => $estoque->unidade,
                     'quantidade' => $estoque->quantidade,
                     'item' => $estoque->insumo->nome ?? 'N/A',
                     'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
@@ -143,6 +151,8 @@ class UnidadeEstoqueController extends Controller
             'historicoMovimentacoes' => $historicoMovimentacoes,
         ]);
     }
+
+
 
     // Lista os fornecederes
     public function unidadeForencedores()

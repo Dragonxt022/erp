@@ -126,6 +126,9 @@
           <tr
             v-for="(movimentacao, index) in historicoMovimentacoes"
             :key="index"
+            :style="
+              movimentacao.quantidade === 5 ? 'background-color: #fee2e2;' : ''
+            "
           >
             <td
               class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex text-center"
@@ -145,6 +148,7 @@
               class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
             >
               {{ movimentacao.quantidade }}
+              {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
             </td>
             <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
               {{ movimentacao.item }}
