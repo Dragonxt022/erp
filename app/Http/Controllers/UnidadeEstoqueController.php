@@ -29,20 +29,28 @@ class UnidadeEstoqueController extends Controller
             $primeiroLote = $lotes->first();
             $insumo = $primeiroLote->insumo;
 
+            // Filtra os lotes com quantidade > 0
+            $lotesDisponiveis = $lotes->filter(function ($lote) {
+                return $lote->quantidade > 0; // Só manter os lotes com estoque maior que 0
+            });
+
+            // Se não houver lotes disponíveis, não exibe o produto
+            if ($lotesDisponiveis->isEmpty()) {
+                return null; // Retorna null para ocultar o produto
+            }
+
             // Calcular a soma do valor total do lote (valor unitário * quantidade)
-            $valorTotalLotes = $lotes->sum(function ($lote) {
+            $valorTotalLotes = $lotesDisponiveis->sum(function ($lote) {
                 return ($lote->preco_insumo / 100) * $lote->quantidade;
             });
 
             // Calcular a soma do valor pago por quilo para os produtos 'a_granel'
             $valorPagoPorQuiloLote = null;
             if ($insumo->unidadeDeMedida === 'a_granel') {
-                $valorPagoPorQuiloLote = $lotes->sum(function ($lote) {
+                $valorPagoPorQuiloLote = $lotesDisponiveis->sum(function ($lote) {
                     return ($lote->preco_insumo / 100); // Soma apenas o valor unitário (não multiplicado pela quantidade)
                 });
             }
-
-
 
             return [
                 'id' => $insumo->id,
@@ -50,7 +58,7 @@ class UnidadeEstoqueController extends Controller
                 'profile_photo' => $insumo->profile_photo,
                 'categoria' => $insumo->categoria,
                 'unidadeDeMedida' => $insumo->unidadeDeMedida,
-                'lotes' => $lotes->map(function ($lote) use ($insumo) {
+                'lotes' => $lotesDisponiveis->map(function ($lote) use ($insumo) {
                     // Calcular o valor unitário
                     $valorUnitario = $lote->preco_insumo / 100;
                     $valorTotal = $valorUnitario * $lote->quantidade; // Valor total do lote
@@ -80,11 +88,12 @@ class UnidadeEstoqueController extends Controller
                 'valor_pago_por_quilo_lote' => $valorPagoPorQuiloLote !== null
                     ? 'R$ ' . number_format($valorPagoPorQuiloLote, 2, ',', '.') : null,
             ];
-        });
+        })->filter(); // Remove os produtos que foram marcados como null
 
         // Retorna os dados no formato JSON
         return response()->json($produtosAgrupados);
     }
+
 
     // Responsavel pelos dados da tela de estoque
     public function painelInicialEstoque()
