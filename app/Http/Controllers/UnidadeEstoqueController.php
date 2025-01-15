@@ -62,6 +62,7 @@ class UnidadeEstoqueController extends Controller
 
                     return [
                         'id' => $lote->id,
+                        'unidadeDeMedida' => $insumo->unidadeDeMedida,
                         'data' => $lote->created_at->format('d/m/Y'),
                         'fornecedor' => $lote->fornecedor->razao_social,
                         'quantidade' => $lote->quantidade,
@@ -203,27 +204,80 @@ class UnidadeEstoqueController extends Controller
     }
 
     // Atualiza o lote
+    // public function update(Request $request, $loteId)
+    // {
+    //     // Validação dos dados
+    //     $request->validate([
+    //         'quantidade' => 'required|numeric|min:0',
+    //     ]);
+
+    //     // Busca o lote pelo ID
+    //     $lote = UnidadeEstoque::findOrFail($loteId);
+
+    //     // Obtém os dados da tabela
+    //     $unidade = $lote->unidade; // Exemplo: 'unidade' ou 'kg'
+
+    //     // Calcula a diferença de quantidade
+    //     $quantidadeAntiga = $lote->quantidade;
+    //     $novaQuantidade = $request->input('quantidade');
+    //     $diferencaQuantidade = $novaQuantidade - $quantidadeAntiga;
+
+    //     // Realiza os cálculos com base na unidade
+    //     if ($unidade === 'unidade') {
+    //         // Produto por unidade: calcula o preço unitário em centavos
+    //         $precoUnitarioCentavos = $lote->preco_insumo / $quantidadeAntiga;
+    //         $novoValorTotalCentavos = $novaQuantidade * $precoUnitarioCentavos;
+    //     } elseif ($unidade === 'kg') {
+    //         // Produto por quilo: calcula o valor por quilo em centavos
+    //         $valorPorQuiloCentavos = $lote->preco_insumo / $quantidadeAntiga;
+    //         $novoValorTotalCentavos = $novaQuantidade * $valorPorQuiloCentavos;
+    //     } else {
+    //         return response()->json(['error' => 'Unidade de medida inválida.'], 400);
+    //     }
+
+    //     // Atualiza a quantidade e o preço total no lote (em centavos)
+    //     $lote->quantidade = $novaQuantidade;
+    //     $lote->preco_insumo = round($novoValorTotalCentavos); // Armazena em centavos
+    //     $lote->updated_at = now(); // Atualiza o timestamp
+
+    //     $lote->save();
+
+    //     return response()->json([
+    //         'message' => 'Quantidade e valores atualizados com sucesso!',
+    //         'lote' => [
+    //             'id' => $lote->id,
+    //             'insumo_id' => $lote->insumo_id,
+    //             'quantidade' => $lote->quantidade,
+    //             'preco_insumo' => number_format($lote->preco_insumo / 100, 2, ',', '.'), // Exibe em reais
+    //         ],
+    //     ]);
+    // }
+
     public function update(Request $request, $loteId)
     {
         // Validação dos dados
         $request->validate([
-            'quantidade' => 'required|numeric|min:0', // Verifica se a quantidade é um número válido
+            'quantidade' => 'required|numeric|min:0',
         ]);
 
         // Busca o lote pelo ID
         $lote = UnidadeEstoque::findOrFail($loteId);
 
-        // Atualiza a quantidade do lote
-        $lote->quantidade = $request->input('quantidade');
+        // Obtém a nova quantidade
+        $novaQuantidade = $request->input('quantidade');
+
+        // Atualiza a quantidade e o timestamp
+        $lote->quantidade = $novaQuantidade;
+        $lote->updated_at = now(); // Atualiza o timestamp
+
         $lote->save();
 
         return response()->json([
             'message' => 'Quantidade atualizada com sucesso!',
             'lote' => [
                 'id' => $lote->id,
-                'insumo_id' => $lote->insumo_id,
                 'quantidade' => $lote->quantidade,
             ],
-        ]);
+        ], 201);
     }
 }

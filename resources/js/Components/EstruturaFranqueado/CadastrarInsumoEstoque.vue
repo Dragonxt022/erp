@@ -127,23 +127,19 @@ const unidadePlaceholder = computed(() => {
 
 // Validação da quantidade
 const validarQuantidade = () => {
-  const regex =
-    props.produtoSelecionado.unidadeDeMedida === 'a_granel'
-      ? /^[0-9]+(\.[0-9]+)?$/ // Aceita números inteiros e fracionados
-      : /^[0-9]+$/; // Aceita apenas números inteiros
+  let regex = /^[0-9]+(\.[0-9]+)?$/; // Aceita números inteiros e fracionados
+  if (props.produtoSelecionado.unidadeDeMedida === 'unidade') {
+    regex = /^[0-9]+$/; // Aceita apenas números inteiros
+  }
 
   quantidadeInvalida.value = !regex.test(quantidade.value);
-};
 
-// Validação do fornecedor
-const validarFornecedor = () => {
-  fornecedorInvalido.value = !fornecedorSelecionado.value;
-};
-
-// Validação do valor
-const validarValor = () => {
-  const regexValor = /^[0-9]+(\.[0-9]{1,2})?$/; // Aceita números com até 2 casas decimais
-  valorInvalido.value = !regexValor.test(valor.value);
+  // Se for unidade "a_granel" e um número inteiro, adicionar ".0"
+  if (props.produtoSelecionado.unidadeDeMedida === 'a_granel') {
+    if (!quantidade.value.includes('.')) {
+      quantidade.value = `${quantidade.value}.0`; // Adiciona o zero ao lado direito
+    }
+  }
 };
 
 // Função para formatar o valor em centavos
@@ -230,7 +226,7 @@ const adicionarProduto = () => {
   position: -webkit-sticky; /* Para navegadores que exigem o prefixo */
   position: sticky;
   top: 0; /* Defina o valor para o topo de onde o elemento ficará fixo */
-  z-index: 10; /* Para garantir que o elemento fique sobre outros */
+  z-index: 0; /* Para garantir que o elemento fique sobre outros */
 }
 /* Tornando a lista rolável com barra de rolagem invisível */
 .scrollbar-hidden::-webkit-scrollbar {

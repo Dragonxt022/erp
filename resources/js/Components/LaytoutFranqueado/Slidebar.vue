@@ -106,11 +106,14 @@ const menuCategories = [
         ],
         isActive: false,
       },
-    ],
-  },
-  {
-    name: 'Parâmetros da Franquia',
-    items: [
+      {
+        label: 'Taiksu IA',
+        icon: '/storage/images/TAIKSU_IA_ICONE.svg',
+        link: 'franqueado.midias',
+        isLogout: false,
+        isActive: false,
+      },
+
       {
         label: 'Sair',
         icon: '/storage/images/log-out.png',

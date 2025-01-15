@@ -5,156 +5,113 @@
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
-      <div v-else class="w-full h-[80%] bg-white rounded-[20px] p-12">
-        <form @submit.prevent="submitForm">
-          <!-- Upload de Imagem -->
-          <div class="flex justify-center mb-6 relative group">
-            <div
-              class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
-              @click="openFileSelector"
-            >
-              <template v-if="profilePhotoUrl">
+      <div v-else>
+        <div class="w-full h-[80%] bg-white rounded-[20px] p-12">
+          <div class="relative w-full h-full">
+            <!-- Container das colunas -->
+            <div class="flex items-center">
+              <!-- Coluna da Imagem -->
+              <div class="w-1/1 flex justify-center">
                 <img
-                  :src="getProfilePhotoUrl(profilePhotoUrl)"
-                  alt="Imagem selecionada"
-                  class="w-full h-full object-cover"
+                  :src="getProfilePhotoUrl(produto.profile_photo)"
+                  alt="Foto do Produto"
+                  class="w-20 h-20 rounded-md shadow-lg"
                 />
+              </div>
+
+              <div class="w-2/3 pl-5">
                 <div
-                  class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  @click.stop
+                  class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
                 >
-                  <button
-                    @click.stop="removeImage"
-                    class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-sm"
+                  {{ produto.nome || 'N/A' }}
+
+                  <div
+                    class="text-[#6db631] text-[25px] font-bold font-['Figtree'] mt-3 tracking-tight"
                   >
-                    X
-                  </button>
+                    {{
+                      produto.unidadeDeMedida === 'a_granel' &&
+                      produto.valor_pago_por_quilo_lote
+                        ? produto.valor_pago_por_quilo_lote
+                        : produto.valor_total_lote
+                    }}
+                  </div>
                 </div>
-              </template>
-              <template v-else>
-                <img
-                  src="/storage/images/arrow_upload_ready.svg"
-                  alt="Ícone de upload"
-                />
-              </template>
+              </div>
             </div>
-            <input
-              type="file"
-              ref="fileInput"
-              accept="image/*"
-              class="hidden"
-              @change="handleImageUpload"
-            />
+          </div>
+        </div>
+        <form @submit.prevent="showConfirmDialog('Atualizar este produto?')">
+          <!-- Tabela de Lotes -->
+          <div class="mt-5">
+            <table class="min-w-full table-auto">
+              <thead>
+                <tr>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider TrRedonEsquerda"
+                  >
+                    entrada
+                  </th>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider"
+                  >
+                    Fornecedor
+                  </th>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider"
+                  >
+                    qtd
+                  </th>
+                  <!-- Título da coluna, que muda dinamicamente -->
+
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider TrRedonDireita"
+                  >
+                    {{
+                      produto.unidadeDeMedida === 'unitario'
+                        ? 'v. unit'
+                        : 'v. kg'
+                    }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="lote in produto.lotes" :key="lote.id">
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    {{ lote.data }}
+                  </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    {{ lote.fornecedor }}
+                  </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    <input
+                      v-model="lote.quantidade"
+                      type="number"
+                      min="0"
+                      class="border rounded-lg px-2 py-1 w-[75px] h-[32px] text-center"
+                      @input="updateLote(lote)"
+                    />
+                  </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    {{ lote.preco_unitario }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          <!-- Campo Nome -->
-          <LabelModel text="Nome" />
-          <InputModel v-model="nome" placeholder="" />
-
-          <div v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </div>
-
-          <!-- Prioridade -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Prioridade"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="principal"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="categoria === 'principal'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Principal</span>
-            </label>
-
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="secundario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="categoria === 'secundario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Secundário</span>
-            </label>
-          </div>
-
-          <!-- Unidade de medida -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Unidade de medida"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="a_granel"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'a_granel'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>A granel</span>
-            </label>
-
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="unitario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'unitario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Unitário</span>
-            </label>
-          </div>
-
-          <div class="flex justify-start space-x-1 mt-[15%]">
-            <ButtonCancelar text="Cancelar" @click="cancelForm" />
-            <ButtonPrimaryMedio
-              text="Atualizar"
-              @click="showConfirmDialog('Atualizar esse Produto?')"
-            />
+          <!-- Botões -->
+          <div class="flex justify-left mt-12">
+            <ButtonCancelar text="Voltar" @click="cancelForm" />
           </div>
         </form>
-        <ConfirmDialog
-          :isVisible="isConfirmDialogVisible"
-          :motivo="motivo"
-          @confirm="handleConfirm"
-          @cancel="handleCancel"
-        />
       </div>
     </div>
   </transition>
@@ -163,14 +120,11 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
-import { Inertia } from '@inertiajs/inertia';
 import { defineProps, defineEmits } from 'vue';
 import axios from 'axios';
-import InputModel from '../Inputs/InputModel.vue';
-import LabelModel from '../Label/LabelModel.vue';
-import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
+import debounce from 'lodash/debounce'; // Importando debounce do lodash
+
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
-import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 
 const toast = useToast();
 
@@ -189,11 +143,6 @@ const emit = defineEmits(['cancelar']);
 
 const nome = ref('');
 const categoria = ref('');
-const unidadeDeMedida = ref('');
-const profilePhotoUrl = ref('');
-const selectedFile = ref(null);
-const errorMessage = ref('');
-const fileInput = ref(null);
 const isLoading = ref(false);
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
@@ -205,8 +154,6 @@ watch(
     if (novoProduto) {
       nome.value = novoProduto.nome || '';
       categoria.value = novoProduto.categoria || '';
-      unidadeDeMedida.value = novoProduto.unidadeDeMedida || '';
-      profilePhotoUrl.value = novoProduto.profile_photo || '';
     }
   },
   { immediate: true }
@@ -220,94 +167,23 @@ const getProfilePhotoUrl = (profilePhoto) => {
   return new URL(profilePhoto, window.location.origin).href;
 };
 
-const submitForm = async () => {
-  if (!nome.value) {
-    toast.error('O campo nome é obrigatório.');
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-
-    // Criar uma nova instância de FormData
-    const formData = new FormData();
-
-    // Passando os dados do produto (nome e id)
-    formData.append('id', props.produto.id);
-    formData.append('nome', nome.value);
-    formData.append('categoria', categoria.value);
-    formData.append('unidadeDeMedida', unidadeDeMedida.value);
-
-    // Gerar o nome para a imagem (pode ser um nome único)
-    if (selectedFile.value) {
-      const imageName = `${Date.now()}_${selectedFile.value.name}`;
-      formData.append('profile_photo_name', imageName);
-      formData.append('profile_photo', selectedFile.value);
-    }
-
-    // Enviar os dados para o backend
-    const response = await axios.post(`/api/produtos/atualizar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+// Atualiza o lote com debounce para evitar múltiplas requisições seguidas
+const updateLote = debounce((lote) => {
+  axios
+    .put(`/api/estoque/estoque/lote/${lote.id}`, {
+      quantidade: lote.quantidade,
+    })
+    .then((response) => {
+      toast.success('Quantidade do lote atualizada!');
+    })
+    .catch((error) => {
+      toast.error('Erro ao atualizar o lote.');
     });
-
-    // Atualizar a página sem perder o estado, mantendo os dados atualizados
-    Inertia.replace(route('franqueadora.insumos'), {
-      produto: response.data.produto, // Atualize os dados do produto com a resposta
-      preserveState: true, // Preserve o estado atual da página
-    });
-
-    toast.success('Produto atualizado com sucesso!');
-  } catch (error) {
-    toast.error('Erro ao atualizar o produto.');
-    errorMessage.value = error.response?.data?.message || 'Erro inesperado.';
-  } finally {
-    isLoading.value = false;
-  }
-};
+}, 1000); // 1000ms = 1 segundo de delay
 
 const showConfirmDialog = (motivoParam) => {
   motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
   isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
-};
-
-const handleConfirm = () => {
-  submitForm();
-  isConfirmDialogVisible.value = false;
-};
-
-const handleCancel = () => {
-  isConfirmDialogVisible.value = false;
-};
-
-const openFileSelector = () => {
-  fileInput.value?.click();
-};
-
-const removeImage = () => {
-  profilePhotoUrl.value = '';
-  toast.info('Imagem removida.');
-};
-
-// Validação de tipo e tamanho do arquivo de imagem
-const handleImageUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem não pode exceder 5 MB.');
-      return;
-    }
-
-    selectedFile.value = file;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      profilePhotoUrl.value = reader.result;
-      toast.success('Imagem carregada com sucesso!');
-    };
-    reader.readAsDataURL(file);
-  }
 };
 
 const cancelForm = () => {
@@ -316,6 +192,41 @@ const cancelForm = () => {
 </script>
 
 <style scoped>
+/* Estilizando a tabela */
+table {
+  width: 100%;
+  margin-top: 20px;
+
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px;
+}
+
+th {
+  background-color: #d2fac3;
+  color: #262a27;
+  margin-bottom: 10px;
+}
+
+.TrRedonEsquerda {
+  border-radius: 20px 0px 0px 0px;
+}
+
+.TrRedonDireita {
+  border-radius: 0px 20px 0px 0px;
+}
+
+tr:nth-child(even) {
+  background-color: #f4f5f3;
+}
+
+tr:hover {
+  background-color: #dededea9;
+  cursor: pointer;
+}
 /* Customiza as opções de rádio */
 .w-5 {
   width: 1.25rem;

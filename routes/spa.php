@@ -69,13 +69,9 @@ Route::prefix('api')->middleware([
         Route::get('/lista', [UnidadeEstoqueController::class, 'index'])->name('listaEstoque.index');
         Route::get('/incial', [UnidadeEstoqueController::class, 'painelInicialEstoque'])->name('painelInicialEstoque.index');
         Route::get('/fornecedores', [UnidadeEstoqueController::class, 'unidadeForencedores'])->name('unidadeForencedores.index');
-
         Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
 
-
-        // Route::post('/cadastrar', [UnidadeEstoqueController::class, 'store'])->name('cadastrar.store');
-        // Route::post('/atualizar', [UnidadeEstoqueController::class, 'update'])->name('atualizarProdutos.update');
-        // Route::delete('/excluir/{id}', [UnidadeEstoqueController::class, 'destroy'])->name('excluir.produto');
+        Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
     });
 
     Route::prefix('produtos')->group(function () {

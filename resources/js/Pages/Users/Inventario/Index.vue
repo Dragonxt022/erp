@@ -19,6 +19,7 @@
       <!-- Coluna 1: Listar Unidades -->
       <div v-if="!showCadastroProduto">
         <ListarInsumos
+          :key="listaKey"
           ref="listarUnidades"
           @unidade-cadastrada="fetchUnidades"
           @produto-selecionado="ProdutoSelecionado"
@@ -29,9 +30,15 @@
       <div class="flex flex-col gap-4">
         <template v-if="!showCadastroProduto">
           <template v-if="produtoSelecionado">
-            <DetalhesProduto :produto="produtoSelecionado" />
+            <DetalhesProduto
+              @atualizar="atualizarLista"
+              :produto="produtoSelecionado"
+            />
           </template>
-          <div class="absolute bottom-4 right-4 botao-container">
+          <div
+            v-if="!isVisible"
+            class="absolute bottom-4 right-4 botao-container"
+          >
             <ButtonPrimaryMedio
               text="Nova entrada"
               iconPath="/storage/images/arrow_left_alt.svg"
@@ -55,27 +62,36 @@ import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 
 // Dados do usuário selecionado
 const produtoSelecionado = ref(null);
-
+const listaKey = ref(0);
 const showCadastroProduto = ref(false);
+const isVisible = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
 const toggleCadastro = () => {
   showCadastroProduto.value = !showCadastroProduto.value;
 };
 
-// Atualiza a lista de unidades após o cadastro
+// Atualzia o componet de inusmos apos atualizar as quantidades
+const atualizarLista = () => {
+  console.log('atualizando a lista');
+  produtoSelecionado.value = null;
+  // Atualiza a chave, forçando a reinicialização do componente
+  listaKey.value += 1;
+};
+
+// Atualiza a lista de Inumos após o cadastro
 const handleCadastro = () => {
   fetchUnidades();
   showCadastroProduto.value = false;
 };
 
-// Atualiza a lista de unidades
+// Atualiza a lista de inumos
 const fetchUnidades = () => {
   const listarUnidades = ref('listarUnidades');
   listarUnidades.value?.fetchUnidades();
 };
 
-// Define os dados da unidade selecionada
+// Define os dados da Inusmos  selecionada
 const ProdutoSelecionado = (produto) => {
   if (produto && typeof produto === 'object') {
     produtoSelecionado.value = produto;

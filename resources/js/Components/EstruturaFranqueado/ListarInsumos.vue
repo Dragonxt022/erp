@@ -55,6 +55,7 @@
             <div class="quantidade text-gray-600 font-semibold">
               <div class="text-gray-600 font-semibold">
                 {{ getQuantidadeTotal(produto.lotes) }}
+                {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
               </div>
             </div>
           </div>

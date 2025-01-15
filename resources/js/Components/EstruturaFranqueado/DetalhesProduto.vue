@@ -33,115 +33,98 @@
                     : produto.valor_total_lote
                 }}
               </div>
-
-              <!-- <div class="owner">
-                {{ produto.valor_total }}
-              </div> -->
             </div>
-          </div>
-
-          <div class="w-1/1">
-            <ConfirmDialog
-              :isVisible="isConfirmDialogVisible"
-              :motivo="motivo"
-              @confirm="handleConfirm"
-              @cancel="handleCancel"
-            />
-            <!-- <div
-              class="absolute top-4 right-4 cursor-pointer"
-              @click="showConfirmDialog('Excluir esse produto?')"
-            >
-              <img
-                src="/storage/images/delete.svg"
-                alt="Deletar Usuário"
-                class="w-6 h-6"
-              />
-            </div> -->
           </div>
         </div>
         <!-- Exibe o botão de edição apenas se uma unidade for selecionada -->
       </div>
     </div>
-    <!-- <div v-if="produto.id && !isEditMode" class="mt-4">
-      <ButtonEditeMedio
-        text="Editar insumos"
-        icon-path="/storage/images/border_color.svg"
-        @click="toggleEditMode"
-        class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-      />
-    </div> -->
     <!-- Tabela de Lotes -->
-    <div class="mt-8">
-      <table class="min-w-full table-auto">
-        <thead>
-          <tr>
-            <th
-              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonEsquerda"
-            >
-              entrada
-            </th>
-            <th
-              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              Fornecedor
-            </th>
-            <th
-              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
-            >
-              qtd
-            </th>
-            <!-- Título da coluna, que muda dinamicamente -->
+    <div v-if="!isEditMode" class="">
+      <div class="mt-8">
+        <table class="min-w-full table-auto">
+          <thead>
+            <tr>
+              <th
+                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonEsquerda"
+              >
+                entrada
+              </th>
+              <th
+                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                Fornecedor
+              </th>
+              <th
+                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                qtd
+              </th>
+              <!-- Título da coluna, que muda dinamicamente -->
 
-            <th
-              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+              <th
+                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+              >
+                {{
+                  produto.unidadeDeMedida === 'unitario' ? 'v. unit' : 'v. kg'
+                }}
+              </th>
+
+              <th
+                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonDireita"
+              >
+                total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(lote, index) in produto.lotes"
+              :key="index"
+              class="text-center"
             >
-              {{ produto.unidadeDeMedida === 'unitario' ? 'v. unit' : 'v. kg' }}
-            </th>
+              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+                {{ lote.data }}
+              </td>
+              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+                {{ lote.fornecedor }}
+              </td>
+              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+                {{ lote.quantidade }}
+                {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
+              </td>
 
-            <th
-              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonDireita"
-            >
-              total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(lote, index) in produto.lotes"
-            :key="index"
-            class="text-center"
-          >
-            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-              {{ lote.data }}
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-              {{ lote.fornecedor }}
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-              {{ lote.quantidade }}
-            </td>
+              <!-- Preço por Quilo ou Preço Unitário -->
+              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+                {{
+                  produto.unidadeDeMedida === 'unitario'
+                    ? lote.preco_unitario
+                    : lote.valor_pago_por_quilo
+                }}
+              </td>
 
-            <!-- Preço por Quilo ou Preço Unitário -->
-            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-              {{
-                produto.unidadeDeMedida === 'unitario'
-                  ? lote.preco_unitario
-                  : lote.valor_pago_por_quilo
-              }}
-            </td>
-
-            <!-- Valor Total ou Preço Unitário -->
-            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-              {{
-                produto.unidadeDeMedida === 'unitario'
-                  ? lote.valor_total
-                  : lote.preco_unitario
-              }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <!-- Valor Total ou Preço Unitário -->
+              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+                {{
+                  produto.unidadeDeMedida === 'unitario'
+                    ? lote.valor_total
+                    : lote.preco_unitario
+                }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-if="produto.id && !isEditMode" class="mt-4">
+        <ButtonEditeMedio
+          text="Editar insumos"
+          icon-path="/storage/images/border_color.svg"
+          @click="toggleEditMode"
+          class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
+        />
+      </div>
     </div>
+
     <EditarProduto
       v-if="isEditMode"
       ref="dadosProduto"
@@ -155,14 +138,10 @@
 
 <script setup>
 import { defineProps, ref } from 'vue';
-import axios from 'axios';
-import { Inertia } from '@inertiajs/inertia';
-import { useToast } from 'vue-toastification';
+import { defineEmits } from 'vue';
+
 import EditarProduto from './EditarProduto.vue';
 import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
-import ConfirmDialog from '../LaytoutFranqueado/ConfirmDialog.vue';
-
-const toast = useToast();
 
 const props = defineProps({
   produto: {
@@ -171,12 +150,11 @@ const props = defineProps({
   },
 });
 
-const isConfirmDialogVisible = ref(false);
-const motivo = ref('');
+const emit = defineEmits(['atualizar']);
+
 const showCadastroProduto = ref(false);
 
 const isEditMode = ref(false);
-const isLoading = ref(false);
 
 const fetchProdutos = () => {
   const dadosProduto = ref.dadosProduto;
@@ -190,49 +168,13 @@ const getProfilePhotoUrl = (profilePhoto) => {
   return new URL(profilePhoto, window.location.origin).href;
 };
 
-const deleteProduto = async () => {
-  try {
-    isLoading.value = true;
-    const response = await axios.delete(
-      `/api/produtos/excluir/${props.produto.id}`
-    ); // URL para deletar o produto
-    console.log(response.data.message); // Mensagem de sucesso do backend
-    toast.success('Produto deletado com sucesso!'); // Exibe um toast de sucesso
-    Inertia.visit(route('franqueadora.insumos'));
-  } catch (error) {
-    toast.error(
-      'Erro ao deletar o produto:',
-      error.response?.data?.error || error.message
-    );
-    console.error(
-      'Erro ao deletar o produto:',
-      error.response?.data?.error || error.message
-    );
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 const toggleEditMode = () => {
   isEditMode.value = !isEditMode.value;
   showCadastroProduto.value = false;
 };
 
-const showConfirmDialog = (motivoParam) => {
-  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
-  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
-};
-
-const handleConfirm = () => {
-  deleteProduto();
-  isConfirmDialogVisible.value = false;
-};
-
-const handleCancel = () => {
-  isConfirmDialogVisible.value = false;
-};
-
 const cancelEdit = () => {
+  emit('atualizar');
   isEditMode.value = false;
   showCadastroProduto.value = true;
 };
