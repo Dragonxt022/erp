@@ -49,7 +49,7 @@
         <!-- Coluna -->
         <div class="bg-white rounded-lg p-7">
           <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Valor em insumos
+            Estoque atual
           </h3>
           <div
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"

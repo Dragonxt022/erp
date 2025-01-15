@@ -11,51 +11,6 @@ use Illuminate\Support\Facades\DB;
 class UnidadeEstoqueController extends Controller
 {
 
-    // public function index()
-    // {
-    //     // Obtém a unidade do usuário autenticado
-    //     $unidadeId = Auth::user()->unidade_id;
-
-    //     // Filtra os estoques pela unidade
-    //     $estoques = UnidadeEstoque::with(['insumo', 'fornecedor'])
-    //         ->where('unidade_id', $unidadeId)
-    //         ->orderBy('created_at', 'desc')
-    //         ->get();
-
-    //     // Agrupa os estoques pelo insumo
-    //     $produtosAgrupados = $estoques->groupBy('insumo_id')->map(function ($lotes) {
-    //         // Pega o primeiro lote para obter informações do produto
-    //         $primeiroLote = $lotes->first();
-    //         $insumo = $primeiroLote->insumo;
-
-    //         // Calcular a soma do valor total do lote
-    //         $valorTotalLotes = $lotes->sum(function ($lote) {
-    //             return ($lote->preco_insumo / 100) * $lote->quantidade;
-    //         });
-
-    //         return [
-    //             'id' => $insumo->id,
-    //             'nome' => $insumo->nome,
-    //             'profile_photo' => $insumo->profile_photo,
-    //             'categoria' => $insumo->categoria,
-    //             'unidadeDeMedida' => $insumo->unidadeDeMedida,
-    //             'lotes' => $lotes->map(function ($lote) {
-    //                 return [
-    //                     'data' => $lote->created_at->format('d/m/Y'),
-    //                     'fornecedor' => $lote->fornecedor->razao_social,
-    //                     'quantidade' => $lote->quantidade,
-    //                     'preco_unitario' => 'R$ ' . number_format($lote->preco_insumo / 100, 2, ',', '.'),
-    //                     'valor_total' => 'R$ ' . number_format(($lote->preco_insumo / 100) * $lote->quantidade, 2, ',', '.'),
-    //                 ];
-    //             }),
-    //             // Soma o valor total de todos os lotes do insumo
-    //             'valor_total_lote' => 'R$ ' . number_format($valorTotalLotes, 2, ',', '.'),
-    //         ];
-    //     });
-
-    //     // Retorna os dados no formato JSON
-    //     return response()->json($produtosAgrupados);
-    // }
 
     public function index()
     {
@@ -130,44 +85,93 @@ class UnidadeEstoqueController extends Controller
     }
 
 
+    // public function painelInicialEstoque()
+    // {
+    //     $unidadeId = Auth::user()->unidade_id;
+
+    //     // Calcula o valor inicial do estoque e converte para reais
+    //     $valorInicial = UnidadeEstoque::where('unidade_id', $unidadeId)
+    //         ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+
+    //     // Valor total em insumos, convertido para reais
+    //     $valorInsumos = UnidadeEstoque::where('unidade_id', $unidadeId)
+    //         ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+
+    //     // Quantidade total de itens no estoque
+    //     $itensNoEstoque = UnidadeEstoque::where('unidade_id', $unidadeId)->sum('quantidade');
+
+    //     // Histórico de movimentações
+    //     $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
+    //         ->where('unidade_id', $unidadeId)
+    //         ->orderBy('id', 'desc')
+    //         ->take(10) // Limita a 10 registros
+    //         ->get()
+    //         ->map(function ($estoque) {
+    //             return [
+    //                 'operacao' => $estoque->operacao, // 'entrada' ou 'retirada'
+    //                 'quantidade' => $estoque->quantidade,
+    //                 'item' => $estoque->insumo->nome,
+    //                 'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
+    //                 'responsavel' => $estoque->usuario->name,
+    //             ];
+    //         });
+
+    //     return response()->json([
+    //         // 'valorInicial' => number_format($valorInicial, 2, ',', '.'),
+    //         'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
+    //         'itensNoEstoque' => $itensNoEstoque,
+    //         'historicoMovimentacoes' => $historicoMovimentacoes,
+    //     ]);
+    // }
+
     public function painelInicialEstoque()
     {
         $unidadeId = Auth::user()->unidade_id;
 
-        // Calcula o valor inicial do estoque e converte para reais
-        $valorInicial = UnidadeEstoque::where('unidade_id', $unidadeId)
-            ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+        // Obtém todos os itens do estoque da unidade
+        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->get();
 
-        // Valor total em insumos, convertido para reais
-        $valorInsumos = UnidadeEstoque::where('unidade_id', $unidadeId)
-            ->sum(DB::raw('quantidade * preco_insumo')) / 100;
+        // Calcula o valor total dos insumos considerando a unidade de medida
+        $valorInsumos = $estoque->reduce(function ($total, $item) {
+            $preco = $item->preco_insumo / 100; // Convertendo centavos para reais
+            $quantidade = $item->quantidade;
+
+            // Verifica se a unidade é 'kg' ou 'unidade' e calcula corretamente
+            if ($item->unidade === 'kg') {
+                return $total + $preco; // Preço total já é o valor final para 'kg'
+            } elseif ($item->unidade === 'unidade') {
+                return $total + ($preco * $quantidade); // Multiplica pela quantidade
+            }
+
+            return $total;
+        }, 0);
 
         // Quantidade total de itens no estoque
-        $itensNoEstoque = UnidadeEstoque::where('unidade_id', $unidadeId)->sum('quantidade');
+        $itensNoEstoque = $estoque->sum('quantidade');
 
         // Histórico de movimentações
         $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
             ->orderBy('id', 'desc')
-            ->take(10) // Limita a 10 registros
+            ->take(10)
             ->get()
             ->map(function ($estoque) {
                 return [
-                    'operacao' => $estoque->operacao, // 'entrada' ou 'retirada'
+                    'operacao' => $estoque->operacao,
                     'quantidade' => $estoque->quantidade,
-                    'item' => $estoque->insumo->nome,
+                    'item' => $estoque->insumo->nome ?? 'N/A',
                     'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
-                    'responsavel' => $estoque->usuario->name,
+                    'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
                 ];
             });
 
         return response()->json([
-            // 'valorInicial' => number_format($valorInicial, 2, ',', '.'),
             'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
             'itensNoEstoque' => $itensNoEstoque,
             'historicoMovimentacoes' => $historicoMovimentacoes,
         ]);
     }
+
 
     public function unidadeForencedores()
     {
