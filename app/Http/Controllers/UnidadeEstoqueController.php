@@ -61,6 +61,7 @@ class UnidadeEstoqueController extends Controller
                         : null;
 
                     return [
+                        'id' => $lote->id,
                         'data' => $lote->created_at->format('d/m/Y'),
                         'fornecedor' => $lote->fornecedor->razao_social,
                         'quantidade' => $lote->quantidade,
@@ -84,46 +85,7 @@ class UnidadeEstoqueController extends Controller
         return response()->json($produtosAgrupados);
     }
 
-
-    // public function painelInicialEstoque()
-    // {
-    //     $unidadeId = Auth::user()->unidade_id;
-
-    //     // Calcula o valor inicial do estoque e converte para reais
-    //     $valorInicial = UnidadeEstoque::where('unidade_id', $unidadeId)
-    //         ->sum(DB::raw('quantidade * preco_insumo')) / 100;
-
-    //     // Valor total em insumos, convertido para reais
-    //     $valorInsumos = UnidadeEstoque::where('unidade_id', $unidadeId)
-    //         ->sum(DB::raw('quantidade * preco_insumo')) / 100;
-
-    //     // Quantidade total de itens no estoque
-    //     $itensNoEstoque = UnidadeEstoque::where('unidade_id', $unidadeId)->sum('quantidade');
-
-    //     // Histórico de movimentações
-    //     $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
-    //         ->where('unidade_id', $unidadeId)
-    //         ->orderBy('id', 'desc')
-    //         ->take(10) // Limita a 10 registros
-    //         ->get()
-    //         ->map(function ($estoque) {
-    //             return [
-    //                 'operacao' => $estoque->operacao, // 'entrada' ou 'retirada'
-    //                 'quantidade' => $estoque->quantidade,
-    //                 'item' => $estoque->insumo->nome,
-    //                 'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
-    //                 'responsavel' => $estoque->usuario->name,
-    //             ];
-    //         });
-
-    //     return response()->json([
-    //         // 'valorInicial' => number_format($valorInicial, 2, ',', '.'),
-    //         'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
-    //         'itensNoEstoque' => $itensNoEstoque,
-    //         'historicoMovimentacoes' => $historicoMovimentacoes,
-    //     ]);
-    // }
-
+    // Responsavel pelos dados da tela de estoque
     public function painelInicialEstoque()
     {
         $unidadeId = Auth::user()->unidade_id;
@@ -172,7 +134,7 @@ class UnidadeEstoqueController extends Controller
         ]);
     }
 
-
+    // Lista os fornecederes
     public function unidadeForencedores()
     {
         // Recupera todos os fornecedores
@@ -238,5 +200,30 @@ class UnidadeEstoqueController extends Controller
 
             return response()->json(['error' => 'Erro ao armazenar itens: ' . $e->getMessage()], 500);
         }
+    }
+
+    // Atualiza o lote
+    public function update(Request $request, $loteId)
+    {
+        // Validação dos dados
+        $request->validate([
+            'quantidade' => 'required|numeric|min:0', // Verifica se a quantidade é um número válido
+        ]);
+
+        // Busca o lote pelo ID
+        $lote = UnidadeEstoque::findOrFail($loteId);
+
+        // Atualiza a quantidade do lote
+        $lote->quantidade = $request->input('quantidade');
+        $lote->save();
+
+        return response()->json([
+            'message' => 'Quantidade atualizada com sucesso!',
+            'lote' => [
+                'id' => $lote->id,
+                'insumo_id' => $lote->insumo_id,
+                'quantidade' => $lote->quantidade,
+            ],
+        ]);
     }
 }
