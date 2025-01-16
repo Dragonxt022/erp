@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ListaProduto;
+use App\Models\PrecoFornecedor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -61,6 +62,8 @@ class ListaProdutoController extends Controller
             'categoria' => 'required|string|max:255',
             'unidadeDeMedida' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'precos' => 'nullable|array',
+            'precos.*' => 'nullable|integer|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -98,6 +101,14 @@ class ListaProdutoController extends Controller
             'unidadeDeMedida' => $request->unidadeDeMedida,
             'profile_photo' => $profilePhotoPath,
         ]);
+
+        foreach ($request->precos as $fornecedorId => $precoCentavos) {
+            PrecoFornecedor::create([
+                'lista_produto_id' => $produto->id,
+                'fornecedor_id' => $fornecedorId,
+                'preco_unitario' => $precoCentavos, // Salvar em centavos
+            ]);
+        }
 
         return response()->json([
             'message' => 'Produto cadastrado com sucesso!',

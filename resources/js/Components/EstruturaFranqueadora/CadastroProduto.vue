@@ -141,6 +141,46 @@
             </label>
           </div>
 
+          <!-- Tabela de fornecedores -->
+          <div class="mt-12">
+            <table class="min-w-full table-auto">
+              <thead>
+                <tr class="bg-[#d2fac3]">
+                  <th
+                    class="px-6 py-2 text-left text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tl-2xl"
+                  >
+                    Fornecedor
+                  </th>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
+                  >
+                    Valor
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="fornecedor in fornecedores" :key="fornecedor.id">
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-left"
+                  >
+                    {{ fornecedor.razao_social }}
+                  </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    <input
+                      v-model="preco_fornecedor[fornecedor.id]"
+                      type="text"
+                      placeholder="R$ 0,00"
+                      @input="formatarValor(fornecedor.id)"
+                      class="border rounded-lg px-2 py-1 w-[110px] h-[38px] text-center"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
           <div class="flex justify-start space-x-1 mt-[15%]">
             <ButtonCancelar text="Cancelar" @click="cancelForm" />
             <ButtonPrimaryMedio
@@ -161,7 +201,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import axios from 'axios';
 import { Inertia } from '@inertiajs/inertia';
 import { defineProps, defineEmits } from 'vue';
@@ -193,10 +233,42 @@ const errorMessage = ref('');
 const fileInput = ref(null);
 const isLoading = ref(false);
 
+const preco_fornecedor = ref({}); // Preços dos fornecedores
+const fornecedores = ref([]); // Armazenar fornecedores
+
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
 
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/fornecedores'); // Chamada à API
+    fornecedores.value = response.data.data; // Armazenando fornecedores
+  } catch (error) {
+    toast.error('Erro ao carregar fornecedores.');
+  }
+  fornecedores.value.forEach((fornecedor) => {
+    if (preco_fornecedor.value[fornecedor.id]) {
+      formatarValor(fornecedor.id);
+    }
+  });
+});
+
 // Funções
+
+const formatarValor = (fornecedorId) => {
+  let valor = preco_fornecedor.value[fornecedorId] || '';
+  valor = valor.toString().replace(/\D/g, ''); // Remove tudo que não for número
+  valor = (parseInt(valor, 10) / 100).toFixed(2); // Divide por 100 para formatar como decimal
+
+  // Formata com separador de milhar
+  const valorFormatado = new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valor);
+
+  preco_fornecedor.value[fornecedorId] = `R$ ${valorFormatado}`;
+};
+
 const openFileSelector = () => {
   fileInput.value?.click();
 };
@@ -266,6 +338,13 @@ const submitForm = async () => {
     formData.append('categoria', categoria.value);
     formData.append('unidadeDeMedida', unidadeDeMedida.value);
     formData.append('profile_photo', selectedFile.value);
+
+    // Adicionar preços convertidos para centavos
+    Object.entries(preco_fornecedor.value).forEach(
+      ([fornecedorId, valorCentavos]) => {
+        formData.append(`precos[${fornecedorId}]`, valorCentavos);
+      }
+    );
 
     const response = await axios.post('/api/produtos/cadastrar', formData, {
       headers: {

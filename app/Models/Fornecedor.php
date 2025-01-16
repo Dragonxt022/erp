@@ -20,4 +20,9 @@ class Fornecedor extends Model
         'whatsapp',
         'estado',
     ];
+
+    public function precos()
+    {
+        return $this->hasMany(PrecoFornecedor::class, 'fornecedor_id');
+    }
 }
