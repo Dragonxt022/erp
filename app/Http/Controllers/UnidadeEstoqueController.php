@@ -96,54 +96,38 @@ class UnidadeEstoqueController extends Controller
 
 
     // Responsavel pelos dados da tela de estoque
-    public function painelInicialEstoque()
+    public function painelInicialEstoque(Request $request)
     {
         $unidadeId = Auth::user()->unidade_id;
 
-        // Obtém todos os itens do estoque da unidade, mas filtra os itens com quantidade > 0
-        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)
-            ->where('quantidade', '>', 0)  // Filtra os itens com quantidade maior que 0
-            ->get();
-
-        // Calcula o valor total dos insumos considerando a unidade de medida
-        $valorInsumos = $estoque->reduce(function ($total, $item) {
-            $preco = $item->preco_insumo / 100; // Convertendo centavos para reais
-            $quantidade = $item->quantidade;
-
-            // Verifica se a unidade é 'kg' ou 'unidade' e calcula corretamente
-            if ($item->unidade === 'kg') {
-                return $total + $preco; // Preço total já é o valor final para 'kg'
-            } elseif ($item->unidade === 'unidade') {
-                return $total + ($preco * $quantidade); // Multiplica pela quantidade
-            }
-
-            return $total;
-        }, 0);
-
-        // Quantidade total de itens no estoque (contando "kg" como 1 item)
-        $itensNoEstoque = $estoque->reduce(function ($total, $item) {
-            if ($item->unidade === 'kg') {
-                return $total + 1; // Conta cada 'kg' como 1 item
-            }
-            return $total + $item->quantidade; // Conta as unidades normalmente
-        }, 0);
-
+        // Obtém o histórico de movimentações com paginação
         $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
-            ->where('quantidade', '>', 0)  // Filtra itens com quantidade maior que 0 no histórico também
+            ->where('quantidade', '>', 0)
             ->orderBy('id', 'desc')
-            ->take(10)
-            ->get()
-            ->map(function ($estoque) {
-                return [
-                    'operacao' => $estoque->operacao,
-                    'unidade' => $estoque->unidade,
-                    'quantidade' => $estoque->quantidade,
-                    'item' => $estoque->insumo->nome ?? 'N/A',
-                    'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
-                    'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
-                ];
-            });
+            ->paginate(10); // Retorna registro por pagina
+
+        $historicoMovimentacoes->getCollection()->transform(function ($estoque) {
+            return [
+                'operacao' => $estoque->operacao,
+                'unidade' => $estoque->unidade,
+                'quantidade' => $estoque->quantidade,
+                'item' => $estoque->insumo->nome ?? 'N/A',
+                'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
+                'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
+            ];
+        });
+
+        // Dados principais do painel
+        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->where('quantidade', '>', 0)->get();
+        $valorInsumos = $estoque->reduce(function ($total, $item) {
+            $preco = $item->preco_insumo / 100;
+            $quantidade = $item->quantidade;
+            return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
+        }, 0);
+        $itensNoEstoque = $estoque->reduce(function ($total, $item) {
+            return $item->unidade === 'kg' ? $total + 1 : $total + $item->quantidade;
+        }, 0);
 
         return response()->json([
             'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
@@ -151,6 +135,7 @@ class UnidadeEstoqueController extends Controller
             'historicoMovimentacoes' => $historicoMovimentacoes,
         ]);
     }
+
 
 
 

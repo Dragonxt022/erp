@@ -92,107 +92,154 @@
         </div>
       </div>
 
-      <table class="min-w-full table-auto">
-        <thead>
-          <tr>
-            <th
-              class="px-6 py-3 text-xs font-semibold text-gray-500 TrRedonEsquerda"
+      <div class="bg-white rounded-lg shadow">
+        <!-- Cabeçalho da lista -->
+        <div
+          class="bg-[#164110] grid grid-cols-5 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
+        >
+          <span class="text-left px-5">OPERAÇÃO</span>
+          <span class="text-center">QTD.</span>
+          <span class="text-left">Item</span>
+          <span class="text-center">Quando</span>
+          <span class="text-center">Responsável</span>
+        </div>
+
+        <!-- Dados da lista rolável -->
+        <div
+          ref="scrollContainer"
+          class="overflow-y-auto max-h-96 scroll-hidden"
+        >
+          <ul class="space-y-2">
+            <li
+              v-for="(movimentacao, index) in historicoMovimentacoes"
+              :key="index"
+              :class="{
+                'bg-red-100': movimentacao.quantidade === 5,
+                'hover:bg-gray-200': true,
+                'grid grid-cols-5 gap-2 px-6 py-3 text-[16px]': true,
+              }"
             >
-              OPERAÇÃO
-            </th>
-            <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              QTD.
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Item
-            </th>
-            <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Quando
-            </th>
-            <th
-              class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider TrRedonDireita"
-            >
-              Responsável
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(movimentacao, index) in historicoMovimentacoes"
-            :key="index"
-            :style="
-              movimentacao.quantidade === 5 ? 'background-color: #fee2e2;' : ''
-            "
-          >
-            <td
-              class="px-6 py-4 text-[16px] font-semibold text-gray-900 flex text-center"
-            >
-              <img
-                :src="
-                  movimentacao.operacao === 'Entrada'
-                    ? '/storage/images/arrow_back_verde.svg'
-                    : '/storage/images/arrow_back_red.svg'
-                "
-                alt="icon indicativo"
-                class="mr-5 text-center"
-              />
-              {{ movimentacao.operacao === 'Entrada' ? 'Entrada' : 'Retirada' }}
-            </td>
-            <td
-              class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
-            >
-              {{ movimentacao.quantidade }}
-              {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-900 font-semibold">
-              {{ movimentacao.item }}
-            </td>
-            <td
-              class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
-            >
-              {{ movimentacao.data }}
-            </td>
-            <td class="px-6 py-4 text-[16px] text-gray-500 text-center">
-              {{ movimentacao.responsavel }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <span class="flex items-center text-gray-900 font-semibold">
+                <img
+                  :src="
+                    movimentacao.operacao === 'Entrada'
+                      ? '/storage/images/arrow_back_verde.svg'
+                      : '/storage/images/arrow_back_red.svg'
+                  "
+                  alt="icon indicativo"
+                  class="mr-3 w-5 h-5"
+                />
+                {{
+                  movimentacao.operacao === 'Entrada' ? 'Entrada' : 'Retirada'
+                }}
+              </span>
+              <span class="text-center text-gray-900 font-semibold">
+                {{ movimentacao.quantidade }}
+                {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
+              </span>
+              <span class="text-left text-gray-900 font-medium">
+                {{ movimentacao.item }}
+              </span>
+              <span class="text-center text-gray-600 font-semibold">
+                {{ movimentacao.data }}
+              </span>
+              <span class="text-center text-gray-500 font-semibold">
+                {{ movimentacao.responsavel }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Carregando... -->
+        <div v-if="loading" class="text-center mt-4">Carregando...</div>
+      </div>
     </div>
   </LayoutFranqueado>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
 
 const valorInicial = ref('0.00');
-const valorInsumos = ref('');
-const itensNoEstoque = ref('');
+const valorInsumos = ref('0.00');
+const itensNoEstoque = ref('0.00');
 const historicoMovimentacoes = ref([]);
+const currentPage = ref(1);
+const loading = ref(false);
+const hasMore = ref(true);
+const scrollContainer = ref(null);
 
-onMounted(async () => {
+// Função para carregar movimentações e dados da API
+const loadMovimentacoes = async () => {
+  if (loading.value || !hasMore.value) return;
+
+  loading.value = true;
+
   try {
-    const { data } = await axios.get('/api/estoque/incial'); // Ajuste a rota conforme necessário
-    // valorInicial.value = data.valorInicial;
+    // Realiza a requisição para a API
+    const { data } = await axios.get(
+      `/api/estoque/incial?page=${currentPage.value}`
+    );
+
+    // Atualiza os dados de insumos e itens no estoque
     valorInsumos.value = data.valorInsumos;
     itensNoEstoque.value = data.itensNoEstoque;
-    historicoMovimentacoes.value = data.historicoMovimentacoes;
+
+    // Atualiza o histórico de movimentações
+    historicoMovimentacoes.value.push(...data.historicoMovimentacoes.data);
+
+    // Verifica se há mais páginas
+    if (
+      data.historicoMovimentacoes.current_page >=
+      data.historicoMovimentacoes.last_page
+    ) {
+      hasMore.value = false;
+    } else {
+      currentPage.value++;
+    }
   } catch (error) {
-    console.error('Erro ao carregar dados do painel:', error);
+    console.error('Erro ao carregar movimentações:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const onScroll = () => {
+  const container = scrollContainer.value;
+  if (
+    container.scrollTop + container.clientHeight >=
+    container.scrollHeight - 10
+  ) {
+    loadMovimentacoes();
+  }
+};
+
+// Carrega os dados iniciais
+onMounted(() => {
+  loadMovimentacoes();
+  scrollContainer.value.addEventListener('scroll', onScroll);
+});
+
+onBeforeUnmount(() => {
+  if (scrollContainer.value) {
+    scrollContainer.value.removeEventListener('scroll', onScroll);
   }
 });
 </script>
 
 <style lang="css" scoped>
+.scroll-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
 .painel-title {
   font-size: 34px;
   font-weight: 700;
@@ -205,24 +252,11 @@ onMounted(async () => {
   color: #6d6d6e; /* Cor secundária */
   max-width: 600px; /* Limita a largura do subtítulo */
 }
-
 /* Estilizando a tabela */
-table {
-  width: 100%;
-  margin-top: 20px;
-
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 12px;
-}
 
 th {
   background-color: #164110;
   color: #ffffff;
-  margin-bottom: 10px;
 }
 
 .TrRedonEsquerda {
@@ -239,6 +273,5 @@ tr:nth-child(even) {
 
 tr:hover {
   background-color: #dededea9;
-  cursor: pointer;
 }
 </style>
