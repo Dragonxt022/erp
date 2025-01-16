@@ -149,7 +149,7 @@
                   <th
                     class="px-6 py-2 text-left text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tl-2xl"
                   >
-                    Fornecedor
+                    Fornecedores
                   </th>
                   <th
                     class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
