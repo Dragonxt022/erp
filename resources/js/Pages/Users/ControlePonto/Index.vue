@@ -1,12 +1,12 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Minha conta" />
+    <Head title="Controle de Ponto" />
     <!-- Título principal -->
-    <div class="painel-title">Minha conta</div>
+    <div class="painel-title">Controle de Ponto</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Seus dados pessoais e senha.</p>
+      <p>Controle de ponto</p>
     </div>
   </LayoutFranqueado>
 </template>

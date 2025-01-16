@@ -1,12 +1,12 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Minha conta" />
+    <Head title="Supervisão de Residuos" />
     <!-- Título principal -->
-    <div class="painel-title">Minha conta</div>
+    <div class="painel-title">Supervisão de Resíduos</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Seus dados pessoais e senha.</p>
+      <p>Supervisão de Resíduos</p>
     </div>
   </LayoutFranqueado>
 </template>

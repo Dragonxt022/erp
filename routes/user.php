@@ -41,4 +41,24 @@ Route::middleware([
     Route::get('/franqueado/pedidos', function () {
         return Inertia::render('Users/Pedidos/Index');
     })->name('franqueado.pedidos');
+
+    Route::get('/franqueado/perfil', function () {
+        return Inertia::render('Users/Perfil/Index');
+    })->name('franqueado.perfil');
+
+    Route::get('/franqueado/supervisao-residos', function () {
+        return Inertia::render('Users/SupervisaoResiduos/Index');
+    })->name('franqueado.supervisaoResidos');
+
+    Route::get('/franqueado/gestao-equipe', function () {
+        return Inertia::render('Users/GestaoEquipes/Index');
+    })->name('franqueado.gestaoEquipe');
+
+    Route::get('/franqueado/controle-ponto', function () {
+        return Inertia::render('Users/ControlePonto/Index');
+    })->name('franqueado.controlePonto');
+
+    Route::get('/franqueado/folha-pagamento', function () {
+        return Inertia::render('Users/FolhaPagamento/Index');
+    })->name('franqueado.folhaPagamento');
 });

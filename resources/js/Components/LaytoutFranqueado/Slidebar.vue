@@ -106,6 +106,34 @@ const menuCategories = [
         ],
         isActive: false,
       },
+
+      {
+        label: 'Supervisão de resíduos',
+        icon: '/storage/images/delete_branco.svg',
+        link: 'franqueado.supervisaoResidos',
+        isLogout: false,
+        isActive: false,
+      },
+
+      {
+        label: 'Gestão de equipe',
+        icon: '/storage/images/gestao_servisos.svg',
+        link: 'franqueado.gestaoEquipe',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Controle de ponto',
+            icon: '/storage/images/add_product.svg',
+            link: 'franqueado.controlePonto',
+          },
+          {
+            label: 'Folha de pagamento',
+            link: 'franqueado.folhaPagamento',
+          },
+        ],
+        isActive: false,
+      },
+
       {
         label: 'Taiksu IA',
         icon: '/storage/images/TAIKSU_IA_ICONE.svg',
