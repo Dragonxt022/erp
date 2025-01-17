@@ -12,4 +12,9 @@ class ListaProduto extends Model
         'categoria',
         'unidadeDeMedida',
     ];
+
+    public function precos()
+    {
+        return $this->hasMany(PrecoFornecedore::class, 'lista_produto_id');
+    }
 }

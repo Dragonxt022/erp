@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ListaProduto;
-use App\Models\PrecoFornecedor;
+use App\Models\PrecoFornecedore;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -14,10 +14,44 @@ class ListaProdutoController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // public function index()
+    // {
+    //     // Recupera todos os produtos
+    //     $produtos = ListaProduto::all();
+
+    //     // Classifica os produtos: "principal" no topo e ordem alfabética para cada grupo
+    //     $produtosOrdenados = $produtos->sort(function ($a, $b) {
+    //         // Primeiro, coloca "principal" no topo
+    //         if ($a->categoria === 'principal' && $b->categoria !== 'principal') {
+    //             return -1;
+    //         }
+    //         if ($a->categoria !== 'principal' && $b->categoria === 'principal') {
+    //             return 1;
+    //         }
+
+    //         // Se as categorias forem iguais, ordena alfabeticamente (locale-aware)
+    //         return strcoll($a->nome, $b->nome);
+    //     });
+
+    //     // Mapeia os dados e converte para array
+    //     $resultados = $produtosOrdenados->map(function ($produto) {
+    //         return [
+    //             'id' => $produto->id,
+    //             'nome' => $produto->nome,
+    //             'categoria' => $produto->categoria,
+    //             'unidadeDeMedida' => $produto->unidadeDeMedida,
+    //             'profile_photo' => $produto->profile_photo ?? null,
+    //             'estrela' => $produto->categoria === 'principal' ? '★' : null,
+    //         ];
+    //     })->values()->toArray(); // Reorganiza os índices e converte para array
+
+    //     return response()->json($resultados);
+    // }
+
     public function index()
     {
-        // Recupera todos os produtos
-        $produtos = ListaProduto::all();
+        // Recupera todos os produtos com seus preços
+        $produtos = ListaProduto::with('precos.fornecedor')->get();
 
         // Classifica os produtos: "principal" no topo e ordem alfabética para cada grupo
         $produtosOrdenados = $produtos->sort(function ($a, $b) {
@@ -35,6 +69,16 @@ class ListaProdutoController extends Controller
 
         // Mapeia os dados e converte para array
         $resultados = $produtosOrdenados->map(function ($produto) {
+            // Formata os preços de cada fornecedor
+            $precos = $produto->precos->map(function ($preco) {
+                return [
+                    'preco_id' => $preco->id, // ID do registro em precos_fornecedores
+                    'fornecedor_id' => $preco->fornecedor->id,
+                    'fornecedor' => $preco->fornecedor->razao_social, // Nome do fornecedor
+                    'preco_unitario' => $preco->preco_unitario, // Preço unitário
+                ];
+            });
+
             return [
                 'id' => $produto->id,
                 'nome' => $produto->nome,
@@ -42,6 +86,7 @@ class ListaProdutoController extends Controller
                 'unidadeDeMedida' => $produto->unidadeDeMedida,
                 'profile_photo' => $produto->profile_photo ?? null,
                 'estrela' => $produto->categoria === 'principal' ? '★' : null,
+                'precos' => $precos, // Lista de preços de fornecedores com IDs
             ];
         })->values()->toArray(); // Reorganiza os índices e converte para array
 
@@ -50,12 +95,10 @@ class ListaProdutoController extends Controller
 
 
 
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
+        // dd(request()->all()); // Verifique o conteúdo da requisição
+
         // Validação dos dados
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',
@@ -63,7 +106,7 @@ class ListaProdutoController extends Controller
             'unidadeDeMedida' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
             'precos' => 'nullable|array',
-            'precos.*' => 'nullable|integer|min:0',
+            'precos.*' => 'nullable|string', // Agora são strings para incluir os valores com "R$"
         ]);
 
         if ($validator->fails()) {
@@ -102,12 +145,21 @@ class ListaProdutoController extends Controller
             'profile_photo' => $profilePhotoPath,
         ]);
 
-        foreach ($request->precos as $fornecedorId => $precoCentavos) {
-            PrecoFornecedor::create([
-                'lista_produto_id' => $produto->id,
-                'fornecedor_id' => $fornecedorId,
-                'preco_unitario' => $precoCentavos, // Salvar em centavos
-            ]);
+        // Processar os preços
+        foreach ($request->precos as $fornecedorId => $preco) {
+            // Remover o símbolo R$ e substituir as vírgulas por pontos
+            $preco = preg_replace('/[^\d.,]/', '', $preco); // Remove caracteres não numéricos
+            $preco = str_replace(',', '.', $preco); // Substitui a vírgula por ponto
+            $precoCentavos = (float) $preco * 100; // Converte para centavos
+
+            // Ignorar valores inválidos (0 ou NaN)
+            if ($precoCentavos > 0 && !is_nan($precoCentavos)) {
+                PrecoFornecedore::create([
+                    'lista_produto_id' => $produto->id,
+                    'fornecedor_id' => $fornecedorId,
+                    'preco_unitario' => (int) $precoCentavos, // Salvar como inteiro em centavos
+                ]);
+            }
         }
 
         return response()->json([
@@ -116,21 +168,6 @@ class ListaProdutoController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -138,12 +175,6 @@ class ListaProdutoController extends Controller
 
     public function update(Request $request)
     {
-        // Registrar o início da atualização
-        Log::info('Iniciando atualização do produto', ['produto_id' => $request->id]);
-
-        // Registrar dados da requisição
-        Log::info('Dados recebidos para atualização', ['nome' => $request->nome, 'profile_photo' => $request->profile_photo]);
-
         // Validação dos dados
         $validator = Validator::make($request->all(), [
             'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
@@ -151,6 +182,8 @@ class ListaProdutoController extends Controller
             'categoria' => 'required|string|max:255',
             'unidadeDeMedida' => 'required|string|max:255',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'precos' => 'nullable|array',
+            'precos.*' => 'nullable|string', // Preços recebidos como string para evitar problemas com formatação
         ]);
 
         // Verifica falha na validação
@@ -167,44 +200,90 @@ class ListaProdutoController extends Controller
             return response()->json(['message' => 'Produto não encontrado'], 404);
         }
 
-        // Atualizar o nome
+        // Atualizar os dados principais do produto
         $produto->nome = $request->nome;
         $produto->categoria = $request->categoria;
         $produto->unidadeDeMedida = $request->unidadeDeMedida;
 
         // Processar a nova imagem, se enviada
         if ($request->has('profile_photo') && $request->profile_photo) {
-            // Log para indicar que está tratando a imagem
             Log::info('Processando a imagem do produto', ['produto_id' => $request->id]);
 
             // Remover a imagem antiga, se existir
             if ($produto->profile_photo && file_exists(public_path($produto->profile_photo))) {
-                unlink(public_path($produto->profile_photo));  // Remove a imagem antiga
+                if (!unlink(public_path($produto->profile_photo))) {
+                    Log::warning('Falha ao remover imagem antiga', ['produto_id' => $request->id]);
+                }
             }
 
             // Salvar a nova imagem
             $profilePhoto = $request->file('profile_photo');
             $fileName = time() . '_' . $profilePhoto->getClientOriginalName();
 
-            // Definir o caminho da pasta de armazenamento
             $folderPath = public_path('storage/images');
 
-            // Verificar se a pasta existe, se não, criar a pasta
             if (!file_exists($folderPath)) {
                 mkdir($folderPath, 0755, true);
             }
 
-            // Mover a imagem para o diretório público
             $profilePhoto->move($folderPath, $fileName);
-
-            // Atualizar o caminho da imagem no banco de dados
             $produto->profile_photo = 'storage/images/' . $fileName;
         }
 
-        // Salvar as alterações
+        // Processar os preços enviados
+        if ($request->has('precos') && is_array($request->precos)) {
+            foreach ($request->precos as $precoUnitario) {
+                Log::info('Processando preço', ['preco_unitario' => $precoUnitario]);
+
+                // Decodificar o preço do fornecedor
+                $precoUnitario = json_decode($precoUnitario, true);
+
+                if (isset($precoUnitario['fornecedor_id']) && isset($precoUnitario['preco_unitario'])) {
+                    // Remover o símbolo R$ e substituir as vírgulas por pontos
+                    $preco = preg_replace('/[^\d.,]/', '', $precoUnitario['preco_unitario']);
+                    $preco = str_replace(',', '.', $preco); // Substitui a vírgula por ponto
+                    $precoCentavos = (float) $preco;
+
+                    // Ignorar valores inválidos (0 ou NaN)
+                    if ($precoCentavos > 0 && !is_nan($precoCentavos)) {
+                        // Buscar o preço com base no produto_id e fornecedor_id
+                        $precoExistente = PrecoFornecedore::where('lista_produto_id', $produto->id)
+                            ->where('fornecedor_id', $precoUnitario['fornecedor_id'])
+                            ->first();
+
+                        // Se o preço for encontrado, atualizar
+                        if ($precoExistente) {
+                            $precoExistente->update([
+                                'preco_unitario' => (int) $precoCentavos, // Atualiza para centavos
+                            ]);
+                            Log::info('Preço atualizado', ['produto_id' => $produto->id, 'fornecedor_id' => $precoUnitario['fornecedor_id']]);
+                        } else {
+                            // Se não encontrar o preço, criar um novo preço
+                            PrecoFornecedore::create([
+                                'lista_produto_id' => $produto->id,
+                                'fornecedor_id' => $precoUnitario['fornecedor_id'],
+                                'preco_unitario' => (int) $precoCentavos, // Salvar como inteiro em centavos
+                            ]);
+                            Log::info('Novo preço criado', ['produto_id' => $produto->id, 'fornecedor_id' => $precoUnitario['fornecedor_id']]);
+                        }
+                    } else {
+                        Log::warning('Preço inválido ou preço em formato incorreto', [
+                            'produto_id' => $produto->id,
+                            'preco_unitario' => $precoUnitario['preco_unitario'],
+                        ]);
+                    }
+                } else {
+                    Log::warning('Preço ou fornecedor inválido, ignorando', [
+                        'produto_id' => $produto->id,
+                        'fornecedor_id' => $precoUnitario['fornecedor_id'] ?? 'undefined',
+                    ]);
+                }
+            }
+        }
+
+        // Salvar as alterações no produto
         $produto->save();
 
-        // Registrar o sucesso da atualização
         Log::info('Produto atualizado com sucesso', ['produto_id' => $request->id]);
 
         return response()->json([

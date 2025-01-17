@@ -16,8 +16,8 @@ class CreatePrecosFornecedoresTable extends Migration
         // Criar a tabela precos_fornecedores
         Schema::create('precos_fornecedores', function (Blueprint $table) {
             $table->id(); // ID auto incrementável
-            $table->foreignId('lista_produto_id')->constrained()->onDelete('cascade'); // Relacionamento com a tabela lista_produtos
-            $table->foreignId('fornecedor_id')->constrained()->onDelete('cascade'); // Relacionamento com a tabela fornecedores (você pode criar essa tabela posteriormente)
+            $table->foreignId('lista_produto_id')->constrained('lista_produtos')->onDelete('cascade'); // Relacionamento com a tabela lista_produtos
+            $table->foreignId('fornecedor_id')->constrained('fornecedores')->onDelete('cascade'); // Relacionamento com a tabela fornecedores
             $table->float('quantidade', 10, 2)->nullable(); // Quantidade do produto
             $table->decimal('preco_unitario', 10, 2)->nullable(); // Preço unitário do produto
             $table->timestamps(); // Colunas created_at e updated_at

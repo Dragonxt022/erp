@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Fornecedor extends Model
 {
-    protected $table = 'fornecedores';
-
     use HasFactory;
+
+    protected $table = 'fornecedores'; // Nome explícito da tabela
 
     protected $fillable = [
         'cnpj',
@@ -21,8 +21,11 @@ class Fornecedor extends Model
         'estado',
     ];
 
+    /**
+     * Relacionamento com a tabela precos_fornecedores
+     */
     public function precos()
     {
-        return $this->hasMany(PrecoFornecedor::class, 'fornecedor_id');
+        return $this->hasMany(PrecoFornecedore::class, 'fornecedor_id', 'id');
     }
 }
