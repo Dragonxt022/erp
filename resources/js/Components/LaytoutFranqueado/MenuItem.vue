@@ -160,7 +160,7 @@ watch(showSubmenu, (newValue) => {
 .menu-item .icon {
   width: 24px;
   height: 24px;
-  margin-right: 10px;
+  margin-right: 5px;
 }
 
 .menu-item .label {
@@ -202,7 +202,7 @@ watch(showSubmenu, (newValue) => {
 .submenu-item .icon {
   width: 24px;
   height: 24px;
-  margin-right: 10px;
+  margin-right: 0px;
 }
 
 .submenu-item .label {
@@ -230,7 +230,7 @@ watch(showSubmenu, (newValue) => {
 .submenu-item a {
   text-decoration: none;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .submenu-item a:hover {

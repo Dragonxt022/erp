@@ -42,6 +42,10 @@ Route::middleware([
         return Inertia::render('Users/Pedidos/Index');
     })->name('franqueado.pedidos');
 
+    Route::get('/franqueado/historico-pedidos', function () {
+        return Inertia::render('Users/HistoricoPedidos/Index');
+    })->name('franqueado.historicoPedidos');
+
     Route::get('/franqueado/perfil', function () {
         return Inertia::render('Users/Perfil/Index');
     })->name('franqueado.perfil');

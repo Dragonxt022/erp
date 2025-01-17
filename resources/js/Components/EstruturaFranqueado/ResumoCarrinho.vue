@@ -297,7 +297,7 @@ tr:hover {
 .painel-title {
   font-size: 34px;
   font-weight: 700;
-  color: #6db631; /* Cor escura para título */
+  color: #414141; /* Cor escura para título */
   line-height: 30px;
 }
 

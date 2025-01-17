@@ -2,7 +2,7 @@
   <div>
     <!-- Sidebar -->
     <div
-      class="sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-4 overflow-y-auto h-full sm:w-64 md:w-72 lg:w-80 xl:w-80"
+      class="sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-3 overflow-y-auto h-full sm:w-64 md:w-72 lg:w-80 xl:w-80"
       ref="sidebar"
       @scroll="saveScrollPosition"
     >
@@ -100,8 +100,12 @@ const menuCategories = [
             link: 'franqueado.fornecedores',
           },
           {
-            label: 'Pedidos',
+            label: 'Novo Pedidos',
             link: 'franqueado.pedidos',
+          },
+          {
+            label: 'Histórico de Pedidos',
+            link: 'franqueado.historicoPedidos',
           },
         ],
         isActive: false,
