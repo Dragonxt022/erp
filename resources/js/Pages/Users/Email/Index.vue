@@ -3,7 +3,7 @@
     <Head title="E-mail" />
     <div class="painel-title">E-mail</div>
     <div class="painel-subtitle">
-      <p>Acompanhe seu negócio em tempo real</p>
+      <p>Acompanhe gerenciamento de mensagens</p>
     </div>
   </LayoutFranqueado>
 </template>

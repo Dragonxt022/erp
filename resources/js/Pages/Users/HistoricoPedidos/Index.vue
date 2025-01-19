@@ -3,7 +3,7 @@
     <Head title="Histórico de pedidos" />
     <div class="painel-title">Histórico depedidos</div>
     <div class="painel-subtitle">
-      <p>Acompanhe seu negócio em tempo real</p>
+      <p>Acompanhe o seu histórico de pedios.</p>
     </div>
   </LayoutFranqueado>
 </template>
