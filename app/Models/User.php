@@ -94,14 +94,6 @@ class User extends Authenticatable
     }
 
 
-    /**
-     * Acessor para obter o nome completo do cargo.
-     */
-    public function getCargoNameAttribute()
-    {
-        return $this->cargo ? $this->cargo->name : null;
-    }
-
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));

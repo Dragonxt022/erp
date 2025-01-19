@@ -1,3 +1,88 @@
+<template>
+  <Head title="Recuperar Senha" />
+  <div class="relative w-[1280px] h-[70px] bg-white overflow-hidden">
+    <!-- Fundo branco -->
+    <div class="absolute inset-0 bg-white"></div>
+
+    <!-- Logotipo (área para adicionar logo ou texto) -->
+    <div class="absolute left-[65px] top-[21px] w-[149px] h-[27.27px]">
+      <img
+        src="/storage/images/logo_tipo_verde.svg"
+        alt="Logo tipo verde"
+        class="w-full h-full"
+      />
+    </div>
+
+    <!-- Menu hambúrguer -->
+    <div
+      class="absolute left-[19px] top-[26px] flex flex-wrap gap-[3px] w-[26px] h-[18px]"
+    >
+      <img
+        src="/storage/images/quadrados_verdes.svg"
+        alt="Quadrados verdes"
+        class="w-full h-full"
+      />
+    </div>
+  </div>
+
+  <div class="login-container">
+    <!-- Imagens com alt para acessibilidade -->
+    <div class="login-box">
+      <div class="login-box-inner">
+        <div class="title-container">
+          <div class="title">Recuperar Senha</div>
+          <div class="subtitle">Defina uma nova senha para sua conta</div>
+        </div>
+
+        <form @submit.prevent="submit">
+          <!-- Campo Nova Senha -->
+          <div class="input-container">
+            <label for="password">Nova Senha</label>
+            <input
+              id="password"
+              v-model="form.password"
+              class="input"
+              type="password"
+              placeholder="●●●●●●●●●●●●"
+              autocomplete="new-password"
+              aria-label="Nova Senha"
+            />
+            <!-- Exibindo erro -->
+            <InputError class="mt-2" :message="form.errors.password" />
+          </div>
+
+          <!-- Campo Confirmar Senha -->
+          <div class="input-container">
+            <label for="password_confirmation">Confirmar Senha</label>
+            <input
+              id="password_confirmation"
+              v-model="form.password_confirmation"
+              class="input"
+              type="password"
+              placeholder="●●●●●●●●●●●●"
+              autocomplete="new-password"
+              aria-label="Confirmar Senha"
+            />
+            <!-- Exibindo erro -->
+            <InputError
+              class="mt-2"
+              :message="form.errors.password_confirmation"
+            />
+          </div>
+
+          <!-- Botão Atualizar Senha -->
+          <ButtonPrimary
+            :class="{ 'opacity-25': form.processing }"
+            :disabled="form.processing"
+          >
+            Atualizar Senha
+          </ButtonPrimary>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
@@ -5,13 +90,11 @@ import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
 import { Inertia } from '@inertiajs/inertia';
 
 const props = defineProps({
-  email: String,
   token: String,
 });
 
 const form = useForm({
   token: props.token,
-  email: props.email,
   password: '',
   password_confirmation: '',
 });
@@ -20,7 +103,7 @@ const submit = () => {
   form.post(route('password.update'), {
     onSuccess: () => {
       // Redirecionando para a página de login após sucesso
-      Inertia.visit(route('entrar.painal'));
+      Inertia.visit(route('entrar.painel'));
     },
     onFinish: () => form.reset('password', 'password_confirmation'),
   });
@@ -110,93 +193,3 @@ label {
   margin-top: 10px;
 }
 </style>
-<template>
-  <Head title="Recuperar Senha" />
-  <div class="relative w-[1280px] h-[70px] bg-white overflow-hidden">
-    <!-- Fundo branco -->
-    <div class="absolute inset-0 bg-white"></div>
-
-    <!-- Logotipo (área para adicionar logo ou texto) -->
-    <div class="absolute left-[65px] top-[21px] w-[149px] h-[27.27px]">
-      <img
-        src="/storage/images/logo_tipo_verde.svg"
-        alt="loto tipo verde"
-        class="w-full h-full"
-      />
-    </div>
-
-    <!-- Menu hambúrguer -->
-    <div
-      class="absolute left-[19px] top-[26px] flex flex-wrap gap-[3px] w-[26px] h-[18px]"
-    >
-      <img
-        src="/storage/images/quadrados_verdes.svg"
-        alt="Quadrados verdes"
-        class="w-full h-full"
-      />
-    </div>
-  </div>
-
-  <div class="login-container">
-    <!-- Imagens com alt para acessibilidade -->
-
-    <div class="login-box">
-      <div class="login-box-inner">
-        <div class="title-container">
-          <div class="title">Recuperar Senha</div>
-          <div class="subtitle">Defina uma nova senha para sua conta</div>
-        </div>
-
-        <!-- Mensagem de status de erro ou sucesso -->
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-          {{ status }}
-        </div>
-
-        <form @submit.prevent="submit">
-          <!-- Campo Nova Senha -->
-          <div class="input-container">
-            <label for="password">Nova Senha</label>
-            <input
-              id="password"
-              v-model="form.password"
-              class="input"
-              type="password"
-              placeholder="●●●●●●●●●●●●"
-              autocomplete="new-password"
-              aria-label="Nova Senha"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.password" />
-          </div>
-
-          <!-- Campo Confirmar Senha -->
-          <div class="input-container">
-            <label for="password_confirmation">Confirmar Senha</label>
-            <input
-              id="password_confirmation"
-              v-model="form.password_confirmation"
-              class="input"
-              type="password"
-              placeholder="●●●●●●●●●●●●"
-              autocomplete="new-password"
-              aria-label="Confirmar Senha"
-            />
-            <!-- Exibindo erro -->
-            <InputError
-              class="mt-2"
-              :message="form.errors.password_confirmation"
-            />
-          </div>
-
-          <!-- Botão Atualizar Senha -->
-          <ButtonPrimary
-            :class="{ 'opacity-25': form.processing }"
-            :disabled="form.processing"
-          >
-            Atualizar Senha
-          </ButtonPrimary>
-        </form>
-      </div>
-    </div>
-  </div>
-</template>

@@ -12,6 +12,21 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckFranqueadora;
 
+
+
+
+// rotas abertas para usuarios autenticados!
+Route::prefix('api')->middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+
+])->group(function () {
+
+    // Principais
+    Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
+});
+
 // Rotas protegidas por autenticação Administrador
 Route::prefix('api')->middleware([
     'auth:sanctum',
@@ -19,10 +34,6 @@ Route::prefix('api')->middleware([
     'verified',
     CheckFranqueadora::class
 ])->group(function () {
-
-    // Principais
-    Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
-
     // Unidades
     Route::prefix('unidades')->group(function () {
         Route::get('/', [UnitController::class, 'getUnidades'])->name('unidades.get');

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class AuthController extends Controller
@@ -73,8 +74,6 @@ class AuthController extends Controller
     }
 
 
-
-
     /**
      * Handle the logout request.
      *
@@ -88,5 +87,31 @@ class AuthController extends Controller
 
         // Retornar a resposta para o frontend, indicando que o logout foi realizado
         return redirect()->route('pagina.login');
+    }
+
+    public function getProfile()
+    {
+        $token = request()->bearerToken();
+        Log::info('Token recebido: ' . $token);  // Verifica o token recebido
+
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Usuário não autenticado.',
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        // Carrega os relacionamentos necessários
+        $user = $user->load('userDetails', 'unidade');
+
+
+
+        // Retorna os dados do usuário com os relacionamentos
+        return response()->json([
+            'status' => 'success',
+            'data' => $user,
+        ]);
     }
 }
