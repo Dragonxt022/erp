@@ -4,11 +4,11 @@ use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// Rota Princial
-Route::get('/', [AuthController::class, 'showLoginForm'])->name('entrar');
+// Rota Principal (GET) - Exibe a página de login
+Route::get('/', [AuthController::class, 'paginLogin'])->name('pagina.login');
 
-// Rota para o login (POST), utilizando o AuthController
-Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painal');
+// Rota para o login (POST) - Processa o login
+Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painel');
 
 // Defina a rota para buscar o token
 Route::get('/get-token', function () {

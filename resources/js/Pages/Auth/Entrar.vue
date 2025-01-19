@@ -91,7 +91,6 @@ const form = useForm({
   cpf: '',
   password: '',
   remember: true,
-  errors: {},
 });
 
 const submit = async () => {
@@ -102,42 +101,39 @@ const submit = async () => {
   }));
 
   // Envia a requisição de login
-  form.post(route('entrar.painal'), {
-    onFinish: async () => {
+  form.post(route('entrar.painel'), {
+    onFinish: () => {
       form.reset('password');
 
-      // Chama a função fetchToken após o login
-      const fetchToken = async () => {
-        try {
-          // Faça uma requisição para a rota que retorna o token
-          const response = await axios.get('/get-token', {
-            withCredentials: true,
-          });
-
-          if (response.data.status === 'success') {
-            const token = response.data.token;
-
-            // Armazene o token no localStorage
-            localStorage.setItem('auth_token', token);
-
-            // Configure o Axios para usar o token em futuras requisições
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-            console.log('Token obtido com sucesso!');
-          } else {
-            console.error('Erro ao obter o token:', response.data);
-          }
-        } catch (error) {
-          console.error('Erro na requisição para obter o token:', error);
-        }
-      };
-
-      // Chama a função fetchToken após a requisição de login
-      await fetchToken();
+      // Obtenha e armazene o token, se necessário
+      fetchToken();
     },
   });
 };
 
+// Função para buscar o token após o login
+const fetchToken = async () => {
+  try {
+    const response = await axios.get('/get-token', { withCredentials: true });
+    if (response.data.status === 'success') {
+      const token = response.data.token;
+
+      // Armazene o token no localStorage
+      localStorage.setItem('auth_token', token);
+
+      // Configure o Axios para usar o token em futuras requisições
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      console.log('Token obtido com sucesso!');
+    } else {
+      console.error('Erro ao obter o token:', response.data);
+    }
+  } catch (error) {
+    console.error('Erro na requisição para obter o token:', error);
+  }
+};
+
+// Função para aplicar a máscara de CPF
 const applyCpfMask = (event) => {
   let value = event.target.value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
   if (value.length > 11) value = value.slice(0, 11); // Limita o valor a 11 dígitos
@@ -151,6 +147,7 @@ const applyCpfMask = (event) => {
     value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
   }
 
+  event.target.value = value;
   form.cpf = value;
 };
 </script>

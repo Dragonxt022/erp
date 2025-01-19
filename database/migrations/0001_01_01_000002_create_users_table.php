@@ -18,17 +18,18 @@ return new class extends Migration
             $table->string('pin')->unique()->nullable();  // Alterando o campo para aceitar valores nulos
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-
             $table->rememberToken();
-
-            // Nova coluna de chave estrangeira para unidade
             $table->foreignId('unidade_id')->nullable()->constrained('infor_unidade')->onDelete('set null');
-
-            // Relacionamento com a tabela cargos (id)
-            $table->foreignId('cargo_id')->nullable()->constrained('cargos')->onDelete('set null');  // Agora referenciando o cargo
             $table->string('cpf')->nullable();  // Novo campo para o CPF do usuário
-
             $table->string('profile_photo_path', 2048)->nullable();
+
+            // Tera todos os acesos do painel Administrativo
+            $table->boolean('franqueadora')->default(false);
+
+            // Terá todos os acessos do painel franqueado menos do admim
+            $table->boolean('franqueado')->default(false);
+
+
             $table->timestamps();
         });
 

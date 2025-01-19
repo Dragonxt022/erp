@@ -56,7 +56,6 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'cpf' => 'required|string|size:14|unique:users,cpf',
             'unidade_id' => 'required|exists:infor_unidade,id',
-            'cargo_id' => 'nullable|exists:cargos,id',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048', // Validação da imagem
         ]);
 
@@ -105,7 +104,7 @@ class UserController extends Controller
                 'password' => Hash::make($password), // Hash da senha padrão
                 'cpf' => $request->input('cpf'),
                 'unidade_id' => $request->input('unidade_id'),
-                'cargo_id' => $request->input('cargo_id'),
+                'franqueado' => true,
                 'pin' => $pin, // Armazenar o PIN gerado
                 'profile_photo_path' => $profilePhotoPath, // Caminho da foto
             ]);

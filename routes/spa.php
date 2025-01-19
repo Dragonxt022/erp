@@ -5,19 +5,19 @@ use Illuminate\Support\Facades\Route;
 
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\CargoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Middleware\CheckFranqueadora;
 
 // Rotas protegidas por autenticação Administrador
 Route::prefix('api')->middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    CheckFranqueadora::class
 ])->group(function () {
 
     // Principais
@@ -37,8 +37,7 @@ Route::prefix('api')->middleware([
         Route::delete('/{id}', [UserController::class, 'destroy']);
     });
 
-    // Cargos
-    Route::get('/cargos', [CargoController::class, 'index'])->name('cargos.index');
+
 
     // Fornecedores
     Route::prefix('fornecedores')->group(function () {
