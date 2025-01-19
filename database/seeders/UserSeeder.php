@@ -26,6 +26,7 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+
         // Usuário Franqueado
         DB::table('users')->insert([
             'name' => 'Admin Franqueado',

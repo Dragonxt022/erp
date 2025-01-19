@@ -39,6 +39,6 @@ class NovoPedidoMail extends Mailable
                 'dataPedido' => $this->dataPedido,
             ])
             ->subject($subject)  // Alteração no assunto do e-mail
-            ->attach(storage_path("app/public/pedidos/{$this->fileName}"));
+            ->attach(public_path("storage/pedidos/{$this->fileName}"));
     }
 }
