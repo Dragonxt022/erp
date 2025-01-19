@@ -21,7 +21,6 @@ class NovoPedidoMail extends Mailable
         $this->fileName = $fileName;
         $this->name = $name;
     }
-
     public function build()
     {
         return $this->view('emails.novo-pedido')

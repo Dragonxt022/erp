@@ -18,41 +18,6 @@ use Illuminate\Support\Facades\Storage;
 class UnidadeEstoqueController extends Controller
 {
 
-    // Criar um novo pedido
-    // public function criarPedido(Request $request)
-    // {
-
-    //     // Preparando os dados de entrada
-    //     $itens = $request->itens; // Já é um array, sem a necessidade de json_encode
-    //     // Verificando o fornecedor (presumo que o fornecedor seja o mesmo para todos os itens)
-    //     $fornecedorId = $itens[0]['fornecedor_id'];
-    //     $fornecedor = $request->nomePrimeiroFornecedor;
-
-    //     // Criação do pedido
-    //     $pedido = HistoricoPedido::create([
-    //         'status_pedido' => 'enviado',
-    //         'itens_id' => json_encode($itens), // Itens armazenados como JSON
-    //         'quantidade' => array_column($itens, 'quantidade'),
-    //         'valor_unitario' => array_column($itens, 'valor_unitario'),
-    //         'valor_total_item' => array_column($itens, 'valor_total_item'),
-    //         'valor_total_carrinho' => $request->valor_total_carrinho,
-    //         'unidade_id' => Auth::user()->unidade_id,
-    //         'usuario_responsavel_id' => Auth::user()->id,
-    //         'fornecedor_id' => $fornecedorId,
-    //         'nome_primeiro_fornecedor' => $fornecedor,
-    //     ]);
-
-    //     // Gerar o PDF e exibi-lo
-    //     $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
-
-    //     // Retornar o pedido recém-criado com o nome do arquivo PDF
-    //     return response()->json([
-    //         'pedido' => $pedido,
-    //         'pdf' => $fileName,
-    //     ], 201);
-    // }
-
-
 
     public function criarPedido(Request $request)
     {
@@ -68,6 +33,8 @@ class UnidadeEstoqueController extends Controller
             // Buscar o fornecedor e acessar todas as colunas
             $fornecedor = Fornecedor::findOrFail($fornecedorId);
             Log::info('Fornecedor encontrado', ['fornecedor' => $fornecedor]);
+
+
 
             $pedido = HistoricoPedido::create([
                 'status_pedido' => 'enviado',
@@ -90,6 +57,7 @@ class UnidadeEstoqueController extends Controller
             $emailFornecedor = $fornecedor->email;
             Log::info('E-mail do fornecedor recuperado', ['email' => $emailFornecedor]);
 
+
             if ($emailFornecedor) {
                 // Enviar o e-mail com o PDF, incluindo o nome do usuário autenticado
                 Mail::to($emailFornecedor)->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name));
@@ -111,9 +79,6 @@ class UnidadeEstoqueController extends Controller
             ], 500);
         }
     }
-
-
-
 
 
     public function gerarPdf($pedido, $itens, $fornecedor)
@@ -151,10 +116,18 @@ class UnidadeEstoqueController extends Controller
         $dompdf->render();
 
         // Gerar o nome do arquivo
-        $fileName = "pedido_{$pedido->id}.pdf";
+        $fileName = "pedido_{$nomeUnidade}_{$pedido->id}.pdf";
+
+        // Caminho completo para o diretório public
+        $path = public_path('storage/pedidos');
+
+        // Verificar se o diretório existe, caso contrário, criar
+        if (!file_exists($path)) {
+            mkdir($path, 0777, true);
+        }
 
         // Salvar o PDF no diretório public
-        Storage::put("public/pedidos/{$fileName}", $dompdf->output());
+        file_put_contents("{$path}/{$fileName}", $dompdf->output());
 
         return $fileName;
     }

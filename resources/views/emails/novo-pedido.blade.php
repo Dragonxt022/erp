@@ -23,8 +23,8 @@
                     <!-- Conteúdo -->
                     <tr>
                         <td style="font-size: 16px; color: #333; text-align: center;">
-                            <p style="margin: 10px 0;">Sua lista de pedidos de insumos foi enviada com sucesso para o fornecedor:</p>
-                            <p style="font-size: 20px; font-weight: bold; color: #6DB631; margin: 10px 0;">{{ $fornecedor->razao_social }}</p>
+                            <p style="margin: 10px 0;">Sua lista de pedidos de insumos foi enviada com sucesso</p>
+                            <p style="font-size: 20px; font-weight: bold; color: #6DB631; margin: 10px 0;"> Seu pedido foi enviado!</p>
                             <p style="margin: 10px 0;">Confira todos os detalhes do pedido no documento anexado em PDF.</p>
                             <p style="margin: 10px 0;">Número do Pedido: <strong>#{{ $pedido->id }}</strong></p>
                         </td>

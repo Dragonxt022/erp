@@ -114,7 +114,7 @@
     <div class="info-header">
         <p><strong>Unidade:</strong> {{ $nomeUnidade }}</p>
         <p><strong>Data:</strong> {{ $dataAtual }}</p>
-        <p><strong>Fornecedor:</strong> {{ $nomeFornecedor }}</p>
+        <p><strong>Fornecedor:</strong> {{ $nomeFornecedor->razao_social }}</p>
     </div>
 
 
