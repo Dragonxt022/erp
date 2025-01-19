@@ -6,7 +6,7 @@
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Gestão de equipe.</p>
+      <p>Uma pagina onde ficar o controle e gestão de sua Equipe.</p>
     </div>
   </LayoutFranqueado>
 </template>
