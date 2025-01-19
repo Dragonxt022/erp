@@ -36,7 +36,7 @@
               class="input"
               type="text"
               placeholder="123.456.789-90"
-              autocomplete="cpf"
+              autocomplete="off"
               aria-label="CPF"
             />
             <!-- Exibindo erro -->
@@ -52,7 +52,7 @@
               class="input"
               type="password"
               placeholder="●●●●●●●●●●●●"
-              autocomplete="password"
+              autocomplete="off"
               aria-label="Senha"
             />
             <!-- Exibindo erro -->

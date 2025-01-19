@@ -136,13 +136,19 @@
       </label>
       <InputModel v-model="quantidade" />
     </div>
-    <div class="mt-5 flex gap-4">
-      <ButtonCancelar text="Finalizar" @click="finalizarResumo" />
+    <div class="mt-5 flex gap-2">
       <ButtonPrimaryCarrinho
         :disabled="isLoading"
         text="adicionar ao carrinho"
+        iconPath="/storage/images/carrinho.svg"
         @click="adicionarAoCarrinho"
         class="uppercase"
+      />
+      <ButtonPrimaryMedio
+        class="w-full"
+        text="Finalizar Pedido"
+        iconPath="/storage/images/arrow_left_alt.svg"
+        @click="finalizarResumo"
       />
     </div>
   </div>
@@ -157,6 +163,7 @@ import LabelModel from '../Label/LabelModel.vue';
 import ButtonPrimaryCarrinho from '../Button/ButtonPrimaryCarrinho.vue';
 import InputModel from '../Inputs/InputModel.vue';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
+import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 const toast = useToast();
 
 const props = defineProps({

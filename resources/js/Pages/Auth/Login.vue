@@ -52,7 +52,7 @@ const handleClick = () => {
           class="mt-1 block w-full"
           required
           autofocus
-          autocomplete="username"
+          autocomplete="off"
         />
         <InputError class="mt-2" :message="form.errors.email" />
       </div>
@@ -65,7 +65,7 @@ const handleClick = () => {
           type="password"
           class="mt-1 block w-full"
           required
-          autocomplete="current-password"
+          autocomplete="off"
         />
         <InputError class="mt-2" :message="form.errors.password" />
       </div>

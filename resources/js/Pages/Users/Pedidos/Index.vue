@@ -37,16 +37,6 @@
               @adicionarAoCarrinho="handleAdicionarAoCarrinho"
             />
           </template>
-          <div
-            v-if="!showCadastroProduto && !produtoSelecionado && !isVisible"
-            class="absolute bottom-4 right-4"
-          >
-            <ButtonPrimaryMedio
-              text="Efetuar Pedido"
-              iconPath="/storage/images/arrow_left_alt.svg"
-              @click="toggleCadastro"
-            />
-          </div>
         </template>
       </div>
     </div>
@@ -57,7 +47,6 @@
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import DetalhesProdutoPedidos from '@/Components/EstruturaFranqueado/DetalhesProdutoPedidos.vue';
 import ListarInsumosPedidos from '@/Components/EstruturaFranqueado/ListarInsumosPedidos.vue';
 import ResumoCarrinhoPedidos from '@/Components/EstruturaFranqueado/ResumoCarrinhoPedidos.vue';

@@ -28,7 +28,6 @@ class User extends Authenticatable
         'email',
         'password',
         'unidade_id',  // Novo campo de unidade
-        'cargo_id',    // Novo campo de cargo
         'pin',         // Novo campo para PIN
         'cpf',         // Novo campo para CPF
         'profile_photo_path',
@@ -79,14 +78,6 @@ class User extends Authenticatable
 
 
     /**
-     * Relacionamento com a tabela de permissões
-     */
-    public function permissions()
-    {
-        return $this->belongsToMany(Permission::class, 'user_permissions');
-    }
-
-    /**
      * Relacionamento com a tabela de UserDetails
      */
     public function userDetails()
@@ -102,13 +93,6 @@ class User extends Authenticatable
         return $this->belongsTo(InforUnidade::class, 'unidade_id');
     }
 
-    /**
-     * Relacionamento com a tabela de Cargo
-     */
-    public function cargo()
-    {
-        return $this->belongsTo(Cargo::class, 'cargo_id'); // Referência à chave estrangeira cargo_id
-    }
 
     /**
      * Acessor para obter o nome completo do cargo.
