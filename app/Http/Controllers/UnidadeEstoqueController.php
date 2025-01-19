@@ -2,14 +2,162 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NovoPedidoMail;
 use App\Models\Fornecedor;
+use App\Models\HistoricoPedido;
 use App\Models\UnidadeEstoque;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 
 class UnidadeEstoqueController extends Controller
 {
+
+    // Criar um novo pedido
+    // public function criarPedido(Request $request)
+    // {
+
+    //     // Preparando os dados de entrada
+    //     $itens = $request->itens; // Já é um array, sem a necessidade de json_encode
+    //     // Verificando o fornecedor (presumo que o fornecedor seja o mesmo para todos os itens)
+    //     $fornecedorId = $itens[0]['fornecedor_id'];
+    //     $fornecedor = $request->nomePrimeiroFornecedor;
+
+    //     // Criação do pedido
+    //     $pedido = HistoricoPedido::create([
+    //         'status_pedido' => 'enviado',
+    //         'itens_id' => json_encode($itens), // Itens armazenados como JSON
+    //         'quantidade' => array_column($itens, 'quantidade'),
+    //         'valor_unitario' => array_column($itens, 'valor_unitario'),
+    //         'valor_total_item' => array_column($itens, 'valor_total_item'),
+    //         'valor_total_carrinho' => $request->valor_total_carrinho,
+    //         'unidade_id' => Auth::user()->unidade_id,
+    //         'usuario_responsavel_id' => Auth::user()->id,
+    //         'fornecedor_id' => $fornecedorId,
+    //         'nome_primeiro_fornecedor' => $fornecedor,
+    //     ]);
+
+    //     // Gerar o PDF e exibi-lo
+    //     $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
+
+    //     // Retornar o pedido recém-criado com o nome do arquivo PDF
+    //     return response()->json([
+    //         'pedido' => $pedido,
+    //         'pdf' => $fileName,
+    //     ], 201);
+    // }
+
+
+
+    public function criarPedido(Request $request)
+    {
+        Log::info('Início do método criarPedido', ['request' => $request->all()]);
+
+        try {
+            $itens = $request->itens;
+            Log::info('Itens do pedido recebidos', ['itens' => $itens]);
+
+            $fornecedorId = $itens[0]['fornecedor_id'];
+            Log::info('ID do fornecedor extraído', ['fornecedor_id' => $fornecedorId]);
+
+            // Buscar o fornecedor e acessar todas as colunas
+            $fornecedor = Fornecedor::findOrFail($fornecedorId);
+            Log::info('Fornecedor encontrado', ['fornecedor' => $fornecedor]);
+
+            $pedido = HistoricoPedido::create([
+                'status_pedido' => 'enviado',
+                'itens_id' => json_encode($itens),
+                'quantidade' => array_column($itens, 'quantidade'),
+                'valor_unitario' => array_column($itens, 'valor_unitario'),
+                'valor_total_item' => array_column($itens, 'valor_total_item'),
+                'valor_total_carrinho' => $request->valor_total_carrinho,
+                'unidade_id' => Auth::user()->unidade_id,
+                'usuario_responsavel_id' => Auth::user()->id,
+                'fornecedor_id' => $fornecedor->id,
+                'nome_primeiro_fornecedor' => $fornecedor->nome,
+            ]);
+            Log::info('Pedido criado com sucesso', ['pedido' => $pedido]);
+
+            $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
+            Log::info('PDF gerado', ['fileName' => $fileName]);
+
+            // Recuperar o e-mail do fornecedor
+            $emailFornecedor = $fornecedor->email;
+            Log::info('E-mail do fornecedor recuperado', ['email' => $emailFornecedor]);
+
+            if ($emailFornecedor) {
+                // Enviar o e-mail com o PDF, incluindo o nome do usuário autenticado
+                Mail::to($emailFornecedor)->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name));
+                Log::info('E-mail enviado para o fornecedor', ['email' => $emailFornecedor]);
+            }
+
+            return response()->json([
+                'pedido' => $pedido,
+                'pdf' => $fileName,
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar pedido', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'error' => 'Ocorreu um erro ao criar o pedido. Verifique os logs para mais detalhes.',
+            ], 500);
+        }
+    }
+
+
+
+
+
+    public function gerarPdf($pedido, $itens, $fornecedor)
+    {
+        // Preparando os dados dos produtos para o PDF diretamente da request
+        $produtosParaPdf = array_map(function ($item) {
+            return [
+                'nome' => $item['nome'],
+                'quantidade' => $item['quantidade'],
+                'valor_unitario' => number_format($item['valor_unitario'] / 100, 2, ',', '.'), // Convertendo para reais
+                'valor_total_item' => number_format($item['valor_total_item'], 2, ',', '.'), // Convertendo para reais
+                'unidade_de_medida' => $item['unidadeDeMedida'] === 'a_granel' ? 'KG' : 'UN', // Definindo a unidade de medida
+            ];
+        }, $itens);
+
+        // Obter a unidade do usuário autenticado
+        $unidade = Auth::user()->unidade; // Acessando o relacionamento
+        $nomeUsuario = Auth::user()->name ?? 'Não informado';
+        $nomeUnidade = $unidade->cidade ?? 'Unidade Desconhecida'; // Usando 'cidade' para o nome da unidade
+        $nomeFornecedor = $fornecedor ?? 'não informado';
+
+        // Data do dia em formato brasileiro
+        $dataAtual = now()->format('d/m/Y');
+
+        // Configurando o DomPDF
+        $pdfOptions = new Options();
+        $pdfOptions->set('isHtml5ParserEnabled', true);
+        $pdfOptions->set('isPhpEnabled', true);
+
+        $dompdf = new Dompdf($pdfOptions);
+
+        // Gerando o HTML do PDF
+        $html = view('pedido.pdf', compact('produtosParaPdf', 'pedido', 'nomeUnidade', 'dataAtual', 'nomeFornecedor', 'nomeUsuario'))->render();
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+
+        // Gerar o nome do arquivo
+        $fileName = "pedido_{$pedido->id}.pdf";
+
+        // Salvar o PDF no diretório public
+        Storage::put("public/pedidos/{$fileName}", $dompdf->output());
+
+        return $fileName;
+    }
 
 
     public function index()
@@ -94,7 +242,6 @@ class UnidadeEstoqueController extends Controller
         return response()->json($produtosAgrupados);
     }
 
-
     // Responsavel pelos dados da tela de estoque
     public function painelInicialEstoque(Request $request)
     {
@@ -135,8 +282,6 @@ class UnidadeEstoqueController extends Controller
             'historicoMovimentacoes' => $historicoMovimentacoes,
         ]);
     }
-
-
 
 
     // Lista os fornecederes
@@ -206,56 +351,6 @@ class UnidadeEstoqueController extends Controller
             return response()->json(['error' => 'Erro ao armazenar itens: ' . $e->getMessage()], 500);
         }
     }
-
-    // Atualiza o lote
-    // public function update(Request $request, $loteId)
-    // {
-    //     // Validação dos dados
-    //     $request->validate([
-    //         'quantidade' => 'required|numeric|min:0',
-    //     ]);
-
-    //     // Busca o lote pelo ID
-    //     $lote = UnidadeEstoque::findOrFail($loteId);
-
-    //     // Obtém os dados da tabela
-    //     $unidade = $lote->unidade; // Exemplo: 'unidade' ou 'kg'
-
-    //     // Calcula a diferença de quantidade
-    //     $quantidadeAntiga = $lote->quantidade;
-    //     $novaQuantidade = $request->input('quantidade');
-    //     $diferencaQuantidade = $novaQuantidade - $quantidadeAntiga;
-
-    //     // Realiza os cálculos com base na unidade
-    //     if ($unidade === 'unidade') {
-    //         // Produto por unidade: calcula o preço unitário em centavos
-    //         $precoUnitarioCentavos = $lote->preco_insumo / $quantidadeAntiga;
-    //         $novoValorTotalCentavos = $novaQuantidade * $precoUnitarioCentavos;
-    //     } elseif ($unidade === 'kg') {
-    //         // Produto por quilo: calcula o valor por quilo em centavos
-    //         $valorPorQuiloCentavos = $lote->preco_insumo / $quantidadeAntiga;
-    //         $novoValorTotalCentavos = $novaQuantidade * $valorPorQuiloCentavos;
-    //     } else {
-    //         return response()->json(['error' => 'Unidade de medida inválida.'], 400);
-    //     }
-
-    //     // Atualiza a quantidade e o preço total no lote (em centavos)
-    //     $lote->quantidade = $novaQuantidade;
-    //     $lote->preco_insumo = round($novoValorTotalCentavos); // Armazena em centavos
-    //     $lote->updated_at = now(); // Atualiza o timestamp
-
-    //     $lote->save();
-
-    //     return response()->json([
-    //         'message' => 'Quantidade e valores atualizados com sucesso!',
-    //         'lote' => [
-    //             'id' => $lote->id,
-    //             'insumo_id' => $lote->insumo_id,
-    //             'quantidade' => $lote->quantidade,
-    //             'preco_insumo' => number_format($lote->preco_insumo / 100, 2, ',', '.'), // Exibe em reais
-    //         ],
-    //     ]);
-    // }
 
     public function update(Request $request, $loteId)
     {

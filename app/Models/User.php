@@ -69,6 +69,16 @@ class User extends Authenticatable
     }
 
     /**
+     * Relacionamento com a tabela de historico
+     */
+
+    public function historicoPedidos()
+    {
+        return $this->hasMany(HistoricoPedido::class, 'usuario_responsavel_id');
+    }
+
+
+    /**
      * Relacionamento com a tabela de permissões
      */
     public function permissions()
@@ -100,7 +110,7 @@ class User extends Authenticatable
         return $this->belongsTo(Cargo::class, 'cargo_id'); // Referência à chave estrangeira cargo_id
     }
 
-     /**
+    /**
      * Acessor para obter o nome completo do cargo.
      */
     public function getCargoNameAttribute()
@@ -112,5 +122,4 @@ class User extends Authenticatable
     {
         $this->notify(new ResetPasswordNotification($token));
     }
-
 }

@@ -71,13 +71,13 @@ Route::prefix('api')->middleware([
         Route::get('/fornecedores', [UnidadeEstoqueController::class, 'unidadeForencedores'])->name('unidadeForencedores.index');
         Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
 
+        Route::post('/criar-pedido', [UnidadeEstoqueController::class, 'criarPedido'])->name('criarPedido');
+
+
         Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
     });
 
     Route::prefix('produtos')->group(function () {
         Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
-        // Route::post('/cadastrar', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
-        // Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
-        // Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
     });
 });

@@ -32,10 +32,6 @@ class UnitController extends Controller
         return response()->json($resultados);
     }
 
-
-
-
-
     /**
      * Criar uma nova unidade.
      *
@@ -102,7 +98,5 @@ class UnitController extends Controller
             'message' => 'Atualizado!',
             'type' => 'success',
         ]);
-
     }
-
 }

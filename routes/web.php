@@ -31,6 +31,7 @@ Route::get('/get-token', function () {
 });
 
 
+
 // Carregar rotas do painel administrativo
 require __DIR__ . '/admin.php';
 

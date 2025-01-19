@@ -9,7 +9,7 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
-    // CheckAdmin::class
+    CheckAdmin::class
 ])->group(function () {
 
     Route::get('/franqueadora/painel', function () {

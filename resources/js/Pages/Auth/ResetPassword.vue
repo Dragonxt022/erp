@@ -2,6 +2,7 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
+import { Inertia } from '@inertiajs/inertia';
 
 const props = defineProps({
   email: String,
@@ -17,6 +18,10 @@ const form = useForm({
 
 const submit = () => {
   form.post(route('password.update'), {
+    onSuccess: () => {
+      // Redirecionando para a página de login após sucesso
+      Inertia.visit(route('entrar.painal'));
+    },
     onFinish: () => form.reset('password', 'password_confirmation'),
   });
 };

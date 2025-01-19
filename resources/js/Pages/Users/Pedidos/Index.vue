@@ -3,11 +3,11 @@
     <!-- Cabeçalho da página -->
     <Head title="Novo Pedido" />
 
-    <!-- Container de novos produtos -->
+    <!-- Container do carrinho de pedidos -->
     <div v-if="showCadastroProduto" class="mt-6">
-      <CadastroProduto
+      <ResumoCarrinhoPedidos
+        :carrinho="carrinho"
         :isVisible="showCadastroProduto"
-        @unidade-cadastrada="handleCadastro"
         @cancelar="toggleCadastro"
       />
     </div>
@@ -33,11 +33,13 @@
             <DetalhesProdutoPedidos
               @atualizar="atualizarLista"
               :produto="produtoSelecionado"
+              @finalizar="toggleCadastro"
+              @adicionarAoCarrinho="handleAdicionarAoCarrinho"
             />
           </template>
           <div
-            v-if="!isVisible"
-            class="absolute bottom-4 right-4 botao-container"
+            v-if="!showCadastroProduto && !produtoSelecionado && !isVisible"
+            class="absolute bottom-4 right-4"
           >
             <ButtonPrimaryMedio
               text="Efetuar Pedido"
@@ -52,15 +54,16 @@
 </template>
 
 <script setup>
-import CadastroProduto from '@/Components/EstruturaFranqueado/CadastroProduto.vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import DetalhesProdutoPedidos from '@/Components/EstruturaFranqueado/DetalhesProdutoPedidos.vue';
 import ListarInsumosPedidos from '@/Components/EstruturaFranqueado/ListarInsumosPedidos.vue';
+import ResumoCarrinhoPedidos from '@/Components/EstruturaFranqueado/ResumoCarrinhoPedidos.vue';
 
-// Dados do usuário selecionado
+// Dados do carrinho e visibilidade do cadastro
+const carrinho = ref([]);
 const produtoSelecionado = ref(null);
 const listaKey = ref(0);
 const showCadastroProduto = ref(false);
@@ -71,18 +74,18 @@ const toggleCadastro = () => {
   showCadastroProduto.value = !showCadastroProduto.value;
 };
 
+// Função para adicionar produto ao carrinho
+const handleAdicionarAoCarrinho = (item) => {
+  carrinho.value.push(item);
+  // produtoSelecionado.value = null;
+};
+
 // Atualzia o componet de inusmos apos atualizar as quantidades
 const atualizarLista = () => {
   console.log('atualizando a lista');
   produtoSelecionado.value = null;
   // Atualiza a chave, forçando a reinicialização do componente
   listaKey.value += 1;
-};
-
-// Atualiza a lista de Inumos após o cadastro
-const handleCadastro = () => {
-  fetchUnidades();
-  showCadastroProduto.value = false;
 };
 
 // Atualiza a lista de inumos
