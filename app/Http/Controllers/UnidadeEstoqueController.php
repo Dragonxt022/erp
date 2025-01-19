@@ -34,8 +34,12 @@ class UnidadeEstoqueController extends Controller
             $fornecedor = Fornecedor::findOrFail($fornecedorId);
             Log::info('Fornecedor encontrado', ['fornecedor' => $fornecedor]);
 
+            // Obter a unidade do usuário autenticado
+            $unidade = Auth::user()->unidade;
+            $nomeUnidade = $unidade->cidade ?? 'Unidade Desconhecida'; // Usando cidade para nome da unidade
+            $dataPedido = now()->format('d/m/Y'); // Data atual no formato dd/mm/aaaa
 
-
+            // Criar o pedido
             $pedido = HistoricoPedido::create([
                 'status_pedido' => 'enviado',
                 'itens_id' => json_encode($itens),
@@ -50,6 +54,7 @@ class UnidadeEstoqueController extends Controller
             ]);
             Log::info('Pedido criado com sucesso', ['pedido' => $pedido]);
 
+            // Gerar o PDF
             $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
             Log::info('PDF gerado', ['fileName' => $fileName]);
 
@@ -57,11 +62,22 @@ class UnidadeEstoqueController extends Controller
             $emailFornecedor = $fornecedor->email;
             Log::info('E-mail do fornecedor recuperado', ['email' => $emailFornecedor]);
 
+            // Recuperar o e-mail do usuário autenticado (responsável)
+            $emailUsuario = Auth::user()->email;
 
+            // Recuperar o e-mail da franqueadora (caso tenha, ou pode ser um e-mail fixo)
+            $emailFranqueadora = 'taiksusushi@gmail.com'; // Substitua pelo e-mail da franqueadora
+
+            // Enviar o e-mail para o fornecedor com o PDF, incluindo o nome da unidade e a data do pedido
             if ($emailFornecedor) {
-                // Enviar o e-mail com o PDF, incluindo o nome do usuário autenticado
-                Mail::to($emailFornecedor)->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name));
-                Log::info('E-mail enviado para o fornecedor', ['email' => $emailFornecedor]);
+                Mail::to($emailFornecedor)
+                    ->cc([$emailUsuario, $emailFranqueadora]) // Adiciona o usuário e a franqueadora em cópia
+                    ->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name, $nomeUnidade, $dataPedido));
+
+                Log::info('E-mail enviado para o fornecedor, com cópia para o usuário e franqueadora', [
+                    'email' => $emailFornecedor,
+                    'cc' => [$emailUsuario, $emailFranqueadora],
+                ]);
             }
 
             return response()->json([
@@ -79,6 +95,7 @@ class UnidadeEstoqueController extends Controller
             ], 500);
         }
     }
+
 
 
     public function gerarPdf($pedido, $itens, $fornecedor)

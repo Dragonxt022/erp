@@ -14,22 +14,31 @@ class NovoPedidoMail extends Mailable
     public $pedido;
     public $fileName;
     public $name;
+    public $nomeUnidade;
+    public $dataPedido;
 
-    public function __construct($pedido, $fileName, $name)
+    public function __construct($pedido, $fileName, $name, $nomeUnidade, $dataPedido)
     {
         $this->pedido = $pedido;
         $this->fileName = $fileName;
         $this->name = $name;
+        $this->nomeUnidade = $nomeUnidade;
+        $this->dataPedido = $dataPedido;
     }
+
     public function build()
     {
+        $subject = 'Pedido #' . $this->pedido->id . ' - Taiksu | ' . $this->nomeUnidade . ' | ' . $this->dataPedido;
+
         return $this->view('emails.novo-pedido')
             ->with([
                 'pedido' => $this->pedido,
                 'fileName' => $this->fileName,
                 'name' => $this->name,
+                'nomeUnidade' => $this->nomeUnidade,
+                'dataPedido' => $this->dataPedido,
             ])
-            ->subject('Novo Pedido Recebido')
+            ->subject($subject)  // Alteração no assunto do e-mail
             ->attach(storage_path("app/public/pedidos/{$this->fileName}"));
     }
 }
