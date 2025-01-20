@@ -9,27 +9,7 @@
         <div
           class="absolute left-0 top-0 text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[50px] tracking-tight"
         >
-          {{
-            fornecedorData?.razao_social || fornecedorData.razao_social || 'N/A'
-          }}
-        </div>
-        <div class="w-1/1">
-          <ConfirmDialog
-            :isVisible="isConfirmDialogVisible"
-            :motivo="motivo"
-            @confirm="handleConfirm"
-            @cancel="handleCancel"
-          />
-          <div
-            class="absolute top-3 right-4 cursor-pointer"
-            @click="showConfirmDialog('Excluir esse Fornecedor?')"
-          >
-            <img
-              src="/storage/images/delete.svg"
-              alt="Deletar Usuário"
-              class="w-6 h-6"
-            />
-          </div>
+          {{ fornecedor?.razao_social || fornecedor.razao_social || 'N/A' }}
         </div>
         <div class="relative w-full h-full">
           <!-- Exibe o ID e CNPJ -->
@@ -49,7 +29,7 @@
               <div
                 class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
               >
-                ID# {{ (fornecedorData?.id ?? 0).toString().padStart(4, '0') }}
+                ID# {{ (fornecedor?.id ?? 0).toString().padStart(4, '0') }}
               </div>
             </div>
             <div
@@ -65,7 +45,7 @@
               <div
                 class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
               >
-                {{ fornecedorData?.cnpj || 'N/A' }}
+                {{ fornecedor?.cnpj || 'N/A' }}
               </div>
             </div>
           </div>
@@ -79,7 +59,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.razao_social || 'N/A' }}
+            {{ fornecedor.razao_social || 'N/A' }}
           </div>
         </div>
       </div>
@@ -92,7 +72,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.email || 'N/A' }}
+            {{ fornecedor.email || 'N/A' }}
           </div>
         </div>
       </div>
@@ -105,7 +85,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.whatsapp || 'N/A' }}
+            {{ fornecedor.whatsapp || 'N/A' }}
           </div>
         </div>
       </div>
@@ -118,105 +98,26 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.estado || 'N/A' }}
+            {{ fornecedor.estado || 'N/A' }}
           </div>
         </div>
       </div>
     </div>
-    <div v-if="fornecedor.id && !isEditMode" class="mt-7">
-      <ButtonEditeMedio
-        text="Editar insumos"
-        icon-path="/storage/images/border_color.svg"
-        @click="toggleEditMode"
-        class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-      />
-    </div>
   </div>
-  <EditarFornecedor
-    v-if="isEditMode"
-    ref="dadosfornecedor"
-    :isVisible="isEditMode"
-    :fornecedor="fornecedor"
-    @dadosfornecedor="fetchfornecedors"
-    @cancelar="cancelEdit"
-  />
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+
 import { useToast } from 'vue-toastification';
 import LabelModel from '../Label/LabelModel.vue';
-import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
-import EditarFornecedor from './EditarFornecedor.vue';
-import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
-
-const toast = useToast();
-
-const isConfirmDialogVisible = ref(false);
-const motivo = ref('');
-const showCadastrofornecedor = ref(false);
-
 const isEditMode = ref(false);
-const isLoading = ref(false);
-
 const props = defineProps({
   fornecedor: {
     type: Object,
     required: true,
   },
 });
-
-// Dados do fornecedor em modo editável
-const fornecedorData = ref({ ...props.fornecedor });
-
-const deleteFornecedor = async () => {
-  try {
-    isLoading.value = true;
-
-    await axios.delete(`/api/fornecedores/${props.fornecedor.id}`);
-
-    Inertia.replace(route('franqueadora.fornecedores'), {
-      preserveState: true,
-    });
-
-    toast.success('Fornecedor deletado com sucesso!');
-  } catch (error) {
-    toast.error(`Erro ao deletar o fornecedor: ${error.message}`);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const fetchfornecedors = () => {
-  const dadosfornecedor = ref.dadosfornecedor;
-  dadosfornecedor.fetchfornecedor();
-};
-
-const toggleEditMode = () => {
-  isEditMode.value = !isEditMode.value;
-  console.log('isEditMode:', isEditMode.value); // Para depuração
-  showCadastrofornecedor.value = false;
-};
-
-const showConfirmDialog = (motivoParam) => {
-  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
-  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
-};
-
-const handleConfirm = () => {
-  deleteFornecedor();
-  isConfirmDialogVisible.value = false;
-};
-
-const handleCancel = () => {
-  isConfirmDialogVisible.value = false;
-};
-
-const cancelEdit = () => {
-  isEditMode.value = false;
-  showCadastrofornecedor.value = true;
-};
 </script>
 
 <style scoped>

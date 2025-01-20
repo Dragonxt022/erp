@@ -70,13 +70,14 @@ import axios from 'axios';
 const emit = defineEmits(['fornecedor-selecionado']);
 
 // Dados reativos
+
 const fornecedores = ref([]);
 const searchQuery = ref('');
 
 // Função para buscar fornecedores
 const fetchFornecedores = async () => {
   try {
-    const response = await axios.get('/api/fornecedores');
+    const response = await axios.get('/api/estoque/fornecedores');
     fornecedores.value = response.data.data;
   } catch (error) {
     console.error('Erro ao carregar fornecedores:', error);

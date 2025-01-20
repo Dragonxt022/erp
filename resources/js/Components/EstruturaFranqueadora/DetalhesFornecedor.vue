@@ -195,8 +195,10 @@ const fetchfornecedors = () => {
 
 const toggleEditMode = () => {
   isEditMode.value = !isEditMode.value;
-  console.log('isEditMode:', isEditMode.value); // Para depuração
-  showCadastrofornecedor.value = false;
+  if (!isEditMode.value) {
+    // Atualiza o fornecedorData após sair do modo de edição
+    fornecedorData.value = { ...props.fornecedor };
+  }
 };
 
 const showConfirmDialog = (motivoParam) => {

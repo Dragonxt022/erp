@@ -10,7 +10,7 @@
         <ListarFornecedores
           ref="listarFornecedores"
           @fornecedor-cadastrado="fetchFornecedores"
-          @fornecedor-selecionado="fornecedorSelecionadoHandler"
+          @fornecedor-selecionado="selecionarFornecedor"
         />
       </div>
 
@@ -77,14 +77,7 @@ const fetchFornecedores = () => {
 };
 
 // Define os dados do fornecedor selecionado
-const fornecedorSelecionadoHandler = (fornecedor) => {
-  if (fornecedor && typeof fornecedor === 'object') {
-    fornecedorSelecionado.value = fornecedor;
-  } else {
-    console.warn(
-      'Dados inválidos recebidos no evento fornecedor-selecionado:',
-      fornecedor
-    );
-  }
+const selecionarFornecedor = (fornecedor) => {
+  fornecedorSelecionado.value = fornecedor;
 };
 </script>

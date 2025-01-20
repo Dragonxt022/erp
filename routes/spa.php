@@ -80,12 +80,13 @@ Route::prefix('api')->middleware([
         Route::get('/incial', [UnidadeEstoqueController::class, 'painelInicialEstoque'])->name('painelInicialEstoque.index');
         Route::get('/fornecedores', [UnidadeEstoqueController::class, 'unidadeForencedores'])->name('unidadeForencedores.index');
         Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
-
         Route::post('/criar-pedido', [UnidadeEstoqueController::class, 'criarPedido'])->name('criarPedido');
 
 
         Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
     });
+
+
 
     Route::prefix('produtos')->group(function () {
         Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');

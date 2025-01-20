@@ -284,11 +284,11 @@ class UnidadeEstoqueController extends Controller
         $fornecedoresData = $fornecedores->map(function ($fornecedor) {
             return [
                 'id' => $fornecedor->id,
-                // 'cnpj' => $fornecedor->cnpj,
+                'cnpj' => $fornecedor->cnpj,
                 'razao_social' => $fornecedor->razao_social,
-                // 'email' => $fornecedor->email,
-                // 'whatsapp' => $fornecedor->whatsapp,
-                // 'estado' => $fornecedor->estado,
+                'email' => $fornecedor->email,
+                'whatsapp' => $fornecedor->whatsapp,
+                'estado' => $fornecedor->estado,
             ];
         });
 
