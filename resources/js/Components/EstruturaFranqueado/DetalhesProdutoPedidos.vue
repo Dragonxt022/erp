@@ -63,7 +63,9 @@
             >
               Preço
               {{
-                produto.unidadeDeMedida === 'unitario' ? 'Unitario' : 'A Granel'
+                produto.unidadeDeMedida === 'unitario'
+                  ? 'Por Unidade'
+                  : 'Por Kg'
               }}
             </th>
           </tr>

@@ -16,20 +16,20 @@
                     <tr>
                         <td style="text-align: center; margin-bottom: 30px;">
                             <img src="{{ asset('storage/images/logo_tipo_verde.png') }}" alt="Logo" style="width: 175px; margin-bottom: 40px;">
-                            <h1 style="color: #6DB631; font-size: 24px; margin: 0;">Olá!</h1>
                         </td>
                     </tr>
 
                     <!-- Conteúdo -->
                     <tr>
-                        <td style="font-size: 16px; color: #333; text-align: center;">
-                            <p style="margin: 10px 0;">Um novo pedido foi realizado no sistema.</p>
-                            <p style="font-size: 20px; font-weight: bold; color: #6DB631; margin: 10px 0;">Pedido realizado na plataforma Taiksu</p>
+                        <td style="font-size: 15px; color: #333; text-align: center;">
+
+                            <p style="font-size: 20px; font-weight: bold; color: #6DB631; margin: 10px 0;">Um novo pedido foi realizado no sistema.</p>
                             <p style="margin: 10px 0;">Confira todos os detalhes do pedido no documento em PDF anexado.</p>
                             <p style="margin: 10px 0;">Número do Pedido: <strong>#{{ $pedido->id }}</strong></p>
 
                             <p style="margin: 10px 0;">Data do Pedido: <strong>{{ $dataPedido }}</strong></p>
                             <p style="margin: 10px 0;">Unidade: <strong>{{ $nomeUnidade }}</strong></p>
+                            <p style="margin: 10px 0;">* valor atualizado semanalmente, podendo sofrer alterações, confirme com o fornecedor no ato do envio do pedido.</p>
                         </td>
                     </tr>
 

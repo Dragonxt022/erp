@@ -30,6 +30,17 @@
           {{ nomePrimeiroFornecedor || 'Fornecedor desconhecido' }}.
         </span>
       </div>
+      <div
+        class="mt-[20%] text-[#ff2d55] text-[15px] font-normal font-['Figtree'] leading-[18px] tracking-tight"
+      >
+        <p>
+          * valor atualizado semanalmente,
+          <br />
+          podendo sofrer alterações, confirme
+          <br />
+          com o fornecedor no ato do envio do pedido.
+        </p>
+      </div>
     </div>
 
     <!-- Coluna da direita -->
@@ -209,7 +220,7 @@ const calcularSomaTotal = () => {
 
 const enviarPedido = async () => {
   isLoading.value = true;
-  // isSending.value = true;
+  isSending.value = true;
   try {
     // Preparando os dados que serão enviados para a API
     const dadosEntrada = {
@@ -239,11 +250,10 @@ const enviarPedido = async () => {
     if (response.status === 201) {
       console.log('Resposta da API:', response.data);
 
-      // Redirecionando para a página de inventário após sucesso
-      // Inertia.visit(route('franqueado.inventario'));
-
       // Exibindo notificação de sucesso
       toast.success('Lista de itens está sendo enviada.');
+      // Redirecionando para a página de inventário após sucesso
+      Inertia.visit(route('franqueado.inventario'));
     } else {
       // Caso a resposta da API não seja bem-sucedida
       toast.error('Erro ao enviar os itens.');

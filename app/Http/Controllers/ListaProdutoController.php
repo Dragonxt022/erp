@@ -11,42 +11,6 @@ use Illuminate\Support\Facades\Validator;
 
 class ListaProdutoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    // public function index()
-    // {
-    //     // Recupera todos os produtos
-    //     $produtos = ListaProduto::all();
-
-    //     // Classifica os produtos: "principal" no topo e ordem alfabética para cada grupo
-    //     $produtosOrdenados = $produtos->sort(function ($a, $b) {
-    //         // Primeiro, coloca "principal" no topo
-    //         if ($a->categoria === 'principal' && $b->categoria !== 'principal') {
-    //             return -1;
-    //         }
-    //         if ($a->categoria !== 'principal' && $b->categoria === 'principal') {
-    //             return 1;
-    //         }
-
-    //         // Se as categorias forem iguais, ordena alfabeticamente (locale-aware)
-    //         return strcoll($a->nome, $b->nome);
-    //     });
-
-    //     // Mapeia os dados e converte para array
-    //     $resultados = $produtosOrdenados->map(function ($produto) {
-    //         return [
-    //             'id' => $produto->id,
-    //             'nome' => $produto->nome,
-    //             'categoria' => $produto->categoria,
-    //             'unidadeDeMedida' => $produto->unidadeDeMedida,
-    //             'profile_photo' => $produto->profile_photo ?? null,
-    //             'estrela' => $produto->categoria === 'principal' ? '★' : null,
-    //         ];
-    //     })->values()->toArray(); // Reorganiza os índices e converte para array
-
-    //     return response()->json($resultados);
-    // }
 
     public function index()
     {

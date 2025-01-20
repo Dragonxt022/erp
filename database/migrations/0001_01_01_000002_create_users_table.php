@@ -23,11 +23,9 @@ return new class extends Migration
             $table->string('cpf')->nullable();  // Novo campo para o CPF do usuário
             $table->string('profile_photo_path', 2048)->nullable();
 
-            // Tera todos os acesos do painel Administrativo
             $table->boolean('franqueadora')->default(false);
-
-            // Terá todos os acessos do painel franqueado menos do admim
             $table->boolean('franqueado')->default(false);
+            $table->boolean('controle_retirada_produto')->default(false);
 
 
             $table->timestamps();

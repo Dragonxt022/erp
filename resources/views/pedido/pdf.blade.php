@@ -102,6 +102,10 @@
             width: 100px;
             /* Tamanho ajustado da imagem */
         }
+
+        .textAviso {
+            color: red;
+        }
     </style>
     <title>Novo Pedido #{{ $pedido->id }}</title>
 </head>
@@ -159,7 +163,10 @@
         <p><strong>Pedido realizado</strong> {{ $nomeUsuario }} em {{ $dataAtual }}.</p>
 
     </div>
+    <div class="info-header">
+        <p class="textAviso">* valor atualizado semanalmente, podendo sofrer alterações, confirme com o fornecedor no ato do envio do pedido.</p>
 
+    </div>
 </body>
 
 </html>

@@ -83,6 +83,9 @@ Route::prefix('api')->middleware([
         Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
         Route::post('/criar-pedido', [UnidadeEstoqueController::class, 'criarPedido'])->name('criarPedido');
         Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
+
+        // Rotas de controle de retirada
+        Route::get('/lista-produtos', [UnidadeEstoqueController::class, 'ListaProdutoEstoque'])->name('ListaProdutoEstoque.index');
     });
 
     Route::prefix('historico')->group(function () {

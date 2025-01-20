@@ -30,6 +30,8 @@ Route::get('/get-token', function () {
     return response()->json(['status' => 'unauthorized'], 401);
 });
 
+// Rotas do sistema de retirada de estoque!
+Route::get('/logoin-estoque', [AuthController::class, 'loginComPin'])->name('login.estoque');
 
 
 // Carregar rotas do painel administrativo

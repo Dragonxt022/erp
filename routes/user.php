@@ -65,4 +65,10 @@ Route::middleware([
     Route::get('/franqueado/folha-pagamento', function () {
         return Inertia::render('Users/FolhaPagamento/Index');
     })->name('franqueado.folhaPagamento');
+
+
+    // Rotas Sitemas de Retirada de estoque
+    Route::get('/franqueado/controle-estoque', function () {
+        return Inertia::render('Users/EstoqueRetirada/Index');
+    })->name('franqueado.controleEstoque');
 });

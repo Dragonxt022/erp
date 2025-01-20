@@ -52,12 +52,6 @@
               {{ produto.nome }}
             </div>
             <!-- Quantidade -->
-            <div class="quantidade text-gray-600 font-semibold">
-              <div class="text-gray-600 font-semibold">
-                {{ getQuantidadeTotal(produto.lotes) }}
-                {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -82,7 +76,7 @@ export default {
     // Busca os produtos da API
     async fetchProdutos() {
       try {
-        const response = await axios.get('/api/estoque/lista');
+        const response = await axios.get('/api/produtos/lista');
         console.log('Produtos carregados:', response.data);
         this.produtos = Object.values(response.data); // Converte o objeto em array
       } catch (error) {
@@ -99,11 +93,6 @@ export default {
 
     selecionarProduto(produto) {
       this.$emit('produto-selecionado', produto);
-    },
-
-    // Calcula a quantidade total de todos os lotes de um produto
-    getQuantidadeTotal(lotes) {
-      return lotes.reduce((total, lote) => total + lote.quantidade, 0);
     },
   },
   computed: {

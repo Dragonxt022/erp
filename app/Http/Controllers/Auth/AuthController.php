@@ -12,7 +12,31 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
+    // Sistema de login com PIN para gerenciar o estoque
+    public function loginComPin(Request $request)
+    {
+        // Valida o PIN recebido
+        $dadosValidados = $request->validate([
+            'pin' => 'required|digits:4', // O PIN deve ter 4 dígitos
+        ]);
 
+        // Busca o usuário com o PIN fornecido
+        $usuario = User::where('pin', $dadosValidados['pin'])->first();
+
+        if (!$usuario) {
+            return response()->json(['erro' => 'PIN inválido.'], 401);
+        }
+
+        // Autentica o usuário manualmente
+        Auth::login($usuario);
+
+        return response()->json([
+            'mensagem' => 'Login realizado com sucesso.',
+            'usuario' => $usuario->only(['id', 'name', 'email']),
+        ], 200);
+    }
+
+    // Redirecionador da pagina de Login
     public function paginLogin()
     {
         // Verifica se o usuário está autenticado
@@ -32,7 +56,7 @@ class AuthController extends Controller
         return Inertia::render('Auth/Entrar');
     }
 
-
+    //  Função de login principal
     public function login(Request $request)
     {
 

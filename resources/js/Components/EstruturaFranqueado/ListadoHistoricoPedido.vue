@@ -39,7 +39,7 @@
         <p class="text-[20px]"># {{ dados.id }}</p>
       </div>
       <div
-        class="w-[142.65px] h-[17.68px] text-[#6d6d6d] text-[13px] font-medium font-['Figtree'] leading-[20px]"
+        class="w-[400px] h-[17.68px] text-[#6d6d6d] text-[13px] font-medium font-['Figtree'] leading-[20px]"
       >
         {{ dados.fornecedor_nome }}
       </div>

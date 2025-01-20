@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('unidade_id')->constrained('infor_unidade')->onDelete('cascade');
             $table->foreignId('fornecedor_id')->constrained('fornecedores')->onDelete('cascade');
             $table->integer('valor_total_carrinho'); // Em centavos (como um inteiro)
-            $table->string('itens_id'); // Usando string para armazenar JSON
+            $table->json('itens_id'); // Usando string para armazenar JSON
             $table->string('quantidade'); // Usando string para armazenar JSON
             $table->string('valor_unitario'); // Usando string para armazenar JSON
             $table->string('valor_total_item'); // Usando string para armazenar JSON
