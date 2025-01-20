@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
@@ -81,9 +82,11 @@ Route::prefix('api')->middleware([
         Route::get('/fornecedores', [UnidadeEstoqueController::class, 'unidadeForencedores'])->name('unidadeForencedores.index');
         Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
         Route::post('/criar-pedido', [UnidadeEstoqueController::class, 'criarPedido'])->name('criarPedido');
-
-
         Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
+    });
+
+    Route::prefix('historico')->group(function () {
+        Route::get('lista', [HistoricoPedidoController::class, 'index'])->name('lista.historico');
     });
 
 

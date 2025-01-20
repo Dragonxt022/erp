@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class HistoricoPedido extends Model
 {
@@ -45,10 +46,21 @@ class HistoricoPedido extends Model
         return $this->belongsTo(InforUnidade::class, 'unidade_id');
     }
 
-
     // Relacionamento com fornecedor
     public function fornecedor()
     {
         return $this->belongsTo(Fornecedor::class, 'fornecedor_id');
+    }
+
+    // Acessor para formatar a data created_at automaticamente
+    public function getCreatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('d-m-Y');
+    }
+
+    // Acessor para formatar a data updated_at automaticamente
+    public function getUpdatedAtAttribute($value)
+    {
+        return Carbon::parse($value)->format('d-m-Y');
     }
 }
