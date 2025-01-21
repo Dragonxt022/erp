@@ -171,6 +171,7 @@
                 <button
                   class="w-[40px] h-[30px] flex justify-center items-center text-[#6d6d6d] rounded-full"
                   @click="alterarCarrinho(produto.id, -1)"
+                  :disabled="carrinho[produto.id]?.quantidade <= 0"
                 >
                   <span class="text-[50px] font-bold">−</span>
                 </button>
@@ -179,14 +180,23 @@
                 <input
                   type="number"
                   class="w-[90px] h-[42px] text-xl text-center text-[#6d6d6d] bg-transparent border border-gray-100 rounded"
-                  :value="carrinho[produto.id]?.quantidade || 0"
-                  @input="atualizarQuantidade(produto.id, $event.target.value)"
+                  :value="carrinho[produto.id]?.quantidade ?? 0"
+                  @input="
+                    (event) =>
+                      atualizarQuantidade(produto.id, event.target.value)
+                  "
+                  :max="produto.quantidade_total"
+                  :aria-invalid="isInvalid(produto.id) ? 'true' : 'false'"
+                  step="0.01"
                 />
 
                 <!-- Botão de mais -->
                 <button
                   class="w-[40px] h-[30px] flex justify-center items-center"
                   @click="alterarCarrinho(produto.id, 1)"
+                  :disabled="
+                    carrinho[produto.id]?.quantidade >= produto.quantidade_total
+                  "
                 >
                   <span>
                     <img
@@ -257,73 +267,67 @@ const alterarCarrinho = (produtoId, quantidade) => {
   }
 };
 
-// Atualizar quantidade no carrinho
-const atualizarQuantidade = (produtoId, quantidade) => {
-  if (quantidade < 0) quantidade = 0; // Não permite valores negativos
-  carrinho.value[produtoId] = {
-    ...carrinho.value[produtoId],
-    quantidade,
-  };
+// Função para verificar se a quantidade do produto é inválida
+const isInvalid = (produtoId) => {
+  const itemCarrinho = carrinho.value[produtoId];
+  const produto = produtos.value.find((p) => p.id === produtoId);
+  return (
+    itemCarrinho &&
+    (itemCarrinho.quantidade < 0 ||
+      itemCarrinho.quantidade > produto.quantidade_total)
+  );
 };
 
-// Enviar carrinho para o backend
-const enviarCarrinho = async () => {
-  if (!pin.value) {
-    toast.info('Por favor, insira seu PIN.');
+// Atualizar quantidade no carrinho
+const atualizarQuantidade = (produtoId, quantidade) => {
+  const produto = produtos.value.find((p) => p.id === produtoId);
+  if (!produto) {
+    toast.error('Produto não encontrado.');
     return;
   }
 
-  const carrinhoData = Object.values(carrinho.value);
-  if (carrinhoData.length === 0) {
-    toast.warning('O carrinho está vazio. Adicione itens antes de continuar.');
+  // Remove caracteres inválidos e converte vírgula para ponto
+  quantidade = quantidade.replace(',', '.');
+
+  // Converte a quantidade para número decimal
+  let quantidadeNumerica = parseFloat(quantidade);
+
+  // Valida se a quantidade é um número válido
+  if (isNaN(quantidadeNumerica)) {
+    toast.warning('Quantidade inválida.');
     return;
   }
 
-  isLoading.value = true;
+  // Se a unidade for 'a_granel', permite números fracionados (2 casas decimais)
+  if (produto.unidadeDeMedida === 'a_granel') {
+    // Limita a 2 casas decimais para quantidades fracionadas
+    quantidadeNumerica = parseFloat(quantidadeNumerica.toFixed(2));
+  } else {
+    // Para unidades, apenas números inteiros são permitidos
+    quantidadeNumerica = Math.floor(quantidadeNumerica); // Força a quantidade para inteiro
+  }
 
-  try {
-    console.log('Itens do carrinho:', carrinhoData);
-    console.log('PIN:', pin.value);
+  // Verifica se a quantidade está dentro do limite permitido
+  if (quantidadeNumerica < 0 || quantidadeNumerica > produto.quantidade_total) {
+    toast.warning(
+      `Quantidade inválida. Deve ser entre 0 e ${produto.quantidade_total} ${
+        produto.unidadeDeMedida === 'a_granel' ? 'kg' : 'unidades'
+      }.`
+    );
+    return;
+  }
 
-    const response = await axios.post('/api/estoque/consumir-estoque', {
-      itens: carrinhoData,
-      pin: pin.value, // Envia o PIN junto com os itens do carrinho
-    });
+  // Atualiza a quantidade no carrinho
+  carrinho.value[produtoId] = {
+    ...carrinho.value[produtoId],
+    id: produto.id,
+    nome: produto.nome,
+    quantidade: quantidadeNumerica,
+  };
 
-    if (response.status === 200) {
-      toast.success(response.data.message);
-      carrinho.value = {}; // Limpa o carrinho
-      pin.value = ''; // Limpa o PIN após o envio
-      fecharAuthModal(); // Fecha a modal de autenticação
-
-      // Redirecionar para a página de login
-      if (response.data.redirect_url) {
-        window.location.href = response.data.redirect_url;
-      }
-    } else {
-      console.error('Erro:', error);
-    }
-  } catch (error) {
-    toast.error(error.response.data.error);
-
-    if (error.response) {
-      // Erro retornado pelo backend
-      const { status, data } = error.response;
-      if (status === 403) {
-        toast.error('PIN incorreto. Verifique e tente novamente.');
-      } else if (status === 400) {
-        toast.error(
-          data.error || 'Estoque insuficiente para um ou mais itens.'
-        );
-      } else {
-        console.error('Erro:', error);
-      }
-    } else {
-      // Outro tipo de erro (conexão, etc.)
-      toast.error('Ops! Ouve um erro.');
-    }
-  } finally {
-    isLoading.value = false; // Desativa o indicador de carregamento
+  // Remove o item do carrinho se a quantidade for 0 ou NaN
+  if (quantidadeNumerica === 0 || isNaN(quantidadeNumerica)) {
+    delete carrinho.value[produtoId];
   }
 };
 
@@ -373,8 +377,70 @@ const prosseguirAlteracao = () => {
 const fecharAuthModal = () => {
   showAuthModal.value = false;
 };
+
+// Enviar carrinho para o backend
+const enviarCarrinho = async () => {
+  if (!pin.value) {
+    toast.info('Por favor, insira seu PIN.');
+    return;
+  }
+
+  const carrinhoData = Object.values(carrinho.value);
+  if (carrinhoData.length === 0) {
+    toast.warning('O carrinho está vazio. Adicione itens antes de continuar.');
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    console.log('Itens do carrinho:', carrinhoData);
+    console.log('PIN:', pin.value);
+
+    const response = await axios.post('/api/estoque/consumir-estoque', {
+      itens: carrinhoData,
+      pin: pin.value, // Envia o PIN junto com os itens do carrinho
+    });
+
+    if (response.status === 200) {
+      toast.success(response.data.message);
+      carrinho.value = {}; // Limpa o carrinho
+      pin.value = ''; // Limpa o PIN após o envio
+      fecharAuthModal(); // Fecha a modal de autenticação
+
+      // Redirecionar para a página de login
+      if (response.data.redirect_url) {
+        window.location.href = response.data.redirect_url;
+      }
+    } else {
+      console.error('Erro:', error);
+    }
+  } catch (error) {
+    toast.error('Ouve um erro ao tentar enviar');
+
+    if (error.response) {
+      // Erro retornado pelo backend
+      const { status, data } = error.response;
+      if (status === 403) {
+        toast.error('PIN incorreto. Verifique e tente novamente.');
+      } else if (status === 400) {
+        toast.error(
+          data.error || 'Estoque insuficiente para um ou mais itens.'
+        );
+      } else {
+        console.error('Erro:', error);
+      }
+    } else {
+      // Outro tipo de erro (conexão, etc.)
+      toast.error('Ops! Ouve um erro.');
+    }
+  } finally {
+    isLoading.value = false; // Desativa o indicador de carregamento
+  }
+};
 </script>
 
+<!-- estilos -->
 <style lang="css" scoped>
 .fixed {
   z-index: 1000;

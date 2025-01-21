@@ -95,7 +95,7 @@ const submit = async () => {
     } else if (error.response?.status === 401) {
       errorMessage.value = 'PIN inválido.';
     } else {
-      errorMessage.value = 'Ocorreu um erro inesperado. Tente novamente.';
+      console.log('Ouve um erro inesperado');
     }
   }
 };
