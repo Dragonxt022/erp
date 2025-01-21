@@ -317,6 +317,7 @@ const submitForm = async () => {
     formData.append('nome', nome.value);
     formData.append('categoria', categoria.value);
     formData.append('unidadeDeMedida', unidadeDeMedida.value);
+    formData.append('profile_photo', selectedFile.value);
 
     // Enviar os preços com base nos fornecedores, incluindo fornecedor_id e preco_unitario
     Object.entries(preco_fornecedor.value).forEach(([fornecedorId, valor]) => {
