@@ -86,6 +86,8 @@ Route::prefix('api')->middleware([
 
         // Rotas de controle de retirada
         Route::get('/lista-produtos', [UnidadeEstoqueController::class, 'ListaProdutoEstoque'])->name('ListaProdutoEstoque.index');
+        // Route::post('/retirada-produtos', [UnidadeEstoqueController::class, 'enviarCarrinho'])->name('retirada.produtos');
+        Route::post('/consumir-estoque', [UnidadeEstoqueController::class, 'consumirEstoque'])->name('consumir.estoque');
     });
 
     Route::prefix('historico')->group(function () {

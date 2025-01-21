@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Mail\NovoPedidoMail;
 use App\Models\Fornecedor;
 use App\Models\HistoricoPedido;
+use App\Models\MovimentacoesEstoque;
+
 use App\Models\UnidadeEstoque;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,9 +16,92 @@ use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class UnidadeEstoqueController extends Controller
 {
+    // Logica responsal pela retirada de itens
+    public function consumirEstoque(Request $request)
+    {
+        // Verificar se o usuário está autenticado
+        $usuario = Auth::user();
+
+        // Verificar se o PIN informado corresponde ao do usuário
+        if ($usuario->pin !== $request->pin) {
+            return response()->json(['error' => 'PIN incorreto'], 403);
+        }
+
+        $validatedData = $request->validate([
+            'itens' => 'required|array',
+            'itens.*.id' => 'required|integer|exists:lista_produtos,id',
+            'itens.*.quantidade' => 'required|numeric|min:0',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($validatedData['itens'] as $item) {
+                $quantidadeRestante = floatval($item['quantidade']);
+                $estoques = DB::table('unidade_estoque')
+                    ->where('insumo_id', $item['id'])
+                    ->where('unidade_id', Auth::user()->unidade_id)
+                    ->orderBy('created_at', 'asc') // FIFO
+                    ->get();
+
+                foreach ($estoques as $estoque) {
+                    if ($quantidadeRestante <= 0) {
+                        break;
+                    }
+
+                    $quantidadeConsumir = min($estoque->quantidade, $quantidadeRestante);
+
+                    // Atualizar o estoque
+                    DB::table('unidade_estoque')
+                        ->where('id', $estoque->id)
+                        ->update(['quantidade' => $estoque->quantidade - $quantidadeConsumir]);
+
+                    $quantidadeRestante -= $quantidadeConsumir;
+
+                    // Registrar a movimentação
+                    MovimentacoesEstoque::create([
+                        'insumo_id' => $item['id'],
+                        'fornecedor_id' => $estoque->fornecedor_id,
+                        'usuario_id' => Auth::id(),
+                        'quantidade' => $quantidadeConsumir,
+                        'preco_insumo' => $estoque->preco_insumo,
+                        'operacao' => 'Retirada',
+                        'unidade' => $estoque->unidade,
+                        'unidade_id' => Auth::user()->unidade_id,
+                    ]);
+                }
+
+                if ($quantidadeRestante > 0) {
+                    throw new \Exception("Estoque insuficiente para o produto ID {$item['id']}");
+                }
+            }
+
+            DB::commit();
+
+            // Fazendo o logout da sessão (não afeta o token de API)
+            Auth::guard('web')->logout();
+
+            // Invalida a sessão
+            request()->session()->invalidate();
+
+            // Regenera o token da sessão
+            request()->session()->regenerateToken();
+
+
+            return response()->json([
+                'message' => 'Operação realizada com sucesso! O usuário foi desconectado.',
+                'redirect_url' => route('login.pagina.estoque') // URL para redirecionamento
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(['error' => 'Erro ao retirar os itens: ' . $e->getMessage()], 500);
+        }
+    }
 
     // Cria novos pedidos
     public function criarPedido(Request $request)
@@ -243,8 +328,11 @@ class UnidadeEstoqueController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Variável para somar a quantidade total de todos os itens
+        $quantidadeTotalGeral = 0;
+
         // Agrupa os estoques pelo insumo
-        $produtosAgrupados = $estoques->groupBy('insumo_id')->map(function ($lotes) {
+        $produtosAgrupados = $estoques->groupBy('insumo_id')->map(function ($lotes) use (&$quantidadeTotalGeral) {
             // Pega o primeiro lote para obter informações do produto
             $primeiroLote = $lotes->first();
             $insumo = $primeiroLote->insumo;
@@ -263,6 +351,10 @@ class UnidadeEstoqueController extends Controller
             $valorTotalLotes = $lotesDisponiveis->sum(function ($lote) {
                 return ($lote->preco_insumo / 100) * $lote->quantidade;
             });
+
+            // Calcular a soma da quantidade total para este produto
+            $quantidadeTotalProduto = $lotesDisponiveis->sum('quantidade');
+            $quantidadeTotalGeral += $quantidadeTotalProduto; // Atualiza o total geral
 
             // Calcular a soma do valor pago por quilo para os produtos 'a_granel'
             $valorPagoPorQuiloLote = null;
@@ -307,12 +399,18 @@ class UnidadeEstoqueController extends Controller
                 // Soma do valor pago por quilo de todos os lotes do insumo
                 'valor_pago_por_quilo_lote' => $valorPagoPorQuiloLote !== null
                     ? 'R$ ' . number_format($valorPagoPorQuiloLote, 2, ',', '.') : null,
+                // Quantidade total do produto
+                'quantidade_total' => $quantidadeTotalProduto,
             ];
         })->filter(); // Remove os produtos que foram marcados como null
 
-        // Retorna os dados no formato JSON
-        return response()->json($produtosAgrupados);
+        // Retorna os dados no formato JSON com o total geral de itens
+        return response()->json([
+            'produtos' => $produtosAgrupados,
+            'quantidade_total_geral' => $quantidadeTotalGeral,
+        ]);
     }
+
 
     // Responsavel pelos dados da tela de estoque
     public function painelInicialEstoque(Request $request)
@@ -320,7 +418,7 @@ class UnidadeEstoqueController extends Controller
         $unidadeId = Auth::user()->unidade_id;
 
         // Obtém o histórico de movimentações com paginação
-        $historicoMovimentacoes = UnidadeEstoque::with(['insumo', 'usuario'])
+        $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
             ->where('quantidade', '>', 0)
             ->orderBy('id', 'desc')
@@ -354,7 +452,6 @@ class UnidadeEstoqueController extends Controller
             'historicoMovimentacoes' => $historicoMovimentacoes,
         ]);
     }
-
 
     // Lista os fornecederes
     public function unidadeForencedores()
@@ -390,27 +487,44 @@ class UnidadeEstoqueController extends Controller
             'itens.*.quantidade' => 'required|numeric|min:0',
             'itens.*.valorUnitario' => 'required|numeric|min:0',
             'itens.*.unidadeDeMedida' => 'nullable|string|in:a_granel,unitario',
+        ], [
+            'itens.required' => 'A lista de itens é obrigatória.',
+            'itens.*.id.exists' => 'O insumo selecionado não foi encontrado.',
+            'itens.*.quantidade.min' => 'A quantidade deve ser maior ou igual a 0.',
+            'itens.*.valorUnitario.min' => 'O valor unitário deve ser maior ou igual a 0.',
         ]);
 
         DB::beginTransaction(); // Inicia uma transação
 
         try {
             foreach ($validatedData['itens'] as $item) {
-                // Adicionando a verificação para garantir que a quantidade seja numérica
                 $quantidade = floatval($item['quantidade']);
+                $unidadeMedida = $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade';
 
-                DB::table('unidade_estoque')->insert([
+                // Criar um novo registro no estoque com lote
+                $loteId = DB::table('unidade_estoque')->insertGetId([
                     'insumo_id' => $item['id'],
-                    'fornecedor_id' => $validatedData['fornecedor_id'] ?? null, // Usando o fornecedor_id do JSON ou null
-                    'usuario_id' => Auth::id(), // ID do usuário autenticado
-                    'unidade_id' => Auth::user()->unidade_id, // Referência ao unidade_id do usuário autenticado
-
+                    'fornecedor_id' => $validatedData['fornecedor_id'] ?? null,
+                    'usuario_id' => Auth::id(),
+                    'unidade_id' => Auth::user()->unidade_id,
                     'quantidade' => $quantidade,
-                    'preco_insumo' => $item['valorUnitario'], // Valor já validado no frontend
+                    'preco_insumo' => $item['valorUnitario'],
                     'operacao' => 'Entrada',
-                    'unidade' => empty($item['unidadeDeMedida']) ? 'kg' : ($item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade'),
+                    'unidade' => $unidadeMedida,
                     'created_at' => now(),
                     'updated_at' => now(),
+                ]);
+
+                // Registrar a movimentação no histórico de estoques
+                MovimentacoesEstoque::create([
+                    'insumo_id' => $item['id'],
+                    'fornecedor_id' => $validatedData['fornecedor_id'] ?? null,
+                    'usuario_id' => Auth::id(),
+                    'quantidade' => $quantidade,
+                    'preco_insumo' => $item['valorUnitario'],
+                    'operacao' => 'Entrada',
+                    'unidade' => $unidadeMedida,
+                    'unidade_id' => Auth::user()->unidade_id,
                 ]);
             }
 
@@ -423,6 +537,7 @@ class UnidadeEstoqueController extends Controller
             return response()->json(['error' => 'Erro ao armazenar itens: ' . $e->getMessage()], 500);
         }
     }
+
 
     public function update(Request $request, $loteId)
     {

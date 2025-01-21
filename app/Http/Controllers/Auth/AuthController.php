@@ -12,6 +12,14 @@ use Inertia\Inertia;
 
 class AuthController extends Controller
 {
+
+    // Redirecionador da pagina de Login
+    public function paginaLoginEstoque()
+    {
+        // Se não estiver autenticado, exibe a página de login
+        return Inertia::render('Auth/LoginEstoque');
+    }
+
     // Sistema de login com PIN para gerenciar o estoque
     public function loginComPin(Request $request)
     {
@@ -24,17 +32,29 @@ class AuthController extends Controller
         $usuario = User::where('pin', $dadosValidados['pin'])->first();
 
         if (!$usuario) {
-            return response()->json(['erro' => 'PIN inválido.'], 401);
+            // Retorna o erro como uma propriedade no Inertia
+            return Inertia::render('Auth/LoginEstoque', [
+                'errorMessage' => 'PIN inválido.',
+            ]);
+        }
+
+        // Verifica se o usuário tem permissão para acessar o controle de estoque
+        if (!$usuario->controle_retirada_produto) {
+            // Retorna o erro como uma propriedade no Inertia
+            return Inertia::render('Auth/LoginEstoque', [
+                'errorMessage' => 'Acesso negado ao controle de estoque.',
+            ]);
         }
 
         // Autentica o usuário manualmente
         Auth::login($usuario);
 
-        return response()->json([
-            'mensagem' => 'Login realizado com sucesso.',
-            'usuario' => $usuario->only(['id', 'name', 'email']),
-        ], 200);
+        // Retorna o redirecionamento usando Inertia
+        return Inertia::location(route('franqueado.controleEstoque'));
     }
+
+
+
 
     // Redirecionador da pagina de Login
     public function paginLogin()

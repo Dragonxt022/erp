@@ -31,7 +31,8 @@ Route::get('/get-token', function () {
 });
 
 // Rotas do sistema de retirada de estoque!
-Route::get('/logoin-estoque', [AuthController::class, 'loginComPin'])->name('login.estoque');
+Route::get('/login-estoque', [AuthController::class, 'paginaLoginEstoque'])->name('login.pagina.estoque');
+Route::post('/login-estoque', [AuthController::class, 'loginComPin'])->name('login.estoque');
 
 
 // Carregar rotas do painel administrativo

@@ -3,8 +3,8 @@
   <div class="login-container">
     <!-- Imagens com alt para acessibilidade -->
     <img
-      class="background-img"
-      src="/storage/images/mulher_login.png"
+      class="background-img transform scale-x-[-1]"
+      src="/storage/images/mulher_login_estoque.png"
       alt="Imagem de fundo representando uma mulher usando um computador"
     />
     <img
@@ -16,47 +16,31 @@
     <div class="login-box">
       <div class="login-box-inner">
         <div class="title-container">
-          <div class="title">Entrar no Taiksu</div>
-          <div class="subtitle">Acompanhe seu negócio em tempo real</div>
-        </div>
-
-        <!-- Mensagem de status de erro ou sucesso -->
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-          {{ status }}
+          <div class="title">Controle de estoque</div>
+          <div class="subtitle">Registro de retirada em estoque da loja.</div>
         </div>
 
         <form @submit.prevent="submit">
-          <!-- Campo CPF -->
-          <div class="input-container">
-            <label for="cpf">CPF</label>
-            <input
-              id="cpf"
-              v-model="form.cpf"
-              @input="applyCpfMask"
-              class="input"
-              type="text"
-              placeholder="123.456.789-90"
-              autocomplete="off"
-              aria-label="CPF"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.cpf" />
-          </div>
-
           <!-- Campo Senha -->
           <div class="input-container">
-            <label for="password">Senha</label>
+            <label for="pin">Seu PIN</label>
             <input
-              id="password"
-              v-model="form.password"
+              id="pin"
+              v-model="form.pin"
               class="input"
-              type="password"
-              placeholder="●●●●●●●●●●●●"
+              type="pin"
+              placeholder="●●●●"
               autocomplete="off"
               aria-label="Senha"
             />
             <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.password" />
+            <InputError class="mt-2 text-center" :message="form.errors.pin" />
+          </div>
+          <div
+            v-if="errorMessage"
+            class="mb-4 font-medium text-sm text-red-600 text-center"
+          >
+            {{ errorMessage }}
           </div>
 
           <!-- Botão Acessar -->
@@ -66,11 +50,6 @@
           >
             Acessar
           </ButtonPrimary>
-
-          <!-- Link Esqueci minha senha -->
-          <Link :href="route('password.request')" class="cursor-pointer">
-            <p class="forgot-password">Esqueci minha senha</p>
-          </Link>
         </form>
       </div>
     </div>
@@ -80,7 +59,8 @@
 <script setup>
 import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
 import InputError from '@/Components/InputError.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 defineProps({
   canResetPassword: Boolean,
@@ -88,67 +68,36 @@ defineProps({
 });
 
 const form = useForm({
-  cpf: '',
-  password: '',
-  remember: true,
+  pin: '',
 });
 
+const errorMessage = ref(null);
+
 const submit = async () => {
-  // Transforma os dados antes de enviar
-  form.transform((data) => ({
-    ...data,
-    remember: form.remember ? 'on' : '',
-  }));
+  // Reseta a mensagem de erro
+  errorMessage.value = null;
 
-  // Envia a requisição de login
-  form.post(route('entrar.painel'), {
-    onFinish: () => {
-      form.reset('password');
-
-      // Obtenha e armazene o token, se necessário
-      fetchToken();
-    },
-  });
-};
-
-// Função para buscar o token após o login
-const fetchToken = async () => {
   try {
-    const response = await axios.get('/get-token', { withCredentials: true });
-    if (response.data.status === 'success') {
-      const token = response.data.token;
+    // Envia a requisição de login
+    const response = await form.post(route('login.estoque'), {
+      onFinish: () => form.reset('pin'),
+    });
 
-      // Armazene o token no localStorage
-      localStorage.setItem('auth_token', token);
-
-      // Configure o Axios para usar o token em futuras requisições
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      console.log('Token obtido com sucesso!');
-    } else {
-      console.error('Erro ao obter o token:', response.data);
+    // Verifica se a resposta contém um redirecionamento
+    if (response.data?.redirect) {
+      // Redireciona para a página de controle de estoque
+      window.location.href = response.data.redirect;
     }
   } catch (error) {
-    console.error('Erro na requisição para obter o token:', error);
+    // Lida com erros de validação ou acesso negado
+    if (error.response?.status === 403) {
+      errorMessage.value = 'Acesso negado ao controle de estoque.';
+    } else if (error.response?.status === 401) {
+      errorMessage.value = 'PIN inválido.';
+    } else {
+      errorMessage.value = 'Ocorreu um erro inesperado. Tente novamente.';
+    }
   }
-};
-
-// Função para aplicar a máscara de CPF
-const applyCpfMask = (event) => {
-  let value = event.target.value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
-  if (value.length > 11) value = value.slice(0, 11); // Limita o valor a 11 dígitos
-
-  // Aplica a formatação do CPF
-  if (value.length > 9) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  } else if (value.length > 6) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  } else if (value.length > 3) {
-    value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-  }
-
-  event.target.value = value;
-  form.cpf = value;
 };
 </script>
 
@@ -161,9 +110,10 @@ const applyCpfMask = (event) => {
 }
 
 .background-img {
-  width: auto;
-  height: 100vh;
-  position: absolute;
+  width: 40%; /* Define a largura desejada */
+  height: 100vh; /* A altura ocupa toda a altura da tela */
+  object-fit: cover; /* Garante que a imagem preencha o contêiner sem distorção */
+  object-position: 100% center; /* Desloca o centro da imagem para a direita */
 }
 
 .logo-img {

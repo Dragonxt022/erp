@@ -114,7 +114,6 @@
               v-for="(movimentacao, index) in historicoMovimentacoes"
               :key="index"
               :class="{
-                'bg-red-100': movimentacao.quantidade === 5,
                 'hover:bg-gray-200': true,
                 'grid grid-cols-5 gap-2 px-6 py-3 text-[16px]': true,
               }"
