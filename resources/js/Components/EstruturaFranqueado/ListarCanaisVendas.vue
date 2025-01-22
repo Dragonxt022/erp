@@ -4,11 +4,11 @@
       <div class="spinner"></div>
     </div>
     <!-- Título principal -->
-    <div class="painel-title">Métodos de pagamento</div>
+    <div class="painel-title">Canais de venda</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Ative formas de pagamento para o fluxo de caixa</p>
+      <p>Plataformas de e-commerce da sua unidade</p>
     </div>
 
     <!-- Campo de pesquisa -->
@@ -70,9 +70,8 @@ const isLoading = ref(false);
 // Função para buscar os pedidos da API
 const fetchDados = async () => {
   isLoading.value = true;
-
   try {
-    const response = await axios.get('/api/metodos-pagamentos/lista');
+    const response = await axios.get('/api/canais-vendas/lista');
     dados.value = Object.values(response.data); // Converte o objeto em array
   } catch (error) {
     console.error('Erro ao carregar os dados:', error);
@@ -183,26 +182,21 @@ const filteredDados = computed(() => {
 .card-inner {
   display: flex;
   align-items: center;
-  padding: 8px;
+  padding: 12px;
 }
 
 .icon-container {
   position: relative;
   width: 55px;
   height: 55px;
-}
-
-.icon-bg {
-  width: 55px;
-  height: 55px;
-  position: absolute;
-  left: 0;
-  top: 1.33px;
+  top: 5px;
+  margin-right: 5px;
 }
 
 .text-container {
   margin-left: 14px;
   flex-grow: 1;
+  margin-bottom: 15px;
 }
 
 .city {

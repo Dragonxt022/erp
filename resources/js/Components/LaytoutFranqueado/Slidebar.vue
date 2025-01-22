@@ -164,7 +164,6 @@ const menuCategories = [
         submenuItems: [
           {
             label: 'Métodos de pagamento',
-            icon: '/storage/images/add_product.svg',
             link: 'franqueado.metodosPagamentos',
           },
           {

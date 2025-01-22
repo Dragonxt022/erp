@@ -14,6 +14,13 @@
         <img :src="icon" alt="icon" />
       </div>
       <div class="label">{{ label }}</div>
+      <div
+        v-if="submenuItems && submenuItems.length > 0"
+        class="right-icon"
+        :class="{ 'rotate-icon': isIconRotated }"
+      >
+        <img src="/storage/images/arrow_drop_down.svg" alt="arrow icon" />
+      </div>
     </Link>
 
     <!-- Caso seja logout, trata com POST -->
@@ -41,8 +48,8 @@
           :href="route(submenu.link)"
           :class="{ active: isSubmenuActive(submenu.link) }"
         >
-          <!-- <div class="icon">
-            <img :src="submenu.icon" alt="submenu icon" />
+          <!-- <div class="icon" :class="{ 'rotate-icon': isIconRotated }">
+            <img :src="icon" alt="icon" />
           </div> -->
           <div class="label">{{ submenu.label }}</div>
         </Link>
@@ -69,6 +76,7 @@ const props = defineProps({
 
 const showSubmenu = ref(false);
 const delayTimeout = ref(null);
+const isIconRotated = computed(() => showSubmenu.value); // Verifica se o submenu está aberto
 
 const handleMouseEnter = () => {
   // Cancela qualquer timeout existente para fechar o menu
@@ -160,6 +168,11 @@ watch(showSubmenu, (newValue) => {
 </script>
 
 <style scoped>
+.rotate-icon {
+  transform: rotate(90deg); /* Rotaciona o ícone em 180 graus */
+  transition: transform 0.3s ease-in-out; /* Animação suave para a rotação */
+}
+
 .menu-item {
   display: flex;
   align-items: center;
@@ -185,7 +198,7 @@ watch(showSubmenu, (newValue) => {
 
 .menu-item .label {
   color: white;
-  font-size: 15px;
+  font-size: 90%;
   font-family: Figtree;
   font-weight: 600;
   line-height: 22px;

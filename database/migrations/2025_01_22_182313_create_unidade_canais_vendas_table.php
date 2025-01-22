@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('unidade_payment_methods', function (Blueprint $table) {
+        Schema::create('unidade_canais_vendas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('unidade_id')->constrained('infor_unidade')->onDelete('cascade');
-            $table->foreignId('default_payment_method_id')->constrained('default_payment_methods')->onDelete('cascade');
+            $table->foreignId('canal_venda_method_id')->constrained('default_canais_vendas')->onDelete('cascade');
             $table->integer('porcentagem')->default(0);
             $table->boolean('status')->default(false);
             $table->timestamps();
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('unidade_payment_methods');
+        Schema::dropIfExists('unidade_canais_vendas');
     }
 };

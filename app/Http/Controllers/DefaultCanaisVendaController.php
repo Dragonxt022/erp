@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DefaultPaymentMethod;
-use App\Models\UnidadePaymentMethod;
+use App\Models\DefaultCanaisVenda;
+use App\Models\UnidadeCanaisVenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class DefaultPaymentMethodController extends Controller
+class DefaultCanaisVendaController extends Controller
 {
-    // Lista todos os métodos de pagamento
+    // Lista todos os canais de vendas
     public function index()
     {
-        // Obtém todos os métodos de pagamento com status ativo
-        $paymentMethods = DefaultPaymentMethod::where('status', true)->get();
+        // Obtém todos os canais de vendas com status ativo
+        $canaisVendas = DefaultCanaisVenda::where('status', true)->get();
 
-        // Retorna a resposta com os métodos de pagamento ativos (pode ser em formato JSON ou uma view)
-        return response()->json($paymentMethods);
+        // Retorna a resposta com os canais de vendas ativos (pode ser em formato JSON ou uma view)
+        return response()->json($canaisVendas);
     }
 
-
+    // Exibe um canal de venda específico
     public function show($id)
     {
         // Obter o usuário autenticado
@@ -30,27 +30,25 @@ class DefaultPaymentMethodController extends Controller
             return response()->json(['error' => 'Usuário não associado a uma unidade.'], 403);
         }
 
-
         // Obter a unidade do usuário
         $unidadeId = $user->unidade_id;
 
-        // Buscar o método de pagamento associado à unidade e ao ID
-        $paymentMethod = UnidadePaymentMethod::where('default_payment_method_id', $id)
+        // Buscar o canal de venda associado à unidade e ao ID
+        $canalVenda = UnidadeCanaisVenda::where('canal_venda_method_id', $id)
             ->where('unidade_id', $unidadeId)
             ->first();
 
-        if (!$paymentMethod) {
-            return response()->json(['error' => 'Método de pagamento não encontrado para esta unidade.'], 404);
+        if (!$canalVenda) {
+            return response()->json(['error' => 'Canal de venda não encontrado para esta unidade.'], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $paymentMethod,
+            'data' => $canalVenda,
         ]);
     }
 
-
-    // Métod usado para atualizar a forma de pagamento ou criar um novo
+    // Método usado para atualizar o canal de vendas ou criar um novo
     public function upsert(Request $request)
     {
         // Obter o usuário autenticado
@@ -63,7 +61,7 @@ class DefaultPaymentMethodController extends Controller
 
         // Validar os dados da requisição
         $validated = $request->validate([
-            'default_payment_method_id' => 'required|exists:default_payment_methods,id',
+            'canal_venda_method_id' => 'required|exists:default_canais_vendas,id',
             'porcentagem' => 'required|numeric|min:0|max:100',
             'status' => 'required|boolean',
         ]);
@@ -71,11 +69,11 @@ class DefaultPaymentMethodController extends Controller
         // Adicionar o unidade_id do usuário logado ao array de dados
         $validated['unidade_id'] = $user->unidade_id;
 
-        // Criar ou atualizar o método de pagamento
-        $paymentMethod = UnidadePaymentMethod::updateOrCreate(
+        // Criar ou atualizar o canal de venda
+        $canalVenda = UnidadeCanaisVenda::updateOrCreate(
             [
                 'unidade_id' => $validated['unidade_id'],
-                'default_payment_method_id' => $validated['default_payment_method_id'],
+                'canal_venda_method_id' => $validated['canal_venda_method_id'],
             ],
             [
                 'porcentagem' => $validated['porcentagem'],
@@ -83,7 +81,7 @@ class DefaultPaymentMethodController extends Controller
             ]
         );
 
-        // Retornar o método de pagamento atualizado/criado
-        return response()->json($paymentMethod);
+        // Retornar o canal de venda atualizado/criado
+        return response()->json($canalVenda);
     }
 }

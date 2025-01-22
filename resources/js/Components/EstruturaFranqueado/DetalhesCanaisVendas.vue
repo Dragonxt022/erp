@@ -80,7 +80,7 @@ const buscarMetodo = async () => {
   isLoading.value = true;
   try {
     const response = await axios.get(
-      `/api/metodos-pagamentos/verificar-pagamentos/${props.dados.id}`
+      `/api/canais-vendas/verificar-pagamentos/${props.dados.id}`
     );
 
     if (response.status === 200 && response.data) {
@@ -89,13 +89,13 @@ const buscarMetodo = async () => {
       status.value = response.data.data.status === 1;
     } else if (response.status === 404 || !response.data) {
       // Caso o método de pagamento não tenha sido encontrado
-      console.info('Nenhum método de pagamento encontrado para esta unidade.');
+      console.info('Nenhum canal de vendas foi encontrado.');
       porcentagem.value = 0; // Resetar o valor
       status.value = false; // Desativar a chave
     }
   } catch (error) {
     // Log de erro quando falhar em buscar o método de pagamento
-    console.error('Erro ao buscar o método de pagamento:', error);
+    console.error('Erro ao busca canais de venda:', error);
     // Resetando valores caso haja erro (exemplo, rede fora)
     porcentagem.value = 0;
     status.value = false;
@@ -113,15 +113,12 @@ const atualizarMetodo = async () => {
 
     const payload = {
       unidade_id: props.dados.id,
-      default_payment_method_id: props.dados.id,
+      canal_venda_method_id: props.dados.id,
       porcentagem: porcentagem.value,
       status: status.value ? 1 : 0,
     };
 
-    const response = await axios.post(
-      '/api/metodos-pagamentos/upsert',
-      payload
-    );
+    const response = await axios.post('/api/canais-vendas/upsert', payload);
 
     // Exibe o toast somente se não estiver ativo
     if (!toastActive) {

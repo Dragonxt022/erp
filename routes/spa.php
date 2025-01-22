@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\DefaultCanaisVendaController;
 use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
@@ -93,19 +94,28 @@ Route::prefix('api')->middleware([
         Route::post('/consumir-estoque', [UnidadeEstoqueController::class, 'consumirEstoque'])->name('consumir.estoque');
     });
 
+
+    // Rotas do histórico de vendas
     Route::prefix('historico')->group(function () {
         Route::get('lista', [HistoricoPedidoController::class, 'index'])->name('lista.historico');
     });
 
-
+    //  Rotas de produtos
     Route::prefix('produtos')->group(function () {
         Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
     });
 
-
+    // metos de pagamentos
     Route::prefix('metodos-pagamentos')->group(function () {
         Route::get('/lista', [DefaultPaymentMethodController::class, 'index'])->name('metodosPagamentos.index');
         Route::get('/verificar-pagamentos/{id}', [DefaultPaymentMethodController::class, 'show'])->name('metodosPagamento.verificar');
         Route::post('/upsert', [DefaultPaymentMethodController::class, 'upsert'])->name('metodoPagamento.upsert');
+    });
+
+    // Rotas do Canais de Vendas
+    Route::prefix('canais-vendas')->group(function () {
+        Route::get('/lista', [DefaultCanaisVendaController::class, 'index'])->name('canaisVendas.index');
+        Route::get('/verificar-pagamentos/{id}', [DefaultCanaisVendaController::class, 'show'])->name('canaisVendas.verificar');
+        Route::post('/upsert', [DefaultCanaisVendaController::class, 'upsert'])->name('canaisVendas.upsert');
     });
 });

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
 
         // Chama o seeder dos métodos de pagamento
-        $this->call(DefaultPaymentMethodsSeeder::class);
+        // $this->call(DefaultPaymentMethodsSeeder::class);
+        $this->call(DefaultCanaisVendasSeeder::class);
     }
 }

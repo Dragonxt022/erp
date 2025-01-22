@@ -1,14 +1,14 @@
 <template>
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
-    <Head title="Canais de Vendas" />
+    <Head title="Métodos de pagamentos" />
     <!-- Container principal -->
     <div
       class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
     >
       <!-- Coluna 1: Listar Unidades -->
       <div v-if="!showCadastroProduto">
-        <ListadoCanaisVendas
+        <ListarCanaisVendas
           :key="listaKey"
           ref="listaDados"
           @dado-selecionado="dadoSelecionado"
@@ -19,7 +19,7 @@
       <div class="flex flex-col gap-4">
         <template v-if="!showCadastroProduto">
           <template v-if="dadosSelecionado">
-            <DetalhesHistoricoPedidos :dados="dadosSelecionado" />
+            <DetalhesCanaisVendas :dados="dadosSelecionado" />
           </template>
         </template>
       </div>
@@ -31,8 +31,8 @@
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import ListadoCanaisVendas from '@/Components/EstruturaFranqueado/ListadoCanaisVendas.vue';
-import DetalhesHistoricoPedidos from '@/Components/EstruturaFranqueado/DetalhesHistoricoPedidos.vue';
+import ListarCanaisVendas from '@/Components/EstruturaFranqueado/ListarCanaisVendas.vue';
+import DetalhesCanaisVendas from '@/Components/EstruturaFranqueado/DetalhesCanaisVendas.vue';
 
 // Dados do usuário selecionado
 const dadosSelecionado = ref(null);
