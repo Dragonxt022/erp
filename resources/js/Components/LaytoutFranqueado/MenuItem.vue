@@ -2,11 +2,13 @@
   <div>
     <!-- Link do item principal -->
     <Link
-      v-if="!isLogout"
+      v-if="!isLogout && link"
       class="menu-item"
       :class="[menuItemClass, { active: isActive || isAnySubmenuActive }]"
-      :href="link"
-      @click.prevent="toggleSubmenu"
+      :href="link || '#'"
+      @click.prevent="link && toggleSubmenu"
+      @mouseenter="handleMouseEnter"
+      @mouseleave="handleMouseLeave"
     >
       <div class="icon">
         <img :src="icon" alt="icon" />
@@ -66,6 +68,24 @@ const props = defineProps({
 });
 
 const showSubmenu = ref(false);
+const delayTimeout = ref(null);
+
+const handleMouseEnter = () => {
+  // Cancela qualquer timeout existente para fechar o menu
+  if (delayTimeout.value) {
+    clearTimeout(delayTimeout.value);
+    delayTimeout.value = null;
+  }
+  showSubmenu.value = true; // Abre o menu imediatamente
+};
+
+const handleMouseLeave = () => {
+  // Adiciona um atraso de 4 segundos antes de fechar
+  delayTimeout.value = setTimeout(() => {
+    showSubmenu.value = false;
+    saveSubmenuState(); // Atualiza o estado no localStorage
+  }, 4000); // 4 segundos de atraso
+};
 
 // Função para carregar o estado do submenu do localStorage
 const loadSubmenuState = () => {

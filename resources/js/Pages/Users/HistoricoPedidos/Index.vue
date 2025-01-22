@@ -1,7 +1,7 @@
 <template>
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
-    <Head title="Insumos" />
+    <Head title="Histórico de Pedidos" />
     <!-- Container principal -->
     <div
       class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"

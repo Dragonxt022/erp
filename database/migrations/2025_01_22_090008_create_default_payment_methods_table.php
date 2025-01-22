@@ -24,13 +24,12 @@ return new class extends Migration
                     'cabal',
                     'alelo',
                     'pix',
-                    'sodexo',
                     'ticket',
                     'drex',
                     'vr_alimentacao',
                 ]
             );
-
+            $table->boolean('status')->default(true);
             $table->string('img_icon')->nullable(); // Ícone do método
             $table->timestamps();
         });

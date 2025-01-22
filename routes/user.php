@@ -66,6 +66,23 @@ Route::middleware([
         return Inertia::render('Users/FolhaPagamento/Index');
     })->name('franqueado.folhaPagamento');
 
+    // Novas rotas
+    Route::get('/franqueado/fluxo-caixa', function () {
+        return Inertia::render('Users/FluxoCaixa/Index');
+    })->name('franqueado.fluxoCaixa');
+
+    Route::get('/franqueado/metodos-pagamentos', function () {
+        return Inertia::render('Users/MetodosPagamentos/Index');
+    })->name('franqueado.metodosPagamentos');
+
+    Route::get('/franqueado/canais-vendas', function () {
+        return Inertia::render('Users/CanaisVendas/Index');
+    })->name('franqueado.canaisVendas');
+
+    Route::get('/franqueado/historico-caixa', function () {
+        return Inertia::render('Users/HistoricoCaixa/Index');
+    })->name('franqueado.historicoCaixa');
+
 
     // Rotas Sitemas de Retirada de estoque
     Route::get('/franqueado/controle-estoque', function () {

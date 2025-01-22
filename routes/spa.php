@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
@@ -26,6 +27,8 @@ Route::prefix('api')->middleware([
 
     // Principais
     Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
+
+    // Métodos de pagamentos
 });
 
 // Rotas protegidas por autenticação Administrador
@@ -95,8 +98,14 @@ Route::prefix('api')->middleware([
     });
 
 
-
     Route::prefix('produtos')->group(function () {
         Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
+    });
+
+
+    Route::prefix('metodos-pagamentos')->group(function () {
+        Route::get('/lista', [DefaultPaymentMethodController::class, 'index'])->name('metodosPagamentos.index');
+        Route::get('/verificar-pagamentos/{id}', [DefaultPaymentMethodController::class, 'show'])->name('metodosPagamento.verificar');
+        Route::post('/upsert', [DefaultPaymentMethodController::class, 'upsert'])->name('metodoPagamento.upsert');
     });
 });

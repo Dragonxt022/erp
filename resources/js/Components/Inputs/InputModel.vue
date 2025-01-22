@@ -16,12 +16,12 @@ import { defineProps } from 'vue';
 // Propriedades do componente
 defineProps({
   modelValue: {
-    type: String,
+    type: [String, Number],
     disabled: Boolean,
     default: '',
   },
   placeholder: {
-    type: String,
+    type: [String, Number],
     default: '',
   },
 });

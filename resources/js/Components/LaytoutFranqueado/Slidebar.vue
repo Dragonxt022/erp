@@ -21,12 +21,12 @@
         <!-- Itens do menu (Mostrar apenas os ícones em telas pequenas) -->
         <MenuItem
           v-for="item in category.items"
-          :key="item.link"
+          :key="item.link || 'no-link'"
           :label="item.label"
           :icon="item.icon"
-          :link="route(item.link)"
+          :link="item.link ? route(item.link) : null"
           :submenuItems="item.submenuItems"
-          :isActive="isActive(route(item.link))"
+          :isActive="item.link ? isActive(route(item.link)) : false"
           :isLogout="item.isLogout"
         />
       </div>
@@ -159,21 +159,21 @@ const menuCategories = [
       {
         label: 'Fluxo de caixa',
         icon: '/storage/images/fluxo_caixa.svg',
-        link: 'franqueado.estoque',
+        link: 'franqueado.fluxoCaixa',
         isLogout: false,
         submenuItems: [
           {
             label: 'Métodos de pagamento',
             icon: '/storage/images/add_product.svg',
-            link: 'franqueado.inventario',
+            link: 'franqueado.metodosPagamentos',
           },
           {
             label: 'Canais de Vendas',
-            link: 'franqueado.fornecedores',
+            link: 'franqueado.canaisVendas',
           },
           {
             label: 'Histórico de Caixa',
-            link: 'franqueado.pedidos',
+            link: 'franqueado.historicoCaixa',
           },
         ],
         isActive: false,

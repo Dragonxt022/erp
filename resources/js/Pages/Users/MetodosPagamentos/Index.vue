@@ -1,14 +1,14 @@
 <template>
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
-    <Head title="Insumos" />
+    <Head title="Métodos de pagamentos" />
     <!-- Container principal -->
     <div
       class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
     >
       <!-- Coluna 1: Listar Unidades -->
       <div v-if="!showCadastroProduto">
-        <ListadoHistoricoPedido
+        <ListarMetodosPagamentos
           :key="listaKey"
           ref="listaDados"
           @dado-selecionado="dadoSelecionado"
@@ -19,7 +19,7 @@
       <div class="flex flex-col gap-4">
         <template v-if="!showCadastroProduto">
           <template v-if="dadosSelecionado">
-            <DetalhesHistoricoPedidos :dados="dadosSelecionado" />
+            <DetalhesMetodosPagamento :dados="dadosSelecionado" />
           </template>
         </template>
       </div>
@@ -31,8 +31,8 @@
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
-import ListadoHistoricoPedido from '@/Components/EstruturaFranqueado/ListadoHistoricoPedido.vue';
-import DetalhesHistoricoPedidos from '@/Components/EstruturaFranqueado/DetalhesHistoricoPedidos.vue';
+import ListarMetodosPagamentos from '@/Components/EstruturaFranqueado/ListarMetodosPagamentos.vue';
+import DetalhesMetodosPagamento from '@/Components/EstruturaFranqueado/DetalhesMetodosPagamento.vue';
 
 // Dados do usuário selecionado
 const dadosSelecionado = ref(null);

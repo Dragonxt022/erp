@@ -20,13 +20,16 @@ class InforUnidade extends Model
         'cnpj',
     ];
 
-     // Relacionamento com os usuários
-     public function users()
-     {
-         return $this->hasMany(User::class);  // Uma unidade pode ter muitos usuários
-     }
+    // Relacionamento com os usuários
+    public function users()
+    {
+        return $this->hasMany(User::class);  // Uma unidade pode ter muitos usuários
+    }
 
+    // app/Models/InfoUnidade.php
 
-
-
+    public function unidadePaymentMethods()
+    {
+        return $this->hasMany(UnidadePaymentMethod::class, 'unidade_id');
+    }
 }

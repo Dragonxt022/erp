@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
 
-        // Nada aqui
+        // Chama o seeder dos métodos de pagamento
+        $this->call(DefaultPaymentMethodsSeeder::class);
     }
 }
