@@ -43,6 +43,7 @@ const sidebar = ref(null);
 
 // Definindo as categorias de menu
 const menuCategories = [
+  // Inicio
   {
     name: '',
     items: [
@@ -55,6 +56,7 @@ const menuCategories = [
       },
     ],
   },
+  // Ferramentas
   {
     name: 'Ferramentas',
     items: [
@@ -81,6 +83,8 @@ const menuCategories = [
       },
     ],
   },
+
+  // Gestão da loja
   {
     name: 'Gestão da loja',
     items: [
@@ -145,7 +149,42 @@ const menuCategories = [
         isLogout: false,
         isActive: false,
       },
+    ],
+  },
 
+  // Financeiro
+  {
+    name: 'Financeiro',
+    items: [
+      {
+        label: 'Fluxo de caixa',
+        icon: '/storage/images/fluxo_caixa.svg',
+        link: 'franqueado.estoque',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Métodos de pagamento',
+            icon: '/storage/images/add_product.svg',
+            link: 'franqueado.inventario',
+          },
+          {
+            label: 'Canais de Vendas',
+            link: 'franqueado.fornecedores',
+          },
+          {
+            label: 'Histórico de Caixa',
+            link: 'franqueado.pedidos',
+          },
+        ],
+        isActive: false,
+      },
+    ],
+  },
+
+  // Rota de saida da aplicação
+  {
+    name: '',
+    items: [
       {
         label: 'Sair',
         icon: '/storage/images/log-out.png',
