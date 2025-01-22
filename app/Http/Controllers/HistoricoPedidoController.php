@@ -9,12 +9,23 @@ use Illuminate\Support\Carbon;
 class HistoricoPedidoController extends Controller
 {
     // Função para exibir todos os pedidos históricos
-    public function index()
+    public function index(Request $request)
     {
-        // Buscando todos os registros da tabela historico_pedidos com os relacionamentos
-        $pedidos = HistoricoPedido::with(['usuario', 'unidade', 'fornecedor'])->get();
+        // Verificar se foi fornecido um filtro de unidade
+        $unidadeId = $request->query('unidade_id');
 
-        // Processando os dados antes de retorná-los
+        // Inicia a consulta ao modelo, incluindo os relacionamentos necessários
+        $query = HistoricoPedido::with(['usuario', 'unidade', 'fornecedor']);
+
+        // Aplica o filtro por unidade, se especificado
+        if ($unidadeId) {
+            $query->where('unidade_id', $unidadeId);
+        }
+
+        // Obtem os resultados
+        $pedidos = $query->get();
+
+        // Processa os dados antes de retorná-los
         $pedidos->transform(function ($pedido) {
             // Substituindo os IDs pelos nomes dos relacionamentos
             $pedido->usuario_responsavel = $pedido->usuario ? $pedido->usuario->name : null;
