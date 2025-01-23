@@ -1,6 +1,6 @@
 <template>
   <transition name="fade">
-    <div v-if="isVisible" class="sidebar-container">
+    <div v-if="isVisible" class="sidebar-container elemento-fixo">
       <!-- Animação de Carregamento -->
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
@@ -366,6 +366,16 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+.elemento-fixo {
+  max-height: 600px; /* Ajuste conforme necessário */
+  overflow-y: auto; /* Adiciona a rolagem vertical */
+  scrollbar-width: none; /* Remove a barra de rolagem no Firefox */
+}
+
+.elemento-fixo::-webkit-scrollbar {
+  width: 0; /* Torna a barra de rolagem invisível */
+  height: 0;
+}
 .loading-overlay {
   position: fixed;
   top: 0;

@@ -157,10 +157,14 @@ const cancelEdit = () => {
 
 <style scoped>
 .elemento-fixo {
-  position: -webkit-sticky; /* Para navegadores que exigem o prefixo */
-  position: sticky;
-  top: 0; /* Defina o valor para o topo de onde o elemento ficará fixo */
-  z-index: 10; /* Para garantir que o elemento fique sobre outros */
+  max-height: 600px; /* Ajuste conforme necessário */
+  overflow-y: auto; /* Adiciona a rolagem vertical */
+  scrollbar-width: none; /* Remove a barra de rolagem no Firefox */
+}
+
+.elemento-fixo::-webkit-scrollbar {
+  width: 0; /* Torna a barra de rolagem invisível */
+  height: 0;
 }
 /* Tornando a lista rolável com barra de rolagem invisível */
 .scrollbar-hidden::-webkit-scrollbar {

@@ -61,7 +61,31 @@
           <div
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ {{ valorInsumos }}
+            <div
+              class="w-[560px] h-[50px] flex justify-center items-center gap-3"
+            >
+              <!-- Ícone -->
+              <div class="w-6 h-6 bg-[#d9d9d9]"></div>
+
+              <!-- Texto da espécie -->
+              <div
+                class="w-[250px] text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
+              >
+                Canais de vendas
+              </div>
+
+              <!-- Espaço flexível -->
+              <div class="flex-grow h-7 bg-white"></div>
+
+              <!-- Valor -->
+
+              <InputModel
+                v-model="porcentagem"
+                class="w-[30%]"
+                placeholder="R$ 0,00"
+                @input="atualizarMetodo"
+              />
+            </div>
           </div>
         </div>
       </div>
