@@ -26,7 +26,7 @@
           />
           <!-- Ajuste o tamanho do ícone conforme necessário -->
           <span class="text-gray-900 text-[17px] font-semibold">
-            01/09/2024 - 30/09/2024
+            <CalendarFilter :categories="categories" @search="handleSearch" />
           </span>
         </div>
       </div>
@@ -161,6 +161,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue';
 import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
+import CalendarFilter from '@/Components/Filtros/CalendarFilter.vue';
 
 const valorInicial = ref('0.00');
 const valorInsumos = ref('0.00');

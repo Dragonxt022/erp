@@ -16,26 +16,13 @@ const logout = () => {
 <style lang="css" scoped>
 .content {
   position: fixed; /* Garante que o conteúdo se posicione de forma fixa na área visível */
-  top: 8.6%; /* Desconta a altura da navbar */
-  left: 16.4%; /* Desconta a largura da sidebar */
+  top: 70px; /* Desconta a altura da navbar */
+  left: 252px; /* Desconta a largura da sidebar */
   width: calc(100vw - 249px); /* Largura máxima considerando a sidebar */
   height: calc(100vh - 70px); /* Altura máxima considerando a navbar */
   padding: 20px; /* Espaço interno */
   background-color: #f8f8f8; /* Define um fundo para destaque */
   overflow-y: auto; /* Habilita rolagem vertical */
-}
-
-@media (max-width: 640px) {
-  .content {
-    position: fixed; /* Garante que o conteúdo se posicione de forma fixa na área visível */
-    top: 11%; /* Desconta a altura da navbar */
-    left: 13.5%; /* Desconta a largura da sidebar */
-    width: calc(100vw - 65px); /* Largura máxima considerando a sidebar */
-    height: calc(100vh - 70px); /* Altura máxima considerando a navbar */
-    padding: 5%; /* Espaço interno */
-    background-color: #f8f8f8; /* Define um fundo para destaque */
-    overflow-y: auto; /* Habilita rolagem vertical */
-  }
 }
 </style>
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckFranqueado;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -8,6 +9,7 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    CheckFranqueado::class
 ])->group(function () {
 
     Route::get('/franqueado/painel', function () {

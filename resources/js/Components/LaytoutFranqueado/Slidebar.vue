@@ -219,7 +219,8 @@ const isActive = (link) => {
 
 <style scoped>
 .sidebar {
-  height: calc(100% - 70px); /* Ajuste para ocupar toda a altura restante */
+  height: calc(100% - 60px); /* Ajuste para ocupar toda a altura restante */
+  top: 70px;
   width: 250px; /* Largura padrão para telas grandes */
   padding-top: 27px;
   padding-bottom: 27px;
