@@ -66,7 +66,7 @@ Route::prefix('api')->middleware([
 
     // Lista de Produtos
     Route::prefix('produtos')->group(function () {
-        Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
+        Route::get('/lista-insumos', [ListaProdutoController::class, 'index'])->name('listaInsumos.index');
         Route::post('/cadastrar', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
         Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
         Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
