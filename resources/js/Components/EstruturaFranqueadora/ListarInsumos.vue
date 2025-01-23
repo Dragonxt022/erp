@@ -60,52 +60,51 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue';
+<script>
 import axios from 'axios';
 
-// Variáveis reativas
-const produtos = ref([]); // Armazena os produtos
-const searchQuery = ref(''); // Campo de pesquisa
+export default {
+  data() {
+    return {
+      produtos: [], // Armazena os produtos
+      searchQuery: '', // Campo de pesquisa
+    };
+  },
+  mounted() {
+    this.fetchProdutos();
+  },
+  methods: {
+    // Busca os produtos da API
+    async fetchProdutos() {
+      try {
+        const response = await axios.get('/api/produtos/lista-insumos');
+        console.log('Produtos carregados:', response.data);
+        this.produtos = response.data; // Atualiza os dados
+      } catch (error) {
+        console.error('Erro ao carregar os produtos:', error);
+      }
+    },
+    // Método para gerar a URL correta da imagem
+    getProfilePhotoUrl(profilePhoto) {
+      if (!profilePhoto) {
+        return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
+      }
+      return new URL(profilePhoto, window.location.origin).href;
+    },
 
-// Método para buscar os produtos da API
-const fetchProdutos = async () => {
-  try {
-    const response = await axios.get('/api/produtos/lista-insumos');
-    console.log('Produtos carregados:', response.data);
-
-    // Garante que os produtos sejam sempre um array
-    produtos.value = Array.isArray(response.data) ? response.data : [];
-  } catch (error) {
-    console.error('Erro ao carregar os produtos:', error);
-    produtos.value = []; // Garante um array vazio em caso de erro
-  }
+    selecionarProduto(produto) {
+      this.$emit('produto-selecionado', produto);
+    },
+  },
+  computed: {
+    filteredProdutos() {
+      const query = this.searchQuery.toLowerCase();
+      return this.produtos.filter((produto) =>
+        produto.nome.toLowerCase().includes(query)
+      );
+    },
+  },
 };
-
-// Método para gerar a URL correta da imagem
-const getProfilePhotoUrl = (profilePhoto) => {
-  if (!profilePhoto) {
-    return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
-  }
-  return new URL(profilePhoto, window.location.origin).href;
-};
-
-// Computed para filtrar os produtos com base na pesquisa
-const filteredProdutos = computed(() => {
-  const query = searchQuery.value.toLowerCase();
-  return produtos.value.filter((produto) =>
-    produto.nome.toLowerCase().includes(query)
-  );
-});
-
-// Método para selecionar o produto
-const selecionarProduto = (produto) => {
-  // Emitir o evento para o componente pai
-  console.log('Produto selecionado:', produto);
-};
-
-// Monta o componente e busca os produtos
-onMounted(fetchProdutos);
 </script>
 
 <style scoped>
