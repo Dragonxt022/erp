@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use App\Models\CanalVenda;
+use App\Models\FechamentoCaixa;
 use App\Models\UnidadePaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CaixaController extends Controller
 {
@@ -67,6 +69,41 @@ class CaixaController extends Controller
         ]);
     }
 
+    // public function fecharCaixa2(Request $request)
+    // {
+    //     DB::beginTransaction();
+
+    //     try {
+    //         // Criar o fechamento de caixa para métodos de pagamento
+    //         foreach ($request->metodos as $metodo) {
+    //             FechamentoCaixa::create([
+    //                 'unidade_id' => $unidade_id,  // Defina o ID da unidade
+    //                 'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
+    //                 'caixa_id' => $caixa_id,  // Defina o ID do caixa
+    //                 'valor_total_vendas' => $metodo['valor_total_vendas'],
+    //             ]);
+    //         }
+
+    //         // Criar os registros de canais de venda
+    //         foreach ($request->canais as $canal) {
+    //             CanalVenda::create([
+    //                 'unidade_id' => $unidade_id,  // Defina o ID da unidade
+    //                 'canal_de_vendas_id' => $canal['canal_de_vendas_id'],
+    //                 'caixa_id' => $caixa_id,  // Defina o ID do caixa
+    //                 'valor_total_vendas' => $canal['valor_total_vendas'],
+    //                 'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
+    //             ]);
+    //         }
+
+    //         DB::commit();
+
+    //         return response()->json(['status' => 'success'], 200);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
+
     // Método para exibir os detalhes do caixa
     public function detalhesCaixa($id)
     {
@@ -122,16 +159,14 @@ class CaixaController extends Controller
 
         // Filtra os canais de vendas pela unidade do usuário e status ativo
         $canaisVendas = CanalVenda::where('unidade_id', $unidadeId)
-            ->whereHas('canalDeVendas', function ($query) {
-                $query->where('status', 1); // Apenas canais de vendas ativos
-            })
-            ->with('canalDeVendas') // Carrega os detalhes do canal de vendas padrão
+            ->where('status', 1) // Apenas métodos ativos
+            ->with('canalDeVendas') // Carrega os detalhes do método de pagamento padrão
             ->get();
 
         return response()->json([
             'status' => 'success',
             'metodosPagamento' => $metodosPagamento,
             'canaisVendas' => $canaisVendas,
-        ]);
+        ], 200);
     }
 }

@@ -34,25 +34,30 @@
                 </tr>
               </thead>
               <tbody>
-                <tr class="border-b">
-                  <td class="py-2 flex items-center gap-5">
+                <tr v-for="metodo in metodosPagamento" :key="metodo.id">
+                  <td class="py-3 flex items-center gap-5">
                     <img
-                      src="/storage/images/cartao_credito.svg"
-                      alt="Ícone do método"
+                      :src="`/${metodo.default_payment_method.img_icon}`"
+                      :alt="metodo.default_payment_method.nome"
                       class="w-8 h-8"
                     />
                     <div
                       class="w-fill text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
                     >
-                      Cartão de crédito
+                      {{ metodo.default_payment_method.nome }}
                     </div>
                   </td>
 
                   <td class="py-2 w-ful">
                     <InputModel
-                      v-model="porcentagem"
+                      v-model="metodo.total_vendas_metodos_pagamento"
+                      @input="
+                        adicionarMetodoPagamento(
+                          metodo,
+                          metodo.total_vendas_metodos_pagamento
+                        )
+                      "
                       placeholder="R$ 0,00"
-                      @input="atualizarMetodo"
                     />
                   </td>
                 </tr>
@@ -70,7 +75,7 @@
             <div
               class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
             >
-              R$ 0,00
+              {{ totalMetodosPagamento }}
             </div>
           </div>
         </div>
@@ -81,11 +86,13 @@
             <table class="w-full">
               <thead>
                 <tr>
+                  <th></th>
                   <th
-                    class="text-left text-gray-500 text-sm sm:text-base md:text-lg font-semibold font-['Figtree'] leading-snug"
+                    class="px-2 text-left text-gray-500 text-sm sm:text-base md:text-lg font-semibold font-['Figtree'] leading-snug"
                   >
                     Canais de venda
                   </th>
+
                   <th
                     class="text-gray-500 text-sm sm:text-base md:text-lg font-semibold font-['Figtree'] leading-snug"
                   >
@@ -99,33 +106,40 @@
                 </tr>
               </thead>
               <tbody>
-                <tr class="border-b">
-                  <td class="py-2 flex items-center gap-5">
+                <tr v-for="canal in canaisVendas" :key="canal.id">
+                  <td class="w-[85px]">
                     <img
-                      src="/storage/images/cartao_credito.svg"
-                      alt="Ícone do método"
-                      class="w-8 h-8"
+                      :src="`/${canal.canal_de_vendas.img_icon}`"
+                      :alt="canal.canal_de_vendas.nome"
+                      class="h-7 w-17 fill-stone-950"
                     />
+                  </td>
+                  <td class="py-4 px-3 flex items-center gap-5">
                     <div
                       class="w-fill text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug w-[170px]"
                     >
-                      Canal de vendas
+                      {{ canal.canal_de_vendas.nome }}
                     </div>
                   </td>
                   <td class="py-2">
                     <InputModel
-                      v-model="porcentagem"
+                      v-model="canal.total_vendas_cainais_vendas"
+                      @input="
+                        adicionarCanalVenda(
+                          metodo,
+                          metodo.total_vendas_cainais_vendas
+                        )
+                      "
                       placeholder="R$ 0,00"
                       class="w-[130px]"
-                      @input="atualizarMetodo"
                     />
                   </td>
                   <td class="py-2">
                     <InputModel
-                      v-model="porcentagem"
+                      v-model="canal.quantidade_vendas_cainais_vendas"
+                      @input="onInputChange(canal, 'quantidade')"
                       placeholder="0"
                       class="w-[120px]"
-                      @input="atualizarMetodo"
                     />
                   </td>
                 </tr>
@@ -143,42 +157,24 @@
             <div
               class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
             >
-              R$ 0,00
+              {{ totalCanaisVendas }}
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div
-      class="mt-5 fixed bottom-0 left-[250px] w-full max-w-screen-xl mx-auto"
-    >
-      <div
-        class="w-full h-[85px] p-5 bg-white flex justify-between items-center"
-      >
+    <div class="mt-5 bottom-0 left-[250px] w-full max-w-screen-xl mx-auto">
+      <div class="w-full h-[85px] p-5 flex justify-between items-center">
         <!-- Grupo de botões "Suprimento" e "Sangria" -->
         <div class="flex gap-[13px]">
           <!-- Botão Suprimento -->
-          <div
-            class="w-[159px] h-[34px] px-[14.67px] py-1 bg-white rounded-[133.33px] flex justify-center items-center"
-          >
-            <div
-              class="text-center text-[#548c25] text-[15px] font-semibold font-['Figtree'] uppercase leading-tight"
-            >
-              <ButtonSuave class="w-full" text="Suprimento" iconPath="" />
-            </div>
-          </div>
+
+          <ButtonSuave class="w-full" text="Suprimento" iconPath="" />
 
           <!-- Botão Sangria -->
-          <div
-            class="w-[159px] h-[34px] px-[14.67px] py-1 bg-white rounded-[133.33px] flex justify-center items-center"
-          >
-            <div
-              class="text-center text-[#548c25] text-[15px] font-semibold font-['Figtree'] uppercase leading-tight"
-            >
-              <ButtonSuave class="w-full" text="Sangria" iconPath="" />
-            </div>
-          </div>
+
+          <ButtonSuave class="w-full" text="Sangria" iconPath="" />
         </div>
 
         <!-- Botão Fechar Caixa -->
@@ -187,6 +183,7 @@
             class="w-full max-w-[200px]"
             text="Fechar caixa"
             iconPath="/storage/images/arrow_left_alt.svg"
+            @click="enviarFechamentoCaixa"
           />
         </div>
       </div>
@@ -200,14 +197,84 @@ import { Head } from '@inertiajs/vue3';
 import InputModel from '@/Components/Inputs/InputModel.vue';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
 import ButtonSuave from '@/Components/Button/ButtonSuave.vue';
-import { Inertia } from '@inertiajs/inertia';
-import axios from 'axios';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
+import axios from 'axios';
+import { Inertia } from '@inertiajs/inertia';
 
 const toast = useToast();
-
 const isLoading = ref(false);
+const metodosPagamento = ref([]);
+const canaisVendas = ref([]);
+
+// Computed para total de métodos de pagamento
+const totalMetodosPagamento = computed(() =>
+  metodosPagamento.value.reduce(
+    (acc, metodo) =>
+      acc + parseFloat(metodo.total_vendas_metodos_pagamento || 0),
+    0
+  )
+);
+
+// Computed para total de canais de vendas
+const totalCanaisVendas = computed(() =>
+  canaisVendas.value.reduce(
+    (acc, canal) => acc + parseFloat(canal.total_vendas_canais_vendas || 0),
+    0
+  )
+);
+
+// Função para buscar os métodos e canais ativos
+const buscarMetodosCanaisAtivos = async () => {
+  isLoading.value = true;
+  try {
+    const response = await axios.get('/api/caixas/metodos-canais-ativos');
+    if (response.data.status === 'success') {
+      // Carregar métodos e canais com valores padrão (0)
+      metodosPagamento.value = response.data.metodosPagamento.map((metodo) => ({
+        ...metodo,
+        total_vendas_metodos_pagamento: 0, // Valor padrão
+      }));
+      canaisVendas.value = response.data.canaisVendas.map((canal) => ({
+        ...canal,
+        total_vendas_canais_vendas: 0, // Valor padrão
+        quantidade_vendas_canais_vendas: 0, // Valor padrão
+      }));
+    } else {
+      toast.error('Erro ao carregar os dados');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar métodos e canais ativos:', error);
+    toast.error('Erro ao carregar os dados');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Função para enviar os dados para o backend
+const enviarFechamentoCaixa = async () => {
+  isLoading.value = true;
+  try {
+    const response = await axios.post('/api/caixas/fechar', {
+      metodos: metodosPagamento.value,
+      canais: canaisVendas.value,
+      total_metodos_pagamento: totalMetodosPagamento.value,
+      total_canais_vendas: totalCanaisVendas.value,
+    });
+
+    if (response.data.status === 'success') {
+      toast.success('Fechamento realizado com sucesso!');
+      Inertia.visit('/fechamentos');
+    } else {
+      toast.error('Erro ao realizar o fechamento');
+    }
+  } catch (error) {
+    console.error('Erro ao enviar fechamento de caixa:', error);
+    toast.error('Erro ao realizar o fechamento');
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // Função para verificar se já existe um caixa aberto
 const verificarCaixaAberto = async () => {
@@ -215,10 +282,8 @@ const verificarCaixaAberto = async () => {
   try {
     const response = await axios.get('/api/caixas/abertos');
     if (response.data && response.data.aberto) {
-      // Se existir caixa aberto, redireciona para fluxo de caixa
       console.log('caixa aberto, permanecendo na pagina');
     } else {
-      // Se não houver caixa aberto, redireciona para a página de abrir caixa
       toast.warning('Abra o caixa primeiro!');
       Inertia.visit(route('franqueado.abrirCaixa'));
     }
@@ -229,9 +294,9 @@ const verificarCaixaAberto = async () => {
   }
 };
 
-// Verifica se há um caixa aberto ao montar o componente
 onMounted(() => {
   verificarCaixaAberto();
+  buscarMetodosCanaisAtivos();
 });
 </script>
 

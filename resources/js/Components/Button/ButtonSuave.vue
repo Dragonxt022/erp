@@ -2,7 +2,7 @@
   <button
     :type="type"
     @click="onClick"
-    class="h-[46px] px-[38px] py-3 bg-[#6db631] rounded-[10px] shadow-[2px_2px_10px_0px_rgba(0,0,0,0.04)] flex justify-center items-center gap-2.5"
+    class="h-[46px] px-[38px] py-3 bg-white rounded-[133.33px] flex justify-center items-center gap-2.5"
   >
     <span
       class="text-center uppercase text-[#5a9f28] upp text-[15px] font-semibold font-['Figtree'] leading-tight"

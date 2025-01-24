@@ -24,6 +24,16 @@
         placeholder="Buscar um produto"
         class="search-input pl-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-[500px]"
       />
+
+      <!-- Ícone de tela cheia -->
+
+      <div
+        id="fullscreen-icon"
+        class="ml-5 cursor-pointer text-gray-500 hover:text-green-500"
+        title="Tela cheia"
+      >
+        <img src="/storage/images/fullscreen.svg" alt="fullscreen" />
+      </div>
     </div>
 
     <!-- Modal -->
@@ -325,6 +335,8 @@ const atualizarQuantidade = (produtoId, quantidade) => {
     quantidade: quantidadeNumerica,
   };
 
+  showModal.value = true;
+
   // Remove o item do carrinho se a quantidade for 0 ou NaN
   if (quantidadeNumerica === 0 || isNaN(quantidadeNumerica)) {
     delete carrinho.value[produtoId];
@@ -332,7 +344,20 @@ const atualizarQuantidade = (produtoId, quantidade) => {
 };
 
 // Carregar produtos ao montar o componente
-onMounted(fetchProdutos);
+onMounted(() => {
+  const fullscreenIcon = document.getElementById('fullscreen-icon');
+
+  if (fullscreenIcon) {
+    fullscreenIcon.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  }
+  fetchProdutos();
+});
 
 // Produtos formatados
 const produtosListados = computed(() =>
