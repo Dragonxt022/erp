@@ -1,214 +1,256 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Fluxo do Caixa" />
+    <Head title="Fluxo do Caixa " />
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+    </div>
     <div class="flex justify-between items-center mb-4">
       <!-- Coluna 1: Título e subtítulo -->
       <div>
         <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
-          Fluxo do caixa
+          Abertura de caixa
         </div>
         <div class="painel-subtitle">
           <p class="text-sm sm:text-base md:text-lg">
-            Acompanhe seu negócio em tempo real
+            Iniciar a operação de faturamento diário
           </p>
         </div>
       </div>
     </div>
+
     <div class="mt-5">
       <!-- Ajuste do grid para ser responsivo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4">
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Métodos de pagamentos
-          </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <div
-              class="w-[560px] h-[50px] flex justify-center items-center gap-3"
-            >
-              <!-- Ícone -->
-              <div class="w-6 h-6 bg-[#d9d9d9]"></div>
-
-              <!-- Texto da espécie -->
-              <div
-                class="w-[250px] text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
-              >
-                Nome do metodo
-              </div>
-
-              <!-- Espaço flexível -->
-              <div class="flex-grow h-7 bg-white"></div>
-
-              <!-- Valor -->
-
-              <InputModel
-                v-model="porcentagem"
-                class="w-[30%]"
-                placeholder="R$ 0,00"
-                @input="atualizarMetodo"
-              />
-            </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-6">
+        <div
+          v-if="!valorDigitado"
+          class="w-[427px] h-[174px] px-11 py-9 bg-white rounded-[10px] flex flex-col justify-center items-start"
+        >
+          <div class="text-[17px] font-semibold font-['Figtree'] leading-snug">
+            <span class="text-[#6db631]">{{ usuarioNome }}</span>
+            <span class="text-[#6d6d6d]">
+              , com quantos reais
+              <br />
+              você vai abrir o caixa?
+            </span>
           </div>
         </div>
 
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Canais de Vendas
-          </h3>
+        <!-- Coluna 1: Métodos de Pagamento -->
+        <div
+          v-else
+          class="w-[427px] h-[174px] px-11 py-9 bg-white rounded-[10px] flex flex-col justify-center items-start"
+        >
+          <!-- Saudação e introdução -->
+          <div class="text-[17px] font-semibold font-['Figtree'] leading-snug">
+            <span class="text-[#6db631]">{{ usuarioNome }}</span>
+            <span class="text-[#6d6d6d]">, vamos abrir o caixa com</span>
+          </div>
+
+          <!-- Valor em destaque -->
           <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
+            class="text-[#262a27] text-[50px] font-bold font-['Figtree'] leading-[69.98px] tracking-wide"
           >
+            {{ valorFormatado }}
+          </div>
+
+          <!-- Texto adicional -->
+          <div
+            class="text-[#6d6d6d] text-[17px] font-semibold font-['Figtree'] leading-snug"
+          >
+            de saldo em gaveta
+          </div>
+        </div>
+
+        <div class="w-[427px] h-[43px] flex justify-center items-center">
+          <!-- Ícone de gaveta -->
+          <div class="w-6 h-6">
+            <img src="/storage/images/payments_bleck.svg" alt="" />
+          </div>
+
+          <!-- Texto "Valor em gaveta" -->
+          <div
+            class="text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug ml-2"
+          >
+            Valor em gaveta
+          </div>
+
+          <!-- Espaço flexível -->
+          <div class="flex-grow h-7"></div>
+
+          <!-- Campo de valor -->
+          <div class="px-4 py-2 flex justify-center items-center opacity-80">
             <div
-              class="w-[560px] h-[50px] flex justify-center items-center gap-3"
+              class="text-[#262a27] text-xl font-bold font-['Figtree'] leading-[25px] tracking-tight"
             >
-              <!-- Ícone -->
-              <div class="w-6 h-6 bg-[#d9d9d9]"></div>
-
-              <!-- Texto da espécie -->
-              <div
-                class="w-[250px] text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
-              >
-                Canais de vendas
+              <div class="w-full">
+                <input
+                  v-model="valorDigitado"
+                  @input="onInputChange"
+                  type="text"
+                  class="w-full h-10 px-4 border border-gray-300 rounded-lg focus:outline-none focus:border-[#6db631]"
+                  placeholder="R$ 0,00"
+                />
               </div>
-
-              <!-- Espaço flexível -->
-              <div class="flex-grow h-7 bg-white"></div>
-
-              <!-- Valor -->
-
-              <InputModel
-                v-model="porcentagem"
-                class="w-[30%]"
-                placeholder="R$ 0,00"
-                @input="atualizarMetodo"
-              />
             </div>
           </div>
         </div>
+      </div>
+      <div class="fixed bottom-4 right-4">
+        <ButtonPrimaryMedio
+          :class="valorDigitado ? 'bg-[#6db631]' : 'bg-[#6d6d6d]'"
+          class="w-full max-w-[200px]"
+          text="Abrir caixa"
+          iconPath="/storage/images/arrow_left_alt.svg"
+          @click="abrirCaixa"
+        />
       </div>
     </div>
   </LayoutFranqueado>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
-import axios from 'axios';
+import { computed, onMounted, ref } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
-import InputModel from '@/Components/Inputs/InputModel.vue';
+import axios from 'axios';
+import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import { usePage } from '@inertiajs/vue3';
+import { Inertia } from '@inertiajs/inertia';
+import { useToast } from 'vue-toastification';
 
-const valorInicial = ref('0.00');
-const valorInsumos = ref('0.00');
-const itensNoEstoque = ref('0.00');
-const historicoMovimentacoes = ref([]);
-const currentPage = ref(1);
-const loading = ref(false);
-const hasMore = ref(true);
-const scrollContainer = ref(null);
+const toast = useToast();
 
-// Função para carregar movimentações e dados da API
-const loadMovimentacoes = async () => {
-  if (loading.value || !hasMore.value) return;
+const { errors, auth } = usePage().props;
 
-  loading.value = true;
+// Nome do usuário autenticado
+const usuarioNome = ref(auth.user?.name || 'Usuário');
+
+// Estado do valor digitado
+const valorDigitado = ref('');
+const isLoading = ref(false);
+
+// Função para formatar o valor como moeda brasileira
+const formatarParaBRL2 = (valor) => {
+  // Remove tudo que não é número ou vírgula
+  let valorFormatado = valor.replace(/\D/g, '');
+
+  // Formatação do valor para moeda
+  if (valorFormatado.length > 2) {
+    valorFormatado = valorFormatado.replace(/(\d)(\d{2})$/, '$1,$2'); // Adiciona a vírgula para os centavos
+  }
+
+  // Adiciona o ponto como separador de milhar
+  valorFormatado = valorFormatado.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+  return valorFormatado;
+};
+
+// Função para lidar com a digitação do input e formatação
+const onInputChange = (event) => {
+  let valor = event.target.value;
+  valor = formatarParaBRL2(valor); // Formatar o valor digitado
+  valorDigitado.value = valor; // Atualizar o valor
+};
+
+const valorFormatado = computed(() => formatarParaBRL2(valorDigitado.value));
+
+// Função para abrir o caixa (em centavos)
+const abrirCaixa = async () => {
+  isLoading.value = true;
+  // Converte para centavos para enviar ao backend
+  const valorEmCentavos = parseFloat(valorDigitado.value.replace(/\D/g, ''));
+
+  if (!valorDigitado.value || valorEmCentavos <= 0) {
+    toast.warning('Por favor, insira um valor válido para abrir o caixa.');
+    isLoading.value = false;
+    return;
+  }
 
   try {
-    // Realiza a requisição para a API
-    const { data } = await axios.get(
-      `/api/estoque/incial?page=${currentPage.value}`
-    );
+    const response = await axios.post('/api/caixas/abrir', {
+      valor_inicial: valorEmCentavos, // Enviar valor em centavos
+    });
+    toast.success('Caixa aberto com sucesso!');
+    console.log(response.data);
+    Inertia.visit(route('franqueado.fluxoCaixa'));
+  } catch (error) {
+    console.error(error);
+    toast.error('Ocorreu um erro ao abrir o caixa.');
+  } finally {
+    isLoading.value = false;
+  }
+};
 
-    // Atualiza os dados de insumos e itens no estoque
-    valorInsumos.value = data.valorInsumos;
-    itensNoEstoque.value = data.itensNoEstoque;
-
-    // Atualiza o histórico de movimentações
-    historicoMovimentacoes.value.push(...data.historicoMovimentacoes.data);
-
-    // Verifica se há mais páginas
-    if (
-      data.historicoMovimentacoes.current_page >=
-      data.historicoMovimentacoes.last_page
-    ) {
-      hasMore.value = false;
-    } else {
-      currentPage.value++;
+// Função para verificar se já existe um caixa aberto
+const verificarCaixaAberto = async () => {
+  isLoading.value = true;
+  try {
+    const response = await axios.get('/api/caixas/abertos');
+    if (response.data && response.data.aberto) {
+      // Se existir caixa aberto, redireciona para fluxo de caixa
+      toast.info('O caixa já esta aberto.');
+      Inertia.visit(route('franqueado.fluxoCaixa')); // Usando Inertia para redirecionar
     }
   } catch (error) {
-    console.error('Erro ao carregar movimentações:', error);
+    console.error('Erro ao verificar caixa aberto:', error);
   } finally {
-    loading.value = false;
+    isLoading.value = false;
   }
 };
 
-const onScroll = () => {
-  const container = scrollContainer.value;
-  if (
-    container.scrollTop + container.clientHeight >=
-    container.scrollHeight - 10
-  ) {
-    loadMovimentacoes();
-  }
-};
-
-// Carrega os dados iniciais
+// Verifica se há um caixa aberto ao montar o componente
 onMounted(() => {
-  loadMovimentacoes();
-  scrollContainer.value.addEventListener('scroll', onScroll);
-});
-
-onBeforeUnmount(() => {
-  if (scrollContainer.value) {
-    scrollContainer.value.removeEventListener('scroll', onScroll);
-  }
+  verificarCaixaAberto();
 });
 </script>
 
 <style lang="css" scoped>
-.scroll-hidden {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
 }
 
-.scroll-hidden::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+/* Estilos para o spinner */
+.spinner {
+  border: 4px solid #f3f3f3; /* Cor de fundo */
+  border-top: 4px solid #6db631; /* Cor do topo */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
 }
 
+/* Animação do spinner */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 .painel-title {
   font-size: 34px;
   font-weight: 700;
-  color: #262a27; /* Cor escura para título */
+  color: #262a27;
   line-height: 80%;
 }
 
 .painel-subtitle {
   font-size: 17px;
-  color: #6d6d6e; /* Cor secundária */
-  max-width: 600px; /* Limita a largura do subtítulo */
-}
-/* Estilizando a tabela */
-
-th {
-  background-color: #164110;
-  color: #ffffff;
+  color: #6d6d6e;
+  max-width: 600px;
 }
 
-.TrRedonEsquerda {
-  border-radius: 20px 0px 0px 0px;
-}
-
-.TrRedonDireita {
-  border-radius: 0px 20px 0px 0px;
-}
-
-tr:nth-child(even) {
-  background-color: #f4f5f3;
-}
-
-tr:hover {
-  background-color: #dededea9;
+input:focus {
+  outline: none;
 }
 </style>

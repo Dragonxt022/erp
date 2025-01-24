@@ -69,8 +69,12 @@ Route::middleware([
     })->name('franqueado.folhaPagamento');
 
     // Novas rotas
-    Route::get('/franqueado/fluxo-caixa', function () {
+    Route::get('/franqueado/abir-caixa', function () {
         return Inertia::render('Users/FluxoCaixa/Index');
+    })->name('franqueado.abrirCaixa');
+
+    Route::get('/franqueado/fluxo-caixa', function () {
+        return Inertia::render('Users/FluxoCaixa/Fluxo');
     })->name('franqueado.fluxoCaixa');
 
     Route::get('/franqueado/metodos-pagamentos', function () {

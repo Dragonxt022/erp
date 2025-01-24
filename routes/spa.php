@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\DefaultCanaisVendaController;
 use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
@@ -120,54 +121,12 @@ Route::prefix('api')->middleware([
         Route::get('/verificar-pagamentos/{id}', [DefaultCanaisVendaController::class, 'show'])->name('canaisVendas.verificar');
         Route::post('/upsert', [DefaultCanaisVendaController::class, 'upsert'])->name('canaisVendas.upsert');
     });
-});
 
-
-// Rotas protegidas por autenticação Gerente de estoq
-Route::prefix('api')->middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-    CheckFranqueado::class
-])->group(function () {
-
-    // Lista de Produtos
-    Route::prefix('estoque')->group(function () {
-        Route::get('/lista', [UnidadeEstoqueController::class, 'index'])->name('listaEstoque.index');
-        Route::get('/incial', [UnidadeEstoqueController::class, 'painelInicialEstoque'])->name('painelInicialEstoque.index');
-        Route::get('/fornecedores', [UnidadeEstoqueController::class, 'unidadeForencedores'])->name('unidadeForencedores.index');
-        Route::post('/armazenar-entrada', [UnidadeEstoqueController::class, 'armazenarEntrada'])->name('armazena.entrada');
-        Route::post('/criar-pedido', [UnidadeEstoqueController::class, 'criarPedido'])->name('criarPedido');
-        Route::put('/estoque/lote/{id}', [UnidadeEstoqueController::class, 'update'])->name('lote.updade');
-
-        // Rotas de controle de retirada
-        Route::get('/lista-produtos', [UnidadeEstoqueController::class, 'ListaProdutoEstoque'])->name('ListaProdutoEstoque.index');
-        // Route::post('/retirada-produtos', [UnidadeEstoqueController::class, 'enviarCarrinho'])->name('retirada.produtos');
-        Route::post('/consumir-estoque', [UnidadeEstoqueController::class, 'consumirEstoque'])->name('consumir.estoque');
-    });
-
-
-    // Rotas do histórico de vendas
-    Route::prefix('historico')->group(function () {
-        Route::get('lista', [HistoricoPedidoController::class, 'index'])->name('lista.historico');
-    });
-
-    //  Rotas de produtos
-    Route::prefix('produtos')->group(function () {
-        Route::get('/lista', [ListaProdutoController::class, 'index'])->name('listaProdutos.index');
-    });
-
-    // metos de pagamentos
-    Route::prefix('metodos-pagamentos')->group(function () {
-        Route::get('/lista', [DefaultPaymentMethodController::class, 'index'])->name('metodosPagamentos.index');
-        Route::get('/verificar-pagamentos/{id}', [DefaultPaymentMethodController::class, 'show'])->name('metodosPagamento.verificar');
-        Route::post('/upsert', [DefaultPaymentMethodController::class, 'upsert'])->name('metodoPagamento.upsert');
-    });
-
-    // Rotas do Canais de Vendas
-    Route::prefix('canais-vendas')->group(function () {
-        Route::get('/lista', [DefaultCanaisVendaController::class, 'index'])->name('canaisVendas.index');
-        Route::get('/verificar-pagamentos/{id}', [DefaultCanaisVendaController::class, 'show'])->name('canaisVendas.verificar');
-        Route::post('/upsert', [DefaultCanaisVendaController::class, 'upsert'])->name('canaisVendas.upsert');
+    // Rotas dos sistema do fluxo de caixa
+    Route::prefix('caixas')->group(function () {
+        Route::post('abrir', [CaixaController::class, 'abrirCaixa'])->name('abrirCaixa');
+        Route::post('fechar/{id}', [CaixaController::class, 'fecharCaixa'])->name('fecharCaixa');
+        Route::get('detalhes/{id}', [CaixaController::class, 'detalhesCaixa'])->name('detalhesCaixa');
+        Route::get('abertos', [CaixaController::class, 'listarCaixasAbertos'])->name('listarCaixasAbertos');
     });
 });

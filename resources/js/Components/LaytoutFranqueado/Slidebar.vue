@@ -159,7 +159,7 @@ const menuCategories = [
       {
         label: 'Fluxo de caixa',
         icon: '/storage/images/fluxo_caixa.svg',
-        link: 'franqueado.fluxoCaixa',
+        link: 'franqueado.abrirCaixa',
         isLogout: false,
         submenuItems: [
           {
