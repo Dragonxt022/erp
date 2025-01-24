@@ -55,7 +55,7 @@ class CaixaController extends Controller
 
         // Atualiza o valor final e o status do caixa
         $caixa->valor_final = $request->valor_final;
-        $caixa->status = 'fechado';
+        $caixa->status = 0;
         $caixa->motivo = $request->motivo ?? 'Fechamento de caixa';
         $caixa->save();
 
@@ -89,11 +89,11 @@ class CaixaController extends Controller
     {
         // Obtém todos os caixas abertos da unidade do usuário logado
         $caixas = Caixa::where('unidade_id', Auth::user()->unidade_id)
-            ->where('status', 'aberto')
+            ->where('status', 1) // Verifica se o status é 1 (aberto)
             ->get();
 
         return response()->json([
-            'aberto' => !$caixas->isEmpty(),  // Verifica se a coleção está vazia
+            'aberto' => !$caixas->isEmpty(), // Retorna true se houver caixas abertos
             'caixas' => $caixas,
         ]);
     }
