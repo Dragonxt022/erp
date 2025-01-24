@@ -23,6 +23,6 @@ class DefaultCanaisVenda extends Model
     // Relacionamento com a tabela `unidade_canais_vendas` 
     public function unidadesCanaisVenda()
     {
-        return $this->hasMany(UnidadeCanaisVenda::class, 'canal_venda_method_id');
+        return $this->hasMany(UnidadeCanaisVenda::class, 'canal_de_vendas_id');
     }
 }

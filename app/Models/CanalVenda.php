@@ -9,6 +9,8 @@ class CanalVenda extends Model
 {
     use HasFactory;
 
+    protected $table = 'unidade_canais_vendas';
+
     protected $fillable = [
         'unidade_id',
         'canal_de_vendas_id',

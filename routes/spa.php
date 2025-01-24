@@ -128,5 +128,7 @@ Route::prefix('api')->middleware([
         Route::post('fechar/{id}', [CaixaController::class, 'fecharCaixa'])->name('fecharCaixa');
         Route::get('detalhes/{id}', [CaixaController::class, 'detalhesCaixa'])->name('detalhesCaixa');
         Route::get('abertos', [CaixaController::class, 'listarCaixasAbertos'])->name('listarCaixasAbertos');
+
+        Route::get('/metodos-canais-ativos', [CaixaController::class, 'listarMetodosEcanaisAtivos'])->name('listaMetodosEcanaisAtivos');
     });
 });

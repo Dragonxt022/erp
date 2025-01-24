@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caixa;
+use App\Models\CanalVenda;
+use App\Models\UnidadePaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -95,6 +97,41 @@ class CaixaController extends Controller
         return response()->json([
             'aberto' => !$caixas->isEmpty(), // Retorna true se houver caixas abertos
             'caixas' => $caixas,
+        ]);
+    }
+
+
+    // Lista os métodos de pagamentos e canais de vendas ativos da unidade do usuário autenticado
+    public function listarMetodosEcanaisAtivos()
+    {
+        // Obtém o ID da unidade do usuário autenticado
+        $unidadeId = Auth::user()->unidade_id;
+
+        if (!$unidadeId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Usuário não pertence a nenhuma unidade.',
+            ], 403);
+        }
+
+        // Filtra os métodos de pagamento pela unidade do usuário e status ativo
+        $metodosPagamento = UnidadePaymentMethod::where('unidade_id', $unidadeId)
+            ->where('status', 1) // Apenas métodos ativos
+            ->with('defaultPaymentMethod') // Carrega os detalhes do método de pagamento padrão
+            ->get();
+
+        // Filtra os canais de vendas pela unidade do usuário e status ativo
+        $canaisVendas = CanalVenda::where('unidade_id', $unidadeId)
+            ->whereHas('canalDeVendas', function ($query) {
+                $query->where('status', 1); // Apenas canais de vendas ativos
+            })
+            ->with('canalDeVendas') // Carrega os detalhes do canal de vendas padrão
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'metodosPagamento' => $metodosPagamento,
+            'canaisVendas' => $canaisVendas,
         ]);
     }
 }

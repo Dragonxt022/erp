@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('unidade_canais_vendas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('unidade_id')->constrained('infor_unidade')->onDelete('cascade');
-            $table->foreignId('canal_venda_method_id')->constrained('default_canais_vendas')->onDelete('cascade');
+            $table->foreignId('canal_de_vendas_id')->constrained('default_canais_vendas')->onDelete('cascade');
             $table->integer('porcentagem')->default(0);
             $table->boolean('status')->default(false);
             $table->timestamps();

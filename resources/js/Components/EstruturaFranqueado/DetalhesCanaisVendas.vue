@@ -113,7 +113,7 @@ const atualizarMetodo = async () => {
 
     const payload = {
       unidade_id: props.dados.id,
-      canal_venda_method_id: props.dados.id,
+      canal_de_vendas_id: props.dados.id,
       porcentagem: porcentagem.value,
       status: status.value ? 1 : 0,
     };

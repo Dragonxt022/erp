@@ -19,7 +19,6 @@ class DefaultPaymentMethodController extends Controller
         return response()->json($paymentMethods);
     }
 
-
     public function show($id)
     {
         // Obter o usuário autenticado
@@ -48,7 +47,6 @@ class DefaultPaymentMethodController extends Controller
             'data' => $paymentMethod,
         ]);
     }
-
 
     // Métod usado para atualizar a forma de pagamento ou criar um novo
     public function upsert(Request $request)

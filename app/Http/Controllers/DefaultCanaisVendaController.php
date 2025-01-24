@@ -34,7 +34,7 @@ class DefaultCanaisVendaController extends Controller
         $unidadeId = $user->unidade_id;
 
         // Buscar o canal de venda associado à unidade e ao ID
-        $canalVenda = UnidadeCanaisVenda::where('canal_venda_method_id', $id)
+        $canalVenda = UnidadeCanaisVenda::where('canal_de_vendas_id', $id)
             ->where('unidade_id', $unidadeId)
             ->first();
 
@@ -61,7 +61,7 @@ class DefaultCanaisVendaController extends Controller
 
         // Validar os dados da requisição
         $validated = $request->validate([
-            'canal_venda_method_id' => 'required|exists:default_canais_vendas,id',
+            'canal_de_vendas_id' => 'required|exists:default_canais_vendas,id',
             'porcentagem' => 'required|numeric|min:0|max:100',
             'status' => 'required|boolean',
         ]);
@@ -73,7 +73,7 @@ class DefaultCanaisVendaController extends Controller
         $canalVenda = UnidadeCanaisVenda::updateOrCreate(
             [
                 'unidade_id' => $validated['unidade_id'],
-                'canal_venda_method_id' => $validated['canal_venda_method_id'],
+                'canal_de_vendas_id' => $validated['canal_de_vendas_id'],
             ],
             [
                 'porcentagem' => $validated['porcentagem'],
