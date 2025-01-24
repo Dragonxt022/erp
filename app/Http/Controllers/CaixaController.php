@@ -27,7 +27,7 @@ class CaixaController extends Controller
             'responsavel_id' => $responsavelId,
             'valor_inicial' => $valorInicial,
             'valor_final' => $valorInicial,
-            'status' => 'aberto', // Marca o caixa como aberto
+            'status' => 1, // Marca o caixa como aberto
             'motivo' => 'Abertura inicial',
         ]);
 
