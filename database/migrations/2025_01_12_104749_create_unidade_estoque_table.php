@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('insumo_id')->constrained('lista_produtos')->onDelete('cascade');
             $table->foreignId('fornecedor_id')->constrained('fornecedores')->onDelete('cascade');
             $table->foreignId('usuario_id')->constrained('users')->onDelete('cascade');
-            $table->float('quantidade', 2, 2);
+            $table->decimal('quantidade', 10, 3);
             $table->decimal('preco_insumo', 10, 2);
             $table->enum('operacao', ['Retirada', 'Entrada', 'Saida']);
             $table->enum('unidade', ['unidade', 'kg']);

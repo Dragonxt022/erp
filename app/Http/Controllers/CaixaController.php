@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\CanalVenda;
 use App\Models\FechamentoCaixa;
+use App\Models\FluxoCaixa;
+use App\Models\UnidadeCanaisVenda;
 use App\Models\UnidadePaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,84 +27,144 @@ class CaixaController extends Controller
         $responsavelId = Auth::id();
         $valorInicial = $request->valor_inicial;
 
-        // Cria um novo registro de caixa
-        $caixa = Caixa::create([
-            'unidade_id' => $unidadeId,
-            'responsavel_id' => $responsavelId,
-            'valor_inicial' => $valorInicial,
-            'valor_final' => $valorInicial,
-            'status' => 1, // Marca o caixa como aberto
-            'motivo' => 'Abertura inicial',
-        ]);
+        DB::beginTransaction();
 
-        return response()->json([
-            'message' => 'Caixa aberto com sucesso!',
-            'caixa' => $caixa,
-        ]);
+        try {
+            // Cria um novo registro de caixa
+            $caixa = Caixa::create([
+                'unidade_id' => $unidadeId,
+                'responsavel_id' => $responsavelId,
+                'valor_inicial' => $valorInicial,
+                'valor_final' => $valorInicial,
+                'status' => 1, // Marca o caixa como aberto
+                'motivo' => 'Abertura inicial',
+            ]);
+
+            // Registro no histórico (fluxo de caixa)
+            FluxoCaixa::create([
+                'unidade_id' => $unidadeId,
+                'responsavel_id' => $responsavelId,
+                'caixa_id' => $caixa->id,
+                'operacao' => 'abertura',
+                'valor' => $valorInicial, // Valor inicial do caixa
+                'hora' => now(),
+                'motivo' => 'Abertura do caixa',
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Caixa aberto com sucesso!',
+                'caixa' => $caixa,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Erro ao abrir o caixa: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     // Método para fechar o caixa
-    public function fecharCaixa(Request $request, $id)
+    public function fecharCaixa(Request $request)
     {
-        // Validação do valor final
-        $request->validate([
-            'valor_final' => 'required|numeric|min:1',
-        ]);
+        // Identifica o usuário autenticado
+        $usuario = Auth::user();
+        $unidade_id = $usuario->unidade_id;
 
-        // Encontra o caixa com base no ID
-        $caixa = Caixa::findOrFail($id);
+        // Busca o caixa aberto da unidade (com status 1)
+        $caixa = Caixa::where('unidade_id', $unidade_id)
+            ->where('status', 1)
+            ->first();
 
-        // Verifica se o caixa já foi fechado
-        if ($caixa->status === 'fechado') {
-            return response()->json(['message' => 'Este caixa já foi fechado.'], 400);
+        if (!$caixa || !$caixa->id) {
+            return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
         }
 
-        // Atualiza o valor final e o status do caixa
-        $caixa->valor_final = $request->valor_final;
-        $caixa->status = 0;
-        $caixa->motivo = $request->motivo ?? 'Fechamento de caixa';
-        $caixa->save();
+        // Limpando e estruturando os dados de métodos de pagamento
+        $metodosLimpos = array_map(function ($metodo) {
+            return [
+                'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
+                'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0),
+            ];
+        }, $request->metodos);
 
-        return response()->json([
-            'message' => 'Caixa fechado com sucesso!',
-            'caixa' => $caixa,
-        ]);
+        // Limpando e estruturando os dados de canais de venda
+        $canaisLimpos = array_map(function ($canal) {
+            return [
+                'canal_de_vendas_id' => $canal['default_canal_de_vendas']['id'] ?? null, // Corrigido para acessar 'default_canal_de_vendas'
+                'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $canal['total_vendas_canais_vendas'] ?? 0),
+                'quantidade_vendas_feitas' => (int) ($canal['quantidade_vendas_canais_vendas'] ?? 0),
+            ];
+        }, $request->canais);
+
+
+        // Calcula o valor final somando os totais de métodos e canais de venda
+        $totalMetodosPagamento = array_sum(array_column($metodosLimpos, 'valor_total_vendas'));
+        $totalCanaisVendas = array_sum(array_column($canaisLimpos, 'valor_total_vendas'));
+        $valorFinal = $totalMetodosPagamento + $totalCanaisVendas;
+
+        // dd($totalMetodosPagamento, $totalCanaisVendas, $valorFinal, $metodosLimpos, $canaisLimpos, $request);
+
+        DB::beginTransaction();
+
+        try {
+            // Criar o fechamento de caixa para métodos de pagamento
+            foreach ($metodosLimpos as $metodo) {
+                if ($metodo['metodo_pagamento_id']) {
+                    FechamentoCaixa::create([
+                        'unidade_id' => $unidade_id,
+                        'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
+                        'caixa_id' => $caixa->id,
+                        'valor_total_vendas' => $metodo['valor_total_vendas'],
+                    ]);
+                }
+            }
+
+            // Criar os registros de canais de venda
+            foreach ($canaisLimpos as $canal) {
+                if ($canal['canal_de_vendas_id']) {
+                    CanalVenda::create([
+                        'unidade_id' => $unidade_id,
+                        'canal_de_vendas_id' => $canal['canal_de_vendas_id'],
+                        'caixa_id' => $caixa->id,
+                        'valor_total_vendas' => $canal['valor_total_vendas'],
+                        'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
+                    ]);
+                }
+            }
+
+            // Registro no histórico (fechamento)
+            FluxoCaixa::create([
+                'unidade_id' => $unidade_id,
+                'responsavel_id' => $usuario->id,
+                'caixa_id' => $caixa->id,
+                'operacao' => 'fechamento',
+                'valor' => $valorFinal,
+                'hora' => now(),
+                'motivo' => $request->motivo ?? 'Fechamento',
+            ]);
+
+            // Atualiza o valor final e o status do caixa
+            $caixa->valor_final = $valorFinal;
+            $caixa->status = 0;
+            $caixa->motivo = $request->motivo ?? 'Fechamento de caixa';
+            $caixa->save();
+
+            DB::commit();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Caixa fechado com sucesso!',
+                'caixa' => $caixa,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 
-    // public function fecharCaixa2(Request $request)
-    // {
-    //     DB::beginTransaction();
-
-    //     try {
-    //         // Criar o fechamento de caixa para métodos de pagamento
-    //         foreach ($request->metodos as $metodo) {
-    //             FechamentoCaixa::create([
-    //                 'unidade_id' => $unidade_id,  // Defina o ID da unidade
-    //                 'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
-    //                 'caixa_id' => $caixa_id,  // Defina o ID do caixa
-    //                 'valor_total_vendas' => $metodo['valor_total_vendas'],
-    //             ]);
-    //         }
-
-    //         // Criar os registros de canais de venda
-    //         foreach ($request->canais as $canal) {
-    //             CanalVenda::create([
-    //                 'unidade_id' => $unidade_id,  // Defina o ID da unidade
-    //                 'canal_de_vendas_id' => $canal['canal_de_vendas_id'],
-    //                 'caixa_id' => $caixa_id,  // Defina o ID do caixa
-    //                 'valor_total_vendas' => $canal['valor_total_vendas'],
-    //                 'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
-    //             ]);
-    //         }
-
-    //         DB::commit();
-
-    //         return response()->json(['status' => 'success'], 200);
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    //     }
-    // }
 
     // Método para exibir os detalhes do caixa
     public function detalhesCaixa($id)
@@ -158,9 +220,9 @@ class CaixaController extends Controller
             ->get();
 
         // Filtra os canais de vendas pela unidade do usuário e status ativo
-        $canaisVendas = CanalVenda::where('unidade_id', $unidadeId)
-            ->where('status', 1) // Apenas métodos ativos
-            ->with('canalDeVendas') // Carrega os detalhes do método de pagamento padrão
+        $canaisVendas = UnidadeCanaisVenda::where('unidade_id', $unidadeId)
+            ->where('status', 1) // Apenas canais ativos
+            ->with('defaultCanalDeVendas') // Carrega os detalhes do canal de vendas padrão
             ->get();
 
         return response()->json([

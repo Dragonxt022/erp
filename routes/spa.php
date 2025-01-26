@@ -124,8 +124,8 @@ Route::prefix('api')->middleware([
 
     // Rotas dos sistema do fluxo de caixa
     Route::prefix('caixas')->group(function () {
-        Route::post('abrir', [CaixaController::class, 'abrirCaixa'])->name('abrirCaixa');
-        Route::post('fechar/{id}', [CaixaController::class, 'fecharCaixa'])->name('fecharCaixa');
+        Route::post('/abrir', [CaixaController::class, 'abrirCaixa'])->name('abrirCaixa');
+        Route::post('/fechar-caixa', [CaixaController::class, 'fecharCaixa'])->name('fecharCaixa');
         Route::get('detalhes/{id}', [CaixaController::class, 'detalhesCaixa'])->name('detalhesCaixa');
         Route::get('abertos', [CaixaController::class, 'listarCaixasAbertos'])->name('listarCaixasAbertos');
 

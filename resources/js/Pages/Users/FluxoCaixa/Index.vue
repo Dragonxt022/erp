@@ -97,10 +97,13 @@
       </div>
       <div class="fixed bottom-4 right-4">
         <ButtonPrimaryMedio
-          :class="valorDigitado ? 'bg-[#6db631]' : 'bg-[#6d6d6d]'"
+          :class="
+            valorDigitado && valorDigitado > 0 ? 'bg-[#6db631]' : 'bg-[#6d6d6d]'
+          "
           class="w-full max-w-[200px]"
           text="Abrir caixa"
           iconPath="/storage/images/arrow_left_alt.svg"
+          :disabled="!valorDigitado || valorDigitado <= 0"
           @click="abrirCaixa"
         />
       </div>

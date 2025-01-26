@@ -8,8 +8,7 @@ import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { createPinia } from 'pinia';
 import Toast, { useToast } from 'vue-toastification';
 import 'vue-toastification/dist/index.css'; // Importa os estilos padrão
-
-import notify from '../Plugins/Notify'; // Caminho para o seu arquivo de notificação
+import notify from '../Plugins/notify'; // Caminho para o seu arquivo de notificação
 
 const appName = import.meta.env.VITE_APP_NAME || 'Taiksu';
 

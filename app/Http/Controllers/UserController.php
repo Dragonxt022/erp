@@ -127,11 +127,12 @@ class UserController extends Controller
     private function generateUniquePin()
     {
         do {
-            $pin = rand(10000, 99999); // Gera um PIN aleatório de 5 números
+            $pin = rand(1000, 9999); // Gera um PIN aleatório de 4 números
         } while (User::where('pin', $pin)->exists()); // Verifica se o PIN já existe
 
         return $pin;
     }
+
 
     public function destroy($id)
     {

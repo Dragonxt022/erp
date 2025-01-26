@@ -20,9 +20,9 @@ class DefaultCanaisVenda extends Model
         'status',
     ];
 
-    // Relacionamento com a tabela `unidade_canais_vendas` 
+    // Relacionamento com a tabela `unidade_canais_vendas`
     public function unidadesCanaisVenda()
     {
-        return $this->hasMany(UnidadeCanaisVenda::class, 'canal_de_vendas_id');
+        return $this->hasMany(UnidadeCanaisVenda::class, 'canal_de_vendas_id'); // Relacionamento "um para muitos"
     }
 }

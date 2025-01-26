@@ -37,27 +37,31 @@
                 <tr v-for="metodo in metodosPagamento" :key="metodo.id">
                   <td class="py-3 flex items-center gap-5">
                     <img
+                      v-if="
+                        metodo.default_payment_method &&
+                        metodo.default_payment_method.img_icon
+                      "
                       :src="`/${metodo.default_payment_method.img_icon}`"
-                      :alt="metodo.default_payment_method.nome"
+                      :alt="
+                        metodo.default_payment_method.nome ||
+                        'Método de pagamento'
+                      "
                       class="w-8 h-8"
                     />
                     <div
                       class="w-fill text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
                     >
-                      {{ metodo.default_payment_method.nome }}
+                      {{
+                        metodo.default_payment_method?.nome || 'Desconhecido'
+                      }}
                     </div>
                   </td>
 
                   <td class="py-2 w-ful">
                     <InputModel
                       v-model="metodo.total_vendas_metodos_pagamento"
-                      @input="
-                        adicionarMetodoPagamento(
-                          metodo,
-                          metodo.total_vendas_metodos_pagamento
-                        )
-                      "
-                      placeholder="R$ 0,00"
+                      @input="(event) => formatarValor(event, metodo)"
+                      class="w-[120px]"
                     />
                   </td>
                 </tr>
@@ -109,8 +113,14 @@
                 <tr v-for="canal in canaisVendas" :key="canal.id">
                   <td class="w-[85px]">
                     <img
-                      :src="`/${canal.canal_de_vendas.img_icon}`"
-                      :alt="canal.canal_de_vendas.nome"
+                      v-if="
+                        canal.default_canal_de_vendas &&
+                        canal.default_canal_de_vendas.img_icon
+                      "
+                      :src="`/${canal.default_canal_de_vendas.img_icon}`"
+                      :alt="
+                        canal.default_canal_de_vendas.nome || 'Canal de venda'
+                      "
                       class="h-7 w-17 fill-stone-950"
                     />
                   </td>
@@ -118,26 +128,22 @@
                     <div
                       class="w-fill text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug w-[170px]"
                     >
-                      {{ canal.canal_de_vendas.nome }}
+                      {{
+                        canal.default_canal_de_vendas?.nome || 'Desconhecido'
+                      }}
                     </div>
                   </td>
                   <td class="py-2">
                     <InputModel
-                      v-model="canal.total_vendas_cainais_vendas"
-                      @input="
-                        adicionarCanalVenda(
-                          metodo,
-                          metodo.total_vendas_cainais_vendas
-                        )
-                      "
+                      v-model="canal.total_vendas_canais_vendas"
+                      @input="(event) => formatarCanal(event, canal)"
+                      class="w-[120px]"
                       placeholder="R$ 0,00"
-                      class="w-[130px]"
                     />
                   </td>
                   <td class="py-2">
                     <InputModel
-                      v-model="canal.quantidade_vendas_cainais_vendas"
-                      @input="onInputChange(canal, 'quantidade')"
+                      v-model="canal.quantidade_vendas_canais_vendas"
                       placeholder="0"
                       class="w-[120px]"
                     />
@@ -149,15 +155,20 @@
           <div
             class="w-full h-[60px] bg-[#d2fac3] rounded-bl-[10px] rounded-br-[10px] px-12 flex justify-between items-center"
           >
+            <!-- Coluna para o valor total -->
             <div
               class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
             >
-              TOTAL
-            </div>
-            <div
-              class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
-            >
+              <span>Total:</span>
               {{ totalCanaisVendas }}
+            </div>
+
+            <!-- Coluna para quantidade de pedidos -->
+            <div
+              class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
+            >
+              <span>Pedidos:</span>
+              {{ totalPedidosCanais }}
             </div>
           </div>
         </div>
@@ -207,22 +218,104 @@ const isLoading = ref(false);
 const metodosPagamento = ref([]);
 const canaisVendas = ref([]);
 
-// Computed para total de métodos de pagamento
-const totalMetodosPagamento = computed(() =>
-  metodosPagamento.value.reduce(
+const totalMetodosPagamento = computed(() => {
+  const total = metodosPagamento.value.reduce(
     (acc, metodo) =>
-      acc + parseFloat(metodo.total_vendas_metodos_pagamento || 0),
+      acc +
+        parseFloat(
+          metodo.total_vendas_metodos_pagamento
+            .replace('R$', '')
+            .replace(/\./g, '')
+            .replace(',', '.')
+        ) || 0,
     0
-  )
-);
+  );
+
+  // Retorna o valor formatado como moeda brasileira
+  return `R$ ${total.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+});
 
 // Computed para total de canais de vendas
-const totalCanaisVendas = computed(() =>
-  canaisVendas.value.reduce(
-    (acc, canal) => acc + parseFloat(canal.total_vendas_canais_vendas || 0),
+const totalCanaisVendas = computed(() => {
+  const total = canaisVendas.value.reduce(
+    (acc, canal) =>
+      acc +
+        parseFloat(
+          canal.total_vendas_canais_vendas
+            .replace('R$', '')
+            .replace(/\./g, '')
+            .replace(',', '.')
+        ) || 0,
     0
-  )
-);
+  );
+
+  // Retorna o valor formatado como moeda brasileira
+  return `R$ ${total.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+});
+
+const totalPedidosCanais = computed(() => {
+  return canaisVendas.value.reduce(
+    (acc, canal) =>
+      acc + (parseInt(canal.quantidade_vendas_canais_vendas) || 0),
+    0
+  );
+});
+
+const formatarValor = (event, metodo) => {
+  const input = event.target;
+  let valor = input.value.replace(/\D/g, ''); // Remove tudo que não for número
+
+  // Define o valor como "0" caso esteja vazio
+  if (!valor) {
+    valor = '0';
+  }
+
+  // Divide o valor em parte inteira e centavos
+  const inteiro = valor.slice(0, -2) || '0'; // Parte inteira (antes dos dois últimos dígitos)
+  const centavos = valor.slice(-2).padStart(2, '0'); // Parte decimal (os dois últimos dígitos)
+
+  // Formatação do valor para exibição no formato brasileiro
+  const valorFormatado = `R$ ${Number(inteiro).toLocaleString(
+    'pt-BR'
+  )},${centavos}`;
+
+  // Aplica a formatação no campo de entrada
+  input.value = valorFormatado;
+
+  // Atualiza o modelo com a string formatada (mantendo-a como uma string)
+  metodo.total_vendas_metodos_pagamento = valorFormatado;
+};
+
+const formatarCanal = (event, canal) => {
+  const input = event.target;
+  let valor = input.value.replace(/\D/g, ''); // Remove tudo que não for número
+
+  // Define o valor como "0" caso esteja vazio
+  if (!valor) {
+    valor = '0';
+  }
+
+  // Divide o valor em parte inteira e centavos
+  const inteiro = valor.slice(0, -2) || '0'; // Parte inteira (antes dos dois últimos dígitos)
+  const centavos = valor.slice(-2).padStart(2, '0'); // Parte decimal (os dois últimos dígitos)
+
+  // Formatação do valor para exibição no formato brasileiro
+  const valorFormatado = `R$ ${Number(inteiro).toLocaleString(
+    'pt-BR'
+  )},${centavos}`;
+
+  // Aplica a formatação no campo de entrada
+  input.value = valorFormatado;
+
+  // Atualiza o modelo com a string formatada (mantendo-a como uma string)
+  canal.total_vendas_canais_vendas = valorFormatado;
+};
 
 // Função para buscar os métodos e canais ativos
 const buscarMetodosCanaisAtivos = async () => {
@@ -230,16 +323,23 @@ const buscarMetodosCanaisAtivos = async () => {
   try {
     const response = await axios.get('/api/caixas/metodos-canais-ativos');
     if (response.data.status === 'success') {
-      // Carregar métodos e canais com valores padrão (0)
-      metodosPagamento.value = response.data.metodosPagamento.map((metodo) => ({
-        ...metodo,
-        total_vendas_metodos_pagamento: 0, // Valor padrão
-      }));
-      canaisVendas.value = response.data.canaisVendas.map((canal) => ({
-        ...canal,
-        total_vendas_canais_vendas: 0, // Valor padrão
-        quantidade_vendas_canais_vendas: 0, // Valor padrão
-      }));
+      console.log('Métodos de pagamento:', response.data.metodosPagamento);
+      console.log('Canais de vendas:', response.data.canaisVendas);
+
+      metodosPagamento.value = response.data.metodosPagamento
+        .filter((metodo) => metodo.default_payment_method?.img_icon) // Filtra itens inválidos
+        .map((metodo) => ({
+          ...metodo,
+          total_vendas_metodos_pagamento: 'R$ 0,00',
+        }));
+
+      canaisVendas.value = response.data.canaisVendas
+        .filter((canal) => canal.default_canal_de_vendas?.img_icon) // Filtra itens inválidos
+        .map((canal) => ({
+          ...canal,
+          total_vendas_canais_vendas: 'R$ 0,00',
+          quantidade_vendas_canais_vendas: 0,
+        }));
     } else {
       toast.error('Erro ao carregar os dados');
     }
@@ -255,7 +355,7 @@ const buscarMetodosCanaisAtivos = async () => {
 const enviarFechamentoCaixa = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.post('/api/caixas/fechar', {
+    const response = await axios.post('/api/caixas/fechar-caixa', {
       metodos: metodosPagamento.value,
       canais: canaisVendas.value,
       total_metodos_pagamento: totalMetodosPagamento.value,
@@ -264,7 +364,7 @@ const enviarFechamentoCaixa = async () => {
 
     if (response.data.status === 'success') {
       toast.success('Fechamento realizado com sucesso!');
-      Inertia.visit('/fechamentos');
+      Inertia.visit(route('franqueado.abrirCaixa'));
     } else {
       toast.error('Erro ao realizar o fechamento');
     }

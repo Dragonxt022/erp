@@ -68,7 +68,7 @@ class ListaProdutoController extends Controller
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
             'unidadeDeMedida' => 'required|string|max:255',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:8048',
             'precos' => 'nullable|array',
             'precos.*' => 'nullable|string', // Agora são strings para incluir os valores com "R$"
         ]);
@@ -141,14 +141,15 @@ class ListaProdutoController extends Controller
     {
         // Validação dos dados
         $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:lista_produtos,id',  // Validar se o ID existe
+            'id' => 'required|exists:lista_produtos,id',
             'nome' => 'required|string|max:255',
             'categoria' => 'required|string|max:255',
             'unidadeDeMedida' => 'required|string|max:255',
-            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:8048', // Mantém como nullable
             'precos' => 'nullable|array',
-            'precos.*' => 'nullable|string', // Preços recebidos como string para evitar problemas com formatação
+            'precos.*' => 'nullable|string',
         ]);
+
 
         // Verifica falha na validação
         if ($validator->fails()) {

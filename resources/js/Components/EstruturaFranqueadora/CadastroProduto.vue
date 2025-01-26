@@ -234,6 +234,7 @@ const fileInput = ref(null);
 const isLoading = ref(false);
 
 const preco_fornecedor = ref({}); // Preços dos fornecedores
+
 const fornecedores = ref([]); // Armazenar fornecedores
 
 const isConfirmDialogVisible = ref(false);
@@ -243,9 +244,18 @@ onMounted(async () => {
   try {
     const response = await axios.get('/api/fornecedores'); // Chamada à API
     fornecedores.value = response.data.data; // Armazenando fornecedores
+
+    // Inicializar preco_fornecedor com 'R$ 0,00' para cada fornecedor
+    fornecedores.value.forEach((fornecedor) => {
+      if (!preco_fornecedor.value[fornecedor.id]) {
+        preco_fornecedor.value[fornecedor.id] = 'R$ 0,00'; // Valor padrão
+      }
+    });
   } catch (error) {
     toast.error('Erro ao carregar fornecedores.');
   }
+
+  // Formatar os valores existentes de preços para os fornecedores já definidos
   fornecedores.value.forEach((fornecedor) => {
     if (preco_fornecedor.value[fornecedor.id]) {
       formatarValor(fornecedor.id);
@@ -339,12 +349,24 @@ const submitForm = async () => {
     formData.append('unidadeDeMedida', unidadeDeMedida.value);
     formData.append('profile_photo', selectedFile.value);
 
-    // Adicionar preços convertidos para centavos
-    Object.entries(preco_fornecedor.value).forEach(
-      ([fornecedorId, valorCentavos]) => {
-        formData.append(`precos[${fornecedorId}]`, valorCentavos);
-      }
-    );
+    // Verificar se preco_fornecedor possui valores antes de adicionar ao formData
+    if (
+      preco_fornecedor.value &&
+      Object.keys(preco_fornecedor.value).length > 0
+    ) {
+      Object.entries(preco_fornecedor.value).forEach(
+        ([fornecedorId, valorCentavos]) => {
+          // Verifica se o preço tem um valor válido
+          if (
+            valorCentavos &&
+            valorCentavos !== '' &&
+            valorCentavos !== 'R$ NaN'
+          ) {
+            formData.append(`precos[${fornecedorId}]`, valorCentavos);
+          }
+        }
+      );
+    }
 
     const response = await axios.post('/api/produtos/cadastrar', formData, {
       headers: {

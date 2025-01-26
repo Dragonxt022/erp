@@ -9,7 +9,7 @@ class CanalVenda extends Model
 {
     use HasFactory;
 
-    protected $table = 'unidade_canais_vendas';
+    protected $table = 'canal_vendas';
 
     protected $fillable = [
         'unidade_id',
@@ -28,6 +28,7 @@ class CanalVenda extends Model
     {
         return $this->belongsTo(DefaultCanaisVenda::class, 'canal_de_vendas_id');
     }
+
 
     public function caixa()
     {

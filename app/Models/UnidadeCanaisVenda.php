@@ -26,8 +26,8 @@ class UnidadeCanaisVenda extends Model
         return $this->belongsTo(InforUnidade::class, 'unidade_id');
     }
 
-    // Relacionamento com a tabela `default_canais_vendas` 
-    public function canalVenda()
+    // Relacionamento com a tabela `default_canais_vendas`
+    public function defaultCanalDeVendas()
     {
         return $this->belongsTo(DefaultCanaisVenda::class, 'canal_de_vendas_id');  // Relaciona com a chave estrangeira correta
     }
