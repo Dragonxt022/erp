@@ -141,6 +141,24 @@ const menuCategories = [
         ],
         isActive: false,
       },
+      {
+        label: 'DRE Gerencial',
+        icon: '/storage/images/analitic.svg',
+        link: 'franqueado.dreGerencial',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Lista Custos',
+            icon: '/storage/images/add_product.svg',
+            link: 'franqueado.dreListaContas',
+          },
+          {
+            label: 'Gerenciar Categorias',
+            link: 'franqueado.dreCategorias',
+          },
+        ],
+        isActive: false,
+      },
 
       {
         label: 'Taiksu IA',

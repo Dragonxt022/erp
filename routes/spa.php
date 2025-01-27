@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CaixaAnaliticoController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DefaultCanaisVendaController;
 use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
@@ -139,5 +140,12 @@ Route::prefix('api')->middleware([
     // Analitycos do caixa
     Route::prefix('analyticos')->group(function () {
         Route::get('/lista-metodos-pagamentos', [CaixaAnaliticoController::class, 'listarMetodosPagamento'])->name('listarMetodosPagamento.index');
+    });
+
+    // DRE
+    // Categorias
+    Route::prefix('categorias')->group(function () {
+        Route::post('/cadastrar-categoria-custo', [CategoryController::class, 'store'])->name('cadastrarCategoriaCusto.store');
+        Route::get('/lista-categoria-custo', [CategoryController::class, 'index'])->name('listaCategoriasCusto.index');
     });
 });

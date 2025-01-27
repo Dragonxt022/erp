@@ -32,4 +32,10 @@ class InforUnidade extends Model
     {
         return $this->hasMany(UnidadePaymentMethod::class, 'unidade_id');
     }
+
+    // Relacionamento com categorias
+    public function categorias()
+    {
+        return $this->hasMany(Category::class, 'unidade_id');
+    }
 }
