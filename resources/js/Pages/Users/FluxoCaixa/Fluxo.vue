@@ -181,11 +181,21 @@
         <div class="flex gap-[13px]">
           <!-- Botão Suprimento -->
 
-          <ButtonSuave class="w-full" text="Suprimento" iconPath="" />
+          <ButtonSuave
+            class="w-full"
+            text="Suprimento"
+            iconPath=""
+            @click="abirModalSuprimento"
+          />
 
           <!-- Botão Sangria -->
 
-          <ButtonSuave class="w-full" text="Sangria" iconPath="" />
+          <ButtonSuave
+            class="w-full"
+            text="Sangria"
+            iconPath=""
+            @click="AbrirRetirada"
+          />
         </div>
 
         <!-- Botão Fechar Caixa -->
@@ -194,8 +204,198 @@
             class="w-full max-w-[200px]"
             text="Fechar caixa"
             iconPath="/storage/images/arrow_left_alt.svg"
-            @click="enviarFechamentoCaixa"
+            @click="abrirModalConfirmacao"
           />
+        </div>
+      </div>
+    </div>
+
+    <!-- modal Suprimento -->
+    <div
+      v-if="showSuprimento"
+      @click="fechaSuprimentoModal"
+      class="fixed top-0 left-0 right-0 bottom-0 bg-opacity-50 bg-gray-900 flex justify-center items-center"
+    >
+      <div
+        @click.stop
+        class="w-[405px] h-auto px-[19px] py-[20px] bg-white rounded-[20px] flex flex-col justify-center items-center gap-[20px]"
+      >
+        <div class="w-[280px] h-auto relative">
+          <div class="w-[83.46px] h-[83.46px] mx-auto mb-8">
+            <img src="/storage/images/add_circle.svg" alt="" />
+          </div>
+          <div
+            class="text-center text-[#262a27] text-[22px] font-bold font-['Figtree']"
+          >
+            <p>Quanto você vai adicionar?</p>
+          </div>
+        </div>
+
+        <div class="w-[267px] h-auto">
+          <!-- Input para o valor -->
+          <div class="w-full mb-8">
+            <input
+              id="valor"
+              v-model="valor_entrada"
+              @input="valor_entrada = formatarValorBR(valor_entrada)"
+              class="w-full h-[42.16px] bg-white rounded-lg border-2 border-[#d7d7db] px-2 text-[17px] outline-none text-center"
+              placeholder="R$ 0,00"
+            />
+          </div>
+
+          <!-- Input para o motivo -->
+          <div class="w-full mb-8">
+            <label
+              for="motivo"
+              class="block text-gray-800 text-[14.93px] font-semibold font-['Figtree']"
+            >
+              Informações adicionais
+            </label>
+            <textarea
+              id="motivo"
+              v-model="motivo"
+              class="w-full h-24 bg-white rounded-lg border-2 border-[#d7d7db] px-2 py-1 text-[14px] outline-none resize-none"
+              placeholder="Digite aqui..."
+            ></textarea>
+            <p
+              class="text-right text-xs mt-1"
+              :class="{
+                'text-gray-500': motivo.length <= 50,
+                'text-red-500': motivo.length > 50,
+              }"
+            >
+              {{ motivo.length }}/50 caracteres
+            </p>
+          </div>
+
+          <!-- Botão para salvar -->
+          <div class="w-full mb-8">
+            <ButtonPrimaryMedio
+              @click="adicionarValor"
+              text="Adicionar"
+              class="w-full"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Sangria -->
+    <div
+      v-if="showSangria"
+      @click="fechaRetirada"
+      class="fixed top-0 left-0 right-0 bottom-0 bg-opacity-50 bg-gray-900 flex justify-center items-center"
+    >
+      <div
+        @click.stop
+        class="w-[405px] h-auto px-[19px] py-[20px] bg-white rounded-[20px] flex flex-col justify-center items-center gap-[20px]"
+      >
+        <div class="w-[280px] h-auto relative">
+          <div class="w-[83.46px] h-[83.46px] mx-auto mb-8">
+            <img src="/storage/images/do_not_disturb_on.svg" alt="" />
+          </div>
+          <div
+            class="text-center text-[#262a27] text-[22px] font-bold font-['Figtree']"
+          >
+            <p>Quanto você vai retirar?</p>
+          </div>
+        </div>
+
+        <div class="w-[267px] h-auto">
+          <!-- Input para o valor -->
+          <div class="w-full mb-8">
+            <input
+              id="valor"
+              v-model="valor_retirada"
+              @input="valor_retirada = formatarValorBR(valor_retirada)"
+              class="w-full h-[42.16px] bg-white rounded-lg border-2 border-[#d7d7db] px-2 text-[17px] outline-none text-center"
+              placeholder="R$ 0,00"
+            />
+            <div
+              class="text-center text-gray-800 text-[12.93px] font-semibold font-['Figtree'] mt-1"
+            >
+              <p>
+                Valor disponível no caixa:
+                <span class="font-bold">
+                  {{ valorTotalCaixa }}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Input para o motivo -->
+          <div class="w-full mb-8">
+            <label
+              for="motivo"
+              class="block text-gray-800 text-[14.93px] font-semibold font-['Figtree']"
+            >
+              Informações adicionais
+            </label>
+            <textarea
+              id="motivo"
+              v-model="motivo"
+              class="w-full h-24 bg-white rounded-lg border-2 border-[#d7d7db] px-2 py-1 text-[14px] outline-none resize-none"
+              placeholder="Digite aqui..."
+            ></textarea>
+            <p
+              class="text-right text-xs mt-1"
+              :class="{
+                'text-gray-500': motivo.length <= 50,
+                'text-red-500': motivo.length > 50,
+              }"
+            >
+              {{ motivo.length }}/50 caracteres
+            </p>
+          </div>
+
+          <!-- Botão para salvar -->
+          <div class="w-full mb-8">
+            <ButtonPrimaryMedioRed
+              @click="retirarValor"
+              text="Retirar"
+              class="w-full"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmação fechamento de caixa -->
+    <div
+      v-if="showConfirmacao"
+      class="fixed top-0 left-0 right-0 bottom-0 bg-opacity-50 bg-gray-900 flex justify-center items-center"
+    >
+      <div
+        @click.stop
+        class="w-[405px] h-auto px-[19px] py-[20px] bg-white rounded-[20px] flex flex-col justify-center items-center gap-[20px]"
+      >
+        <div class="w-[280px] h-auto relative p-5">
+          <div class="w-[83.46px] h-[83.46px] mx-auto mb-5">
+            <img src="/storage/images/thumb_up_confirmar.svg" alt="" />
+          </div>
+          <div
+            class="text-center text-[#262a27] text-[22px] font-bold font-['Figtree']"
+          >
+            <p>Confirmar fechamento do caixa de hoje?</p>
+          </div>
+        </div>
+
+        <div class="w-[267px] h-auto">
+          <!-- Botão para salvar -->
+          <div class="w-full">
+            <ButtonPrimaryMedio
+              @click="ConfirmarFechamentoDeCaixa"
+              text="Confirmar"
+              class="w-full"
+            />
+          </div>
+
+          <div
+            class="mt-3 text-center text-[#ff2d55] text-[15px] font-bold font-['Figtree']"
+            @click="fechaModalConfirmacao"
+          >
+            <p class="cursor-pointer">Corrigir informações?</p>
+          </div>
         </div>
       </div>
     </div>
@@ -212,11 +412,24 @@ import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import { Inertia } from '@inertiajs/inertia';
+import ButtonPrimaryMedioRed from '@/Components/Button/ButtonPrimaryMedioRed.vue';
 
 const toast = useToast();
 const isLoading = ref(false);
 const metodosPagamento = ref([]);
 const canaisVendas = ref([]);
+
+// Constantes das modais
+const showSuprimento = ref(false);
+const showSangria = ref(false);
+const showConfirmacao = ref(false);
+
+const motivo = ref('');
+
+const valor_retirada = ref(null);
+const valor_entrada = ref(null);
+
+const valorTotalCaixa = ref('R$ 0,00');
 
 const totalMetodosPagamento = computed(() => {
   const total = metodosPagamento.value.reduce(
@@ -266,6 +479,174 @@ const totalPedidosCanais = computed(() => {
     0
   );
 });
+
+// Adiciona Suprimentos ao caixa
+const adicionarValor = () => {
+  // Verifica se o motivo está vazio ou tem mais de 50 caracteres
+  if (!motivo.value.trim()) {
+    toast.warning('Motivo não pode estar vazio!');
+    return;
+  }
+
+  if (motivo.value.length > 50) {
+    toast.warning('Motivo excede o limite de 50 caracteres!');
+    return;
+  }
+
+  // Limpar o valor "R$" e a vírgula, e transformar em número
+  const valor = parseFloat(
+    valor_entrada.value
+      .replace('R$', '')
+      .replace('.', '')
+      .replace(',', '.')
+      .trim()
+  );
+
+  if (isNaN(valor)) {
+    toast.warning('Valor inválido!');
+    return;
+  }
+
+  // Enviar os dados para a rota
+  axios
+    .post('/api/caixas/adicionar-suprimento', {
+      valor: valor,
+      motivo: motivo.value,
+    })
+    .then((response) => {
+      // Sucesso na requisição
+      console.log('Sucesso:', response.data);
+      toast.success('Suprimento adicionado com sucesso!');
+    })
+    .catch((error) => {
+      // Erro na requisição
+      console.error('Erro:', error);
+      toast.error('Erro ao adicionar suprimento.');
+    });
+
+  // Limpar os campos após o envio
+  valor_entrada.value = '';
+  motivo.value = '';
+  showSuprimento.value = false;
+};
+
+// Remove o valor do caixa
+const retirarValor = () => {
+  if (motivo.value.length < 5) {
+    toast.warning('Precisa conter no minimo 5 caracteres!');
+    return;
+  }
+
+  if (motivo.value.length > 50) {
+    toast.warning('Excede o limite de 50 caracteres!');
+    return;
+  }
+
+  // Limpar o valor "R$" e a vírgula, e transformar em número
+  const valor = parseFloat(
+    valor_retirada.value
+      .replace('R$', '')
+      .replace('.', '')
+      .replace(',', '.')
+      .trim()
+  );
+
+  if (isNaN(valor)) {
+    toast.warning('Valor inválido!');
+    return;
+  }
+
+  // Enviar os dados para a rota
+  axios
+    .post('/api/caixas/remover-suprimento', {
+      valor: valor,
+      motivo: motivo.value,
+    })
+    .then((response) => {
+      // Sucesso na requisição
+      console.log('Sucesso:', response.data);
+      toast.success('Sangria realizada com sucesso!');
+    })
+    .catch((error) => {
+      // Erro na requisição
+      console.error('Erro:', error);
+      toast.error('Erro ao realizar a Sangria.');
+    });
+
+  // Lógica para enviar o valor e motivo
+  console.log('Valor retirado:', valor);
+  console.log('Motivo:', motivo.value);
+
+  // Limpar os campos após o envio
+  valor_retirada.value = '';
+  motivo.value = '' || 'Não informado';
+  showSangria.value = false;
+};
+
+const buscarValorCaixa = async () => {
+  try {
+    const response = await axios.get('/api/caixas/valor-disponivel');
+    if (response.data.status === 'success') {
+      valorTotalCaixa.value = `R$ ${response.data.data.valor_disponivel}`;
+    } else {
+      toast.error('Erro ao carregar o valor do caixa.');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar valor do caixa:', error);
+    toast.error('Erro ao carregar o valor do caixa.');
+  }
+};
+
+// Abre a modal de Suprimentos
+const abirModalSuprimento = () => {
+  showSuprimento.value = true; // Corrigido para alterar a variável correta
+};
+
+// Fecha a modal de suprimentos
+const fechaSuprimentoModal = () => {
+  showSuprimento.value = false; // Corrigido para alterar a variável correta
+  motivo.value = '';
+  valor_entrada.value = null;
+};
+
+// Abrir modal de confirmação de fechamento de caixa
+const abrirModalConfirmacao = () => {
+  showConfirmacao.value = true; // Corrigido para alterar a variável correta
+};
+
+// Fecha modal de confirmação de fechamento de caixa
+const fechaModalConfirmacao = () => {
+  showConfirmacao.value = false; // Corrigido para alterar a variável correta
+};
+
+const ConfirmarFechamentoDeCaixa = () => {
+  showConfirmacao.value = false;
+  enviarFechamentoCaixa();
+};
+
+// Modal de retirada
+const AbrirRetirada = () => {
+  showSangria.value = true; // Corrigido para alterar a variável correta
+  buscarValorCaixa();
+};
+
+// Fecha a modal de retirada
+const fechaRetirada = () => {
+  showSangria.value = false; // Corrigido para alterar a variável correta
+  motivo.value = '';
+  valor_retirada.value = null;
+};
+
+// Formata o valor BR
+const formatarValorBR = (valor) => {
+  let numero = valor.replace(/\D/g, ''); // Remove não-numéricos
+  if (!numero) numero = '0';
+
+  const inteiro = numero.slice(0, -2) || '0';
+  const centavos = numero.slice(-2);
+
+  return `R$ ${Number(inteiro).toLocaleString('pt-BR')},${centavos}`;
+};
 
 const formatarValor = (event, metodo) => {
   const input = event.target;

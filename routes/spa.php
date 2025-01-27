@@ -131,6 +131,9 @@ Route::prefix('api')->middleware([
         Route::get('abertos', [CaixaController::class, 'listarCaixasAbertos'])->name('listarCaixasAbertos');
 
         Route::get('/metodos-canais-ativos', [CaixaController::class, 'listarMetodosEcanaisAtivos'])->name('listaMetodosEcanaisAtivos');
+        Route::post('/adicionar-suprimento', [CaixaController::class, 'adicionarSuprimento']);
+        Route::post('/remover-suprimento', [CaixaController::class, 'removeSuprimento']);
+        Route::get('/valor-disponivel', [CaixaController::class, 'valorDisponivel']);
     });
 
     // Analitycos do caixa

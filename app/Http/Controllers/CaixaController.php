@@ -239,4 +239,153 @@ class CaixaController extends Controller
             'canaisVendas' => $canaisVendas,
         ], 200);
     }
+
+    // Adiciona Suprimentos ao caixa
+    public function adicionarSuprimento(Request $request)
+    {
+        // Validação dos dados de entrada
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01',  // Valor deve ser numérico e maior que 0
+            'motivo' => 'required|string|max:255',   // Motivo deve ser uma string com até 255 caracteres
+        ]);
+
+        try {
+            // Obtém o ID da unidade do usuário autenticado
+            $unidadeId = Auth::user()->unidade_id;
+
+            // Obtém o primeiro caixa aberto da unidade do usuário logado
+            $caixa = Caixa::where('unidade_id', $unidadeId)
+                ->where('status', 1) // Verifica se o status é 1 (aberto)
+                ->first(); // Obtém apenas um registro
+
+            // Verifica se o caixa está aberto
+            if (!$caixa) {
+                return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
+            }
+
+            $responsavelId = Auth::user() ? Auth::user()->id : null;
+
+            if (!$responsavelId) {
+                return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
+            }
+
+            // Inicia a transação
+            DB::transaction(function () use ($caixa, $responsavelId, $request) {
+                // Atualiza o valor inicial do caixa
+                $caixa->valor_inicial += $request->valor;
+                $caixa->save(); // Salva a atualização do valor inicial
+
+                // Criação direta do fluxo de caixa sem utilizar o relacionamento
+                FluxoCaixa::create([
+                    'unidade_id' => $caixa->unidade_id,
+                    'responsavel_id' => $responsavelId,  // Passando o ID do responsável corretamente
+                    'caixa_id' => $caixa->id,
+                    'operacao' => 'suprimento',
+                    'valor' => $request->valor,
+                    'hora' => now(),
+                    'motivo' => $request->motivo, // Motivo passado no request
+                ]);
+            });
+
+            // Caso a transação seja bem-sucedida, retorna uma mensagem de sucesso
+            return response()->json(['success' => 'Valor adicionado com sucesso.']);
+        } catch (\Exception $e) {
+            // Caso ocorra algum erro durante a transação, será revertida
+            return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Retira suprimentos do caixa
+    public function removeSuprimento(Request $request)
+    {
+        // Validação dos dados de entrada
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01',  // Valor deve ser numérico e maior que 0
+            'motivo' => 'required|string|max:255',   // Motivo deve ser uma string com até 255 caracteres
+        ]);
+
+        try {
+            // Obtém o ID da unidade do usuário autenticado
+            $unidadeId = Auth::user()->unidade_id;
+
+            // Obtém o primeiro caixa aberto da unidade do usuário logado
+            $caixa = Caixa::where('unidade_id', $unidadeId)
+                ->where('status', 1) // Verifica se o status é 1 (aberto)
+                ->first(); // Obtém apenas um registro
+
+            // Verifica se o caixa está aberto
+            if (!$caixa) {
+                return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
+            }
+
+            // Verifica se o valor de retirada não é maior que o valor disponível no caixa
+            if ($request->valor > $caixa->valor_inicial) {
+                return response()->json(['error' => 'Valor de retirada superior ao disponível no caixa.'], 400);
+            }
+
+            $responsavelId = Auth::user() ? Auth::user()->id : null;
+
+            if (!$responsavelId) {
+                return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
+            }
+
+            // Inicia a transação
+            DB::transaction(function () use ($caixa, $responsavelId, $request) {
+                // Atualiza o valor inicial do caixa
+                $caixa->valor_inicial -= $request->valor;
+                $caixa->save(); // Salva a atualização do valor inicial
+
+                // Criação direta do fluxo de caixa sem utilizar o relacionamento
+                FluxoCaixa::create([
+                    'unidade_id' => $caixa->unidade_id,
+                    'responsavel_id' => $responsavelId,  // Passando o ID do responsável corretamente
+                    'caixa_id' => $caixa->id,
+                    'operacao' => 'sangria',  // Define o tipo de operação
+                    'valor' => $request->valor,
+                    'hora' => now(),
+                    'motivo' => $request->motivo, // Motivo passado no request
+                ]);
+            });
+
+            // Caso a transação seja bem-sucedida, retorna uma mensagem de sucesso
+            return response()->json(['success' => 'Valor retirado com sucesso.']);
+        } catch (\Exception $e) {
+            // Caso ocorra algum erro durante a transação, será revertida
+            return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
+        }
+    }
+
+    // Retorna o valor disponível no caixa aberto
+    public function valorDisponivel()
+    {
+        try {
+            $unidadeId = Auth::user()->unidade_id;
+
+            // Obtém o caixa aberto da unidade do usuário logado
+            $caixa = Caixa::where('unidade_id', $unidadeId)
+                ->where('status', 1) // Caixa aberto
+                ->first();
+
+            if (!$caixa) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Nenhum caixa aberto encontrado.'
+                ], 404);
+            }
+
+            $valorFormatado = 'R$ ' . number_format($caixa->valor_inicial, 2, ',', '.');
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'valor_disponivel' => $valorFormatado
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Erro ao obter o valor do caixa: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

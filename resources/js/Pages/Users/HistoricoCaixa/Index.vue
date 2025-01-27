@@ -186,6 +186,7 @@ const total = ref('');
 const historico = ref([]);
 const graficoData = ref([]);
 const graficoLabels = ref([]);
+const graficoPorcentagem = ref([]);
 let myChart = null;
 
 // Função que retorna o ícone correto com base no status
@@ -249,6 +250,7 @@ const fetchData = async (startDate, endDate, periodo) => {
     // Preparando os dados do gráfico
     graficoLabels.value = data.grafico.labels;
     graficoData.value = data.grafico.data;
+    graficoPorcentagem.value = data.grafico.porcentagem;
 
     renderGrafico();
   } catch (error) {
@@ -268,10 +270,10 @@ const renderGrafico = () => {
   myChart = new Chart(ctx, {
     type: 'pie', // Tipo de gráfico "pie"
     data: {
-      labels: graficoLabels.value,
+      labels: graficoLabels.value, // Usando as labels fornecidas
       datasets: [
         {
-          data: graficoData.value,
+          data: graficoData.value, // Usando os dados fornecidos
           backgroundColor: [
             '#FF6384',
             '#36A2EB',
@@ -315,14 +317,13 @@ const renderGrafico = () => {
             size: 14,
           },
           formatter: (value, ctx) => {
-            const total = graficoData.value.reduce((a, b) => a + b, 0); // Calcula o total
-            const percentage = ((value / total) * 100).toFixed(2) + '%'; // Calcula a porcentagem
-            return percentage; // Exibe a porcentagem no gráfico
+            const index = ctx.dataIndex; // Obtém o índice atual da fatia
+            return graficoPorcentagem.value[index]; // Retorna a porcentagem já calculada
           },
         },
       },
     },
-    plugins: [ChartDataLabels],
+    plugins: [ChartDataLabels], // Certifique-se de registrar o plugin
   });
 };
 
