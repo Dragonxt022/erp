@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 // Controllers
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CaixaAnaliticoController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\DefaultCanaisVendaController;
 use App\Http\Controllers\DefaultPaymentMethodController;
@@ -130,5 +131,10 @@ Route::prefix('api')->middleware([
         Route::get('abertos', [CaixaController::class, 'listarCaixasAbertos'])->name('listarCaixasAbertos');
 
         Route::get('/metodos-canais-ativos', [CaixaController::class, 'listarMetodosEcanaisAtivos'])->name('listaMetodosEcanaisAtivos');
+    });
+
+    // Analitycos do caixa
+    Route::prefix('analyticos')->group(function () {
+        Route::get('/lista-metodos-pagamentos', [CaixaAnaliticoController::class, 'listarMetodosPagamento'])->name('listarMetodosPagamento.index');
     });
 });

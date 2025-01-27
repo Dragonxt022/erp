@@ -82,8 +82,16 @@ class CaixaController extends Controller
             return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
         }
 
-        // Limpando e estruturando os dados de métodos de pagamento
-        $metodosLimpos = array_map(function ($metodo) {
+        $valorAberturaDinheiro = $caixa->valor_inicial;
+
+        $metodosLimpos = array_map(function ($metodo) use ($valorAberturaDinheiro) {
+            // Se o método for "Dinheiro", adicionar o valor da abertura
+            if ($metodo['default_payment_method']['nome'] == 'Dinheiro') {
+                // Convertendo o valor total_vendas_metodos_pagamento de R$ para número
+                $totalVendas = str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento']);
+                $metodo['total_vendas_metodos_pagamento'] = (float)$totalVendas + $valorAberturaDinheiro; // Adiciona o valor da abertura ao total de vendas
+            }
+
             return [
                 'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
                 'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0),
@@ -143,7 +151,7 @@ class CaixaController extends Controller
                 'operacao' => 'fechamento',
                 'valor' => $valorFinal,
                 'hora' => now(),
-                'motivo' => $request->motivo ?? 'Fechamento',
+                'motivo' => $request->motivo ?? 'Fechamento de caixa',
             ]);
 
             // Atualiza o valor final e o status do caixa

@@ -147,7 +147,6 @@ const formatarParaBRL2 = (valor) => {
 
   return valorFormatado;
 };
-
 // Função para lidar com a digitação do input e formatação
 const onInputChange = (event) => {
   let valor = event.target.value;
@@ -155,26 +154,40 @@ const onInputChange = (event) => {
   valorDigitado.value = valor; // Atualizar o valor
 };
 
+const converterCentavosParaDecimal = (valorCentavos) => {
+  return valorCentavos / 100;
+};
+
 const valorFormatado = computed(() => formatarParaBRL2(valorDigitado.value));
 
-// Função para abrir o caixa (em centavos)
+// Função para abrir o caixa
 const abrirCaixa = async () => {
   isLoading.value = true;
-  // Converte para centavos para enviar ao backend
-  const valorEmCentavos = parseFloat(valorDigitado.value.replace(/\D/g, ''));
 
-  if (!valorDigitado.value || valorEmCentavos <= 0) {
+  // Converte o valor digitado para número
+  const valorCentavos =
+    parseInt(valorDigitado.value.replace(/\D/g, ''), 10) || 0; // Remove caracteres não numéricos
+  const valorDecimal = converterCentavosParaDecimal(valorCentavos); // Converte para decimal
+
+  // Valida o valor decimal
+  if (!valorCentavos || valorDecimal <= 0) {
     toast.warning('Por favor, insira um valor válido para abrir o caixa.');
     isLoading.value = false;
     return;
   }
 
   try {
+    // Envia o valor no formato decimal para o backend
     const response = await axios.post('/api/caixas/abrir', {
-      valor_inicial: valorEmCentavos, // Enviar valor em centavos
+      valor_inicial: valorDecimal, // Enviar valor no formato decimal
     });
-    toast.success('Caixa aberto com sucesso!');
+
+    toast.success(
+      `Caixa aberto com sucesso! Valor inicial: R$ ${valorDecimal.toFixed(2)}`
+    );
     console.log(response.data);
+
+    // Redireciona para o fluxo de caixa
     Inertia.visit(route('franqueado.fluxoCaixa'));
   } catch (error) {
     console.error(error);

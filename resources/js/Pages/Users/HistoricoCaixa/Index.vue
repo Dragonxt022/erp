@@ -2,7 +2,6 @@
   <LayoutFranqueado>
     <Head title="Histórico de Caixa" />
     <div class="flex justify-between items-center mb-4">
-      <!-- Coluna 1: Título e subtítulo -->
       <div>
         <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
           Histórico de Caixa
@@ -14,7 +13,6 @@
         </div>
       </div>
 
-      <!-- Coluna 2: Data -->
       <div
         class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
       >
@@ -24,49 +22,75 @@
             alt="Filtro"
             class="w-5 h-5"
           />
-          <!-- Ajuste o tamanho do ícone conforme necessário -->
           <span class="text-gray-900 text-[17px] font-semibold">
-            01/09/2024 - 30/09/2024
+            <CalendarFilterDia @update-filters="handleFilterUpdate" />
           </span>
         </div>
       </div>
     </div>
+
     <div class="mt-5">
-      <!-- Ajuste do grid para ser responsivo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Valor inicial
-          </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-6">
+        <!-- Coluna 1: Métodos de Pagamento -->
+        <div>
+          <div class="bg-white rounded-lg px-12 py-8">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th
+                    class="text-gray-500 text-left text-sm sm:text-base md:text-lg font-semibold font-['Figtree'] leading-snug"
+                  >
+                    Método de pagamento
+                  </th>
+                  <th
+                    class="text-gray-500 text-right text-sm sm:text-base md:text-lg font-semibold font-['Figtree'] leading-snug"
+                  >
+                    Valor
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="metodo in metodosPagamento" :key="metodo.nome">
+                  <td class="py-3 flex items-center gap-5">
+                    <img
+                      v-if="metodo.img_icon"
+                      :src="`/${metodo.img_icon}`"
+                      :alt="metodo.nome"
+                      class="w-8 h-8"
+                    />
+                    <div
+                      class="text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
+                    >
+                      {{ metodo.nome }}
+                    </div>
+                  </td>
+                  <td class="py-3 text-right text-[#262a27] font-semibold">
+                    {{ metodo.valor }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
+            class="w-full h-[60px] bg-[#d2fac3] rounded-bl-[10px] rounded-br-[10px] px-12 flex justify-between items-center"
           >
-            R$ {{ valorInicial }}
+            <div
+              class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
+            >
+              TOTAL
+            </div>
+            <div
+              class="text-[#1d5915] text-xl font-bold font-['Figtree'] leading-snug"
+            >
+              {{ total }}
+            </div>
           </div>
         </div>
 
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Estoque atual
-          </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            R$ {{ valorInsumos }}
-          </div>
-        </div>
-
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Itens no estoque
-          </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            {{ itensNoEstoque }}
+        <!-- Coluna 2: Gráfico Doughnut -->
+        <div>
+          <div class="bg-white rounded-lg px-12 py-8">
+            <canvas id="myChart"></canvas>
           </div>
         </div>
       </div>
@@ -86,61 +110,46 @@
             alt="Filtro"
             class="w-5 h-5"
           />
-          <span class="text-gray-900 text-[17px] font-semibold">
-            Filtrar resultados
-          </span>
         </div>
       </div>
 
       <div class="bg-white rounded-lg shadow">
-        <!-- Cabeçalho da lista -->
         <div
           class="bg-[#164110] grid grid-cols-5 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
         >
           <span class="text-left px-5">OPERAÇÃO</span>
-          <span class="text-center">QTD.</span>
-          <span class="text-left">Item</span>
-          <span class="text-center">Quando</span>
-          <span class="text-center">Responsável</span>
+          <span class="text-center">VALOR</span>
+          <span class="text-left">HORA</span>
+          <span class="text-center">MOTIVO</span>
+          <span class="text-center">RESPONSÁVEL</span>
         </div>
 
-        <!-- Dados da lista rolável -->
         <div
           ref="scrollContainer"
           class="overflow-y-auto max-h-96 scroll-hidden"
         >
           <ul class="space-y-2">
             <li
-              v-for="(movimentacao, index) in historicoMovimentacoes"
-              :key="index"
-              :class="{
-                'hover:bg-gray-200': true,
-                'grid grid-cols-5 gap-2 px-6 py-3 text-[16px]': true,
-              }"
+              v-for="movimentacao in historico"
+              :key="movimentacao.hora"
+              class="hover:bg-gray-200 grid grid-cols-5 gap-2 px-6 py-3 text-[16px]"
             >
               <span class="flex items-center text-gray-900 font-semibold">
                 <img
-                  :src="
-                    movimentacao.operacao === 'Entrada'
-                      ? '/storage/images/arrow_back_verde.svg'
-                      : '/storage/images/arrow_back_red.svg'
-                  "
-                  alt="icon indicativo"
+                  :src="getIconByStatus(movimentacao.operacao)"
+                  alt="icon"
                   class="mr-3 w-5 h-5"
                 />
-                {{
-                  movimentacao.operacao === 'Entrada' ? 'Entrada' : 'Retirada'
-                }}
+                <span>{{ getStatusText(movimentacao.operacao) }}</span>
               </span>
               <span class="text-center text-gray-900 font-semibold">
-                {{ movimentacao.quantidade }}
-                {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
+                {{ movimentacao.valor }}
               </span>
               <span class="text-left text-gray-900 font-medium">
-                {{ movimentacao.item }}
+                {{ movimentacao.hora }}
               </span>
               <span class="text-center text-gray-600 font-semibold">
-                {{ movimentacao.data }}
+                {{ movimentacao.motivo }}
               </span>
               <span class="text-center text-gray-500 font-semibold">
                 {{ movimentacao.responsavel }}
@@ -148,87 +157,198 @@
             </li>
           </ul>
         </div>
-
-        <!-- Carregando... -->
-        <div v-if="loading" class="text-center mt-4">Carregando...</div>
       </div>
     </div>
   </LayoutFranqueado>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
+import {
+  Chart,
+  ArcElement,
+  Tooltip,
+  Legend,
+  DoughnutController,
+  PieController,
+} from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels'; // Certifique-se de importar o plugin
+import CalendarFilterDia from '@/Components/Filtros/CalendarFilterDia.vue';
 
-const valorInicial = ref('0.00');
-const valorInsumos = ref('0.00');
-const itensNoEstoque = ref('0.00');
-const historicoMovimentacoes = ref([]);
-const currentPage = ref(1);
-const loading = ref(false);
-const hasMore = ref(true);
-const scrollContainer = ref(null);
+// Registrar os controladores necessários
+Chart.register(ArcElement, Tooltip, Legend, DoughnutController, PieController);
 
-// Função para carregar movimentações e dados da API
-const loadMovimentacoes = async () => {
-  if (loading.value || !hasMore.value) return;
+const metodosPagamento = ref([]);
+const total = ref('');
+const historico = ref([]);
+const graficoData = ref([]);
+const graficoLabels = ref([]);
 
-  loading.value = true;
+// Função que retorna o ícone correto com base no status
+const getIconByStatus = (status) => {
+  switch (status) {
+    case 'abertura':
+    case 'suprimento':
+      return '/storage/images/arrow_back_verde.svg';
+    case 'fechamento':
+      return '/storage/images/thumb_up.svg';
+    case 'sangria':
+      return '/storage/images/arrow_back_red.svg';
+    default:
+      return ''; // Se o status não for reconhecido
+  }
+};
 
+// Função que retorna o texto correto com base no status
+const getStatusText = (status) => {
+  switch (status) {
+    case 'abertura':
+      return 'Abertura';
+    case 'fechamento':
+      return 'Fechamento';
+    case 'suprimento':
+      return 'Suprimento';
+    case 'sangria':
+      return 'Sangria';
+    default:
+      return ''; // Se o status não for reconhecido
+  }
+};
+
+// Função que lida com a atualização dos filtros
+const handleFilterUpdate = (filters) => {
+  console.log('Filtros atualizados:', filters);
+
+  // Aqui você pode fazer a requisição com os novos filtros
+  fetchData(filters.startDate, filters.endDate, filters.periodo);
+};
+
+const fetchData = async (startDate, endDate, periodo) => {
   try {
-    // Realiza a requisição para a API
-    const { data } = await axios.get(
-      `/api/estoque/incial?page=${currentPage.value}`
+    const response = await axios.get(
+      '/api/analyticos/lista-metodos-pagamentos',
+      {
+        params: {
+          start_date: startDate,
+          end_date: endDate,
+          periodo: periodo || 'total',
+        },
+      }
     );
 
-    // Atualiza os dados de insumos e itens no estoque
-    valorInsumos.value = data.valorInsumos;
-    itensNoEstoque.value = data.itensNoEstoque;
+    const data = response.data;
 
-    // Atualiza o histórico de movimentações
-    historicoMovimentacoes.value.push(...data.historicoMovimentacoes.data);
+    metodosPagamento.value = data.metodos;
+    historico.value = data.historico;
+    total.value = data.total;
 
-    // Verifica se há mais páginas
-    if (
-      data.historicoMovimentacoes.current_page >=
-      data.historicoMovimentacoes.last_page
-    ) {
-      hasMore.value = false;
-    } else {
-      currentPage.value++;
-    }
+    // Preparando os dados do gráfico
+    graficoLabels.value = data.grafico.labels;
+    graficoData.value = data.grafico.data;
+
+    renderGrafico();
   } catch (error) {
-    console.error('Erro ao carregar movimentações:', error);
-  } finally {
-    loading.value = false;
+    console.error('Erro ao buscar dados:', error);
   }
 };
 
-const onScroll = () => {
-  const container = scrollContainer.value;
-  if (
-    container.scrollTop + container.clientHeight >=
-    container.scrollHeight - 10
-  ) {
-    loadMovimentacoes();
-  }
+// const fetchData = async () => {
+//   try {
+//     const response = await axios.get(
+//       '/api/analyticos/lista-metodos-pagamentos'
+//     ); // Substitua pela URL real da API
+//     const data = response.data;
+
+//     metodosPagamento.value = data.metodos.map((metodo) => ({
+//       ...metodo,
+//       valor: metodo.valor, // Formatado já na resposta
+//     }));
+
+//     total.value = data.total;
+
+//     // Preparando os dados do gráfico
+//     graficoLabels.value = data.grafico.labels;
+//     graficoData.value = data.grafico.data;
+
+//     // Histórico de movimentações
+//     historico.value = data.historico;
+
+//     renderGrafico();
+//   } catch (error) {
+//     console.error('Erro ao buscar dados:', error);
+//   }
+// };
+
+const renderGrafico = () => {
+  const ctx = document.getElementById('myChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'pie', // Alterado para "pie" para remover o furo no meio
+    data: {
+      labels: graficoLabels.value,
+      datasets: [
+        {
+          data: graficoData.value,
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#F7464A',
+            '#FF7F50',
+          ],
+          hoverOffset: 4,
+        },
+      ],
+    },
+    options: {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (tooltipItem) {
+              const valorFormatado = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(tooltipItem.raw); // Formata o valor no formato R$
+              return tooltipItem.label + ': ' + valorFormatado; // Exibe o valor formatado
+            },
+          },
+        },
+        legend: {
+          position: 'bottom', // Coloca os nomes na parte de baixo
+          labels: {
+            usePointStyle: true, // Altera a legenda para bolinhas
+            padding: 15, // Ajusta o espaçamento entre as bolinhas
+            boxWidth: 10, // Define o tamanho das bolinhas
+          },
+        },
+        datalabels: {
+          // Plugin para mostrar as porcentagens no gráfico
+          anchor: 'center',
+          align: 'center',
+          color: '#fff', // Cor do texto
+          font: {
+            weight: 'bold',
+            size: 14,
+          },
+          formatter: (value, ctx) => {
+            const total = graficoData.value.reduce((a, b) => a + b, 0); // Calcula o total
+            const percentage = ((value / total) * 100).toFixed(2) + '%'; // Calcula a porcentagem
+            return percentage; // Exibe a porcentagem no gráfico
+          },
+        },
+      },
+    },
+    plugins: [ChartDataLabels],
+  });
 };
 
-// Carrega os dados iniciais
 onMounted(() => {
-  loadMovimentacoes();
-  scrollContainer.value.addEventListener('scroll', onScroll);
-});
-
-onBeforeUnmount(() => {
-  if (scrollContainer.value) {
-    scrollContainer.value.removeEventListener('scroll', onScroll);
-  }
+  fetchData();
 });
 </script>
-
 <style lang="css" scoped>
 .scroll-hidden {
   scrollbar-width: none; /* Firefox */
@@ -253,7 +373,7 @@ onBeforeUnmount(() => {
 }
 /* Estilizando a tabela */
 
-th {
+.tabela th {
   background-color: #164110;
   color: #ffffff;
 }
@@ -266,11 +386,11 @@ th {
   border-radius: 0px 20px 0px 0px;
 }
 
-tr:nth-child(even) {
+.tabela tr:nth-child(even) {
   background-color: #f4f5f3;
 }
 
-tr:hover {
+.tabela tr:hover {
   background-color: #dededea9;
 }
 </style>
