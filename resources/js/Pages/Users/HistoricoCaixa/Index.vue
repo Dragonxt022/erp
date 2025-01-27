@@ -186,6 +186,7 @@ const total = ref('');
 const historico = ref([]);
 const graficoData = ref([]);
 const graficoLabels = ref([]);
+let myChart = null;
 
 // Função que retorna o ícone correto com base no status
 const getIconByStatus = (status) => {
@@ -255,37 +256,17 @@ const fetchData = async (startDate, endDate, periodo) => {
   }
 };
 
-// const fetchData = async () => {
-//   try {
-//     const response = await axios.get(
-//       '/api/analyticos/lista-metodos-pagamentos'
-//     ); // Substitua pela URL real da API
-//     const data = response.data;
-
-//     metodosPagamento.value = data.metodos.map((metodo) => ({
-//       ...metodo,
-//       valor: metodo.valor, // Formatado já na resposta
-//     }));
-
-//     total.value = data.total;
-
-//     // Preparando os dados do gráfico
-//     graficoLabels.value = data.grafico.labels;
-//     graficoData.value = data.grafico.data;
-
-//     // Histórico de movimentações
-//     historico.value = data.historico;
-
-//     renderGrafico();
-//   } catch (error) {
-//     console.error('Erro ao buscar dados:', error);
-//   }
-// };
-
 const renderGrafico = () => {
   const ctx = document.getElementById('myChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'pie', // Alterado para "pie" para remover o furo no meio
+
+  // Destruir o gráfico anterior, se houver
+  if (myChart) {
+    myChart.destroy();
+  }
+
+  // Criar o gráfico de pizza novamente
+  myChart = new Chart(ctx, {
+    type: 'pie', // Tipo de gráfico "pie"
     data: {
       labels: graficoLabels.value,
       datasets: [
