@@ -1,4 +1,9 @@
 <template>
+  <div class="painel-title">Cadastrar Contas</div>
+  <div class="painel-subtitle">
+    <p>Cadastrar contas a pagar da sua operação</p>
+  </div>
+
   <div class="mt-5">
     <div class="grid grid-cols-2 gap-8">
       <!-- Primeira coluna com duas linhas -->
@@ -166,7 +171,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, defineEmits } from 'vue';
 import LabelModel from '@/Components/Label/LabelModel.vue';
 import axios from 'axios';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
@@ -189,6 +194,8 @@ const motivo = ref('');
 
 const categorias = ref([]);
 const errors = ref({}); // Armazenar erros de validação
+
+const emit = defineEmits(['voltar']);
 
 onMounted(async () => {
   try {
@@ -301,10 +308,26 @@ const cancelForm = () => {
   diasLembrete.value = 1;
   descricao.value = '';
   arquivoNome.value = '';
+
+  emit('voltar');
 };
 </script>
 
 <style lang="css" scoped>
+.painel-title {
+  font-size: 34px;
+  line-height: 15px;
+  font-weight: 700;
+  color: #262a27; /* Cor escura para título */
+  margin-bottom: 10px; /* Espaçamento inferior */
+}
+
+.painel-subtitle {
+  font-size: 17px;
+  line-height: 25px;
+  color: #6d6d6e; /* Cor secundária */
+  max-width: 600px; /* Limita a largura do subtítulo */
+}
 .form-buttons {
   display: flex;
   justify-content: flex-end;

@@ -153,5 +153,6 @@ Route::prefix('api')->middleware([
     // contas a pagar
     Route::prefix('cursto')->group(function () {
         Route::post('/contas-a-pagar', [ContaAPagarController::class, 'store']);
+        Route::get('/listar-contas-a-pagar', [ContaAPagarController::class, 'index']);
     });
 });

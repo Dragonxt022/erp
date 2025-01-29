@@ -11,6 +11,28 @@ use Carbon\Carbon;
 
 class ContaAPagarController extends Controller
 {
+
+    public function index()
+    {
+        // Identifica o usuário autenticado
+        $user = Auth::user();
+
+        // Definindo o unidade_id do usuário autenticado
+        $unidade_id = $user->unidade_id;
+
+        // Obtém as contas a pagar filtradas pela unidade e ordenadas por status e vencimento
+        $contas = ContaAPagar::where('unidade_id', $unidade_id)
+            ->orderByRaw("CASE WHEN status = 'pendente' THEN 1 ELSE 2 END") // Pendente primeiro
+            ->orderBy('vencimento', 'asc') // Depois ordena por vencimento
+            ->get();
+
+        // Retorna a resposta com as contas
+        return response()->json(['data' => $contas], 200);
+    }
+
+
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([
