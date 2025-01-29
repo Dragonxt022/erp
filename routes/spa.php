@@ -154,6 +154,8 @@ Route::prefix('api')->middleware([
     Route::prefix('cursto')->group(function () {
         Route::post('/contas-a-pagar', [ContaAPagarController::class, 'store']);
         Route::post('/contas-a-pagar/{id}/pagar', [ContaAPagarController::class, 'marcarComoPago']);
+        Route::delete('/contas-a-pagar/{id}', [ContaAPagarController::class, 'destroy']);
+
 
         Route::get('/listar-contas-a-pagar', [ContaAPagarController::class, 'index']);
     });

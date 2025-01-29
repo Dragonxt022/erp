@@ -4,20 +4,33 @@
     <div v-if="!isEditMode">
       <div class="mt-8">
         <div class="w-full h-[530px] bg-white rounded-[20px] p-7 relative">
-          <p
-            class="text-[25px] font-bold font-['Figtree'] leading-8 tracking-tight"
-          >
-            {{ dados.nome }}
-          </p>
+          <div class="flex justify-between items-center">
+            <p
+              class="text-[25px] font-bold font-['Figtree'] leading-8 tracking-tight"
+            >
+              {{ dados.nome }}
+            </p>
+            <button
+              class="text-gray-500 hover:text-red-600"
+              @click="isConfirmExluirDialogVisible('Excluir essa conta?')"
+            >
+              <img
+                src="/storage/images/delete.svg"
+                alt="Excluir"
+                class="w-6 h-6"
+              />
+            </button>
+          </div>
 
-          <P
+          <p
             class="text-[#6db631] text-xl font-normal font-['Figtree'] leading-[25px] tracking-tight"
           >
             {{ dados.valor_formatado }}
-          </P>
+          </p>
           <p
             class="text-[#6d6d6d] text-[15px] font-medium font-['Figtree'] leading-[20px]"
           ></p>
+
           <div class="col-span-1 row-span-2 mt-8">
             <div class="col-span-1 row-span-2 mt-8">
               <div
@@ -33,8 +46,8 @@
                   class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-center text-gray-700 focus:ring-2 focus:ring-green-500"
                   readonly
                 />
-
                 <div class="mt-12"></div>
+
                 <!-- Input para Data de Vencimento -->
                 <LabelModel text="Data de vencimento" />
                 <input
@@ -47,6 +60,7 @@
                 />
               </div>
             </div>
+
             <LabelModel text="Informações adicionais" />
             <p
               class="w-full h-[100px] bg-white border-gray-300 rounded-lg border-2 border-[#d7d7db] px-2 py-1 text-[14px] outline-none resize-none focus:ring-2 focus:ring-green-500"
@@ -54,6 +68,7 @@
               {{ dados.descricao }}
             </p>
           </div>
+
           <div class="flex space-x-4 mt-5">
             <ButtonClaroMedio
               :text="props.dados.status === 'pendente' ? 'Pagar' : 'Pago'"
@@ -62,7 +77,6 @@
               :iconPath="getStatusIcon(props.dados.status)"
               :disabled="props.dados.status === 'pago'"
             />
-
             <ButtonClaroMedio
               text="Baixar boleto"
               class="text-[#6db631] w-full bg-[#f4faf4] hover:bg-[#c1fab6] transition duration-200 ease-in-out"
@@ -78,6 +92,13 @@
     :motivo="motivo"
     @confirm="handleConfirm"
     @cancel="handleCancel"
+  />
+
+  <ConfirmDialog
+    :isVisible="isConfirmExlusaoDialogVisible"
+    :motivo="motivo"
+    @confirm="handleConfirmExlucao"
+    @cancel="handleCancelExlusao"
   />
 </template>
 
@@ -98,11 +119,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['atualizar']);
+const emit = defineEmits(['voltar', 'atualiza']);
 
 const isEditMode = ref(false);
 const indexEditavel = ref(null);
 const isConfirmDialogVisible = ref(false);
+const isConfirmExlusaoDialogVisible = ref(false);
 const motivo = ref('');
 
 // Configuração do diálogo de confirmação
@@ -110,6 +132,10 @@ const motivo = ref('');
 const showConfirmDialog = (motivoParam) => {
   motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
   isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+const isConfirmExluirDialogVisible = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmExlusaoDialogVisible.value = true; // Exibe o diálogo de confirmação
 };
 
 const getStatusIcon = (status) => {
@@ -133,6 +159,15 @@ const handleCancel = () => {
   isConfirmDialogVisible.value = false;
 };
 
+const handleConfirmExlucao = () => {
+  isConfirmExlusaoDialogVisible.value = false;
+  excluirConta(); // Agora acessa props.dados corretamente
+};
+
+const handleCancelExlusao = () => {
+  isConfirmExlusaoDialogVisible.value = false;
+};
+
 // Função para ativar o modo de edição
 const ativarEdicao = (index) => {
   indexEditavel.value = index;
@@ -152,9 +187,33 @@ const pagarConta = async () => {
 
     // Atualiza o status da conta
     props.dados.status = 'pago';
+    
+    emit('atualiza');
   } catch (error) {
     console.error('Erro ao pagar a conta:', error);
     toast.error('Erro ao pagar a conta');
+  }
+};
+
+const excluirConta = async (id) => {
+  if (!props.dados || !props.dados.id) {
+    toast.error('Erro: Dados da conta não encontrados.');
+    return;
+  }
+
+  try {
+    // Fazendo a requisição DELETE para excluir a conta
+    const response = await axios.delete(
+      `/api/cursto/contas-a-pagar/${props.dados.id}`
+    );
+
+    // Exibir uma notificação de sucesso
+    toast.success('Conta excluída com sucesso');
+    emit('voltar');
+    // Aqui você pode recarregar a lista de contas ou redirecionar o usuário
+  } catch (error) {
+    // Em caso de erro, exiba uma notificação de erro
+    console.error('Erro ao excluir a conta:', error);
   }
 };
 

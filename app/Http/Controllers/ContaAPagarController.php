@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class ContaAPagarController extends Controller
 {
@@ -54,6 +55,39 @@ class ContaAPagarController extends Controller
 
         return response()->json(['message' => 'Conta marcada como paga com sucesso!', 'data' => $conta], 200);
     }
+
+    // Método para excluir a conta
+    public function destroy($id)
+    {
+        try {
+            // Obtém o usuário autenticado
+            $user = Auth::user();
+
+            // Tenta localizar a conta pelo ID e pelo unidade_id do usuário autenticado
+            $conta = ContaAPagar::where('id', $id)
+                ->where('unidade_id', $user->unidade_id)
+                ->first();
+
+            // Verifica se existe o arquivo associado à conta
+            $arquivo = $conta->arquivo; // Supondo que 'arquivo' contém o nome do arquivo, sem o caminho completo
+            $diretorio = public_path('storage/arquivos/' . $arquivo); // Diretório do arquivo
+
+            // Se o arquivo existir, tenta apagá-lo
+            if (File::exists($diretorio)) {
+                File::delete($diretorio); // Apaga o arquivo
+            }
+
+            // Exclui o registro da conta
+            $conta->delete();
+
+            // Retorna uma resposta de sucesso
+            return response()->json(['message' => 'Conta excluída com sucesso.'], 201);
+        } catch (\Exception $e) {
+            // Em caso de erro, retorna uma mensagem de erro
+            return response()->json(['message' => 'Erro ao excluir a conta: ' . $e->getMessage()], 500);
+        }
+    }
+
 
 
 

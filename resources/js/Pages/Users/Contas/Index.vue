@@ -14,7 +14,7 @@
 
     <!-- Componente de Cadastro (visível apenas se showCadastro for true) -->
     <div v-if="showCadastro" class="mt-3">
-      <CadastroContas @voltar="cancelarCadastro" />
+      <CadastroContas @voltar="cancelarCadastro" @atualiza="atualizalista" />
     </div>
 
     <!-- Grid de Listagem e Detalhes (visível apenas se showCadastro for false) -->
@@ -31,7 +31,10 @@
 
       <!-- Componente de Detalhes (mostra apenas se houver um item selecionado) -->
       <div v-if="dadosSelecionado">
-        <DetalhesContasApagar :dados="dadosSelecionado" />
+        <DetalhesContasApagar
+          :dados="dadosSelecionado"
+          @voltar="atualizaConponetes"
+        />
       </div>
     </div>
   </LayoutFranqueado>
@@ -68,5 +71,14 @@ const cancelarCadastro = () => {
   showCadastro.value = false;
   listaKey.value += 1; // Força a atualização da listagem
   console.log('cancelarCadastro');
+};
+
+const atualizaConponetes = () => {
+  dadosSelecionado.value = null;
+  listaKey.value += 1;
+};
+
+const atualizalista = () => {
+  listaKey.value += 1;
 };
 </script>
