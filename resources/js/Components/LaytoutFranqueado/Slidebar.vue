@@ -146,17 +146,6 @@ const menuCategories = [
         icon: '/storage/images/analitic.svg',
         link: 'franqueado.dreGerencial',
         isLogout: false,
-        submenuItems: [
-          {
-            label: 'Lista Custos',
-            icon: '/storage/images/add_product.svg',
-            link: 'franqueado.dreListaContas',
-          },
-          {
-            label: 'Gerenciar Categorias',
-            link: 'franqueado.dreCategorias',
-          },
-        ],
         isActive: false,
       },
 
@@ -191,6 +180,19 @@ const menuCategories = [
           {
             label: 'Histórico de Caixa',
             link: 'franqueado.historicoCaixa',
+          },
+        ],
+        isActive: false,
+      },
+      {
+        label: 'Contas a pagar',
+        icon: '/storage/images/attach_money.svg',
+        link: 'franqueado.contasApagar',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Histórico de Despesas',
+            link: 'franqueado.historicoContas',
           },
         ],
         isActive: false,

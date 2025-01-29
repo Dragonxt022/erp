@@ -93,18 +93,13 @@ Route::middleware([
         return Inertia::render('Users/Dre/Index');
     })->name('franqueado.dreGerencial');
 
-    Route::get('/franqueado/lista-contas', function () {
-        return Inertia::render('Users/Dre/Lista');
-    })->name('franqueado.dreListaContas');
+    Route::get('/franqueado/contas', function () {
+        return Inertia::render('Users/Contas/Index');
+    })->name('franqueado.contasApagar');
 
-    Route::get('/franqueado/cadastrar-custo', function () {
-        return Inertia::render('Users/Dre/Cadastrar');
-    })->name('franqueado.dreCadastrar');
-
-    Route::get('/franqueado/dre-categorias', function () {
-        return Inertia::render('Users/Dre/Categorias');
-    })->name('franqueado.dreCategorias');
-
+    Route::get('/franqueado/contas/historico', function () {
+        return Inertia::render('Users/Contas/Historico');
+    })->name('franqueado.historicoContas');
 
 
     // Rotas Sitemas de Retirada de estoque

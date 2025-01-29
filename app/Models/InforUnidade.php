@@ -36,6 +36,6 @@ class InforUnidade extends Model
     // Relacionamento com categorias
     public function categorias()
     {
-        return $this->hasMany(Category::class, 'unidade_id');
+        return $this->hasMany(Categoria::class);  // Uma unidade pode ter muitas categorias
     }
 }
