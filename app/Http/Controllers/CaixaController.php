@@ -82,15 +82,7 @@ class CaixaController extends Controller
             return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
         }
 
-        $valorAberturaDinheiro = $caixa->valor_inicial;
-
-        $metodosLimpos = array_map(function ($metodo) use ($valorAberturaDinheiro) {
-            // Se o método for "Dinheiro", adicionar o valor da abertura
-            if ($metodo['default_payment_method']['nome'] == 'Dinheiro') {
-                // Convertendo o valor total_vendas_metodos_pagamento de R$ para número
-                $totalVendas = str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento']);
-                $metodo['total_vendas_metodos_pagamento'] = (float)$totalVendas + $valorAberturaDinheiro; // Adiciona o valor da abertura ao total de vendas
-            }
+        $metodosLimpos = array_map(function ($metodo) {
 
             return [
                 'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
@@ -111,7 +103,7 @@ class CaixaController extends Controller
         // Calcula o valor final somando os totais de métodos e canais de venda
         $totalMetodosPagamento = array_sum(array_column($metodosLimpos, 'valor_total_vendas'));
         $totalCanaisVendas = array_sum(array_column($canaisLimpos, 'valor_total_vendas'));
-        $valorFinal = $totalMetodosPagamento + $totalCanaisVendas;
+        $valorFinal = $totalMetodosPagamento;
 
         // dd($totalMetodosPagamento, $totalCanaisVendas, $valorFinal, $metodosLimpos, $canaisLimpos, $request);
 

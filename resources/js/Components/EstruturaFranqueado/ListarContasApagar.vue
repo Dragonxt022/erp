@@ -19,7 +19,8 @@
       <div>
         <p class="text-lg font-medium text-gray-900">{{ conta.nome }}</p>
         <p class="text-sm text-gray-600">
-          R$ {{ conta.valor }} - Vence em {{ formatarData(conta.vencimento) }}
+          {{ conta.valor_formatado }} - Vence em
+          {{ formatarData(conta.vencimento) }}
         </p>
       </div>
 

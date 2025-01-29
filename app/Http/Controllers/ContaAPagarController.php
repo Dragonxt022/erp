@@ -24,12 +24,36 @@ class ContaAPagarController extends Controller
         $contas = ContaAPagar::where('unidade_id', $unidade_id)
             ->orderByRaw("CASE WHEN status = 'pendente' THEN 1 ELSE 2 END") // Pendente primeiro
             ->orderBy('vencimento', 'asc') // Depois ordena por vencimento
-            ->get();
+            ->get()
+            ->map(function ($conta) {
+                // Formatar o valor para o formato de moeda brasileira
+                $conta->valor_formatado = 'R$ ' . number_format($conta->valor, 2, ',', '.');
+                return $conta;
+            });
 
         // Retorna a resposta com as contas
         return response()->json(['data' => $contas], 200);
     }
 
+
+    public function marcarComoPago($id)
+    {
+        // Busca a conta pelo ID e unidade do usuário autenticado
+        $user = Auth::user();
+        $conta = ContaAPagar::where('id', $id)
+            ->where('unidade_id', $user->unidade_id)
+            ->first();
+
+        if (!$conta) {
+            return response()->json(['message' => 'Conta não encontrada'], 404);
+        }
+
+        // Atualiza o status para "pago"
+        $conta->status = 'pago';
+        $conta->save();
+
+        return response()->json(['message' => 'Conta marcada como paga com sucesso!', 'data' => $conta], 200);
+    }
 
 
 
