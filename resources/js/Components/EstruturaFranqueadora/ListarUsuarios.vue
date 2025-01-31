@@ -1,11 +1,11 @@
 <template>
   <div>
     <!-- Título principal -->
-    <div class="painel-title">Fornecedores</div>
+    <div class="painel-title">Franqueados</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Fornecedores de insumos homologados</p>
+      <p>Visualize os gestores das unidades</p>
     </div>
 
     <!-- Campo de pesquisa -->

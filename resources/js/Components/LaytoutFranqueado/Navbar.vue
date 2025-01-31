@@ -31,7 +31,7 @@
 
       <!-- Avatar e informações do usuário -->
       <div class="navbar-right">
-        <div class="notification">
+        <!-- <div class="notification">
           <div class="circle">
             <img
               src="/storage/images/icon_notification.svg"
@@ -39,7 +39,7 @@
             />
           </div>
           <div class="inner-circle"></div>
-        </div>
+        </div> -->
         <div class="user-info">
           <img :src="profilePhoto" alt="Avatar" class="avatar" />
           <div class="user-details">

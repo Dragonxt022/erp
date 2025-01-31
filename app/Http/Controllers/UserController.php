@@ -105,6 +105,7 @@ class UserController extends Controller
                 'cpf' => $request->input('cpf'),
                 'unidade_id' => $request->input('unidade_id'),
                 'franqueado' => true,
+                'franqueadora' => false,
                 'pin' => $pin, // Armazenar o PIN gerado
                 'profile_photo_path' => $profilePhotoPath, // Caminho da foto
             ]);

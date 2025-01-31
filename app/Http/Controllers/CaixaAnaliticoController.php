@@ -36,7 +36,7 @@ class CaixaAnaliticoController extends Controller
 
         // Definir horários com base nas datas de início e fim
         $inicioDoDia = $startDateConverted . ' 05:00:00';
-        $meioDia = $startDateConverted . ' 12:00:00';
+        $meioDia = $startDateConverted . ' 15:30:00';
         $fimDoDia = $endDateConverted . ' 23:59:59';
 
 

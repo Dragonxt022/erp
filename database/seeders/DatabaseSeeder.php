@@ -17,9 +17,9 @@ class DatabaseSeeder extends Seeder
 
         // Chama o seeder dos métodos de pagamento
 
-        // $this->call(UserSeeder::class);
-        // $this->call(DefaultPaymentMethodsSeeder::class);
-        // $this->call(DefaultCanaisVendasSeeder::class);
+        $this->call(UserSeeder::class);
+        $this->call(DefaultPaymentMethodsSeeder::class);
+        $this->call(DefaultCanaisVendasSeeder::class);
         $this->call(ContasSeeder::class);
     }
 }

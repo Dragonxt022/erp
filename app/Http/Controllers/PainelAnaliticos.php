@@ -179,17 +179,23 @@ class PainelAnaliticos extends Controller
         $usuario = Auth::user();
         $unidade_id = $usuario->unidade_id;
 
-        // Obtém os últimos 7 dias
+        // Obtém os últimos 30 dias
         $dias = collect();
         for ($i = 30; $i >= 0; $i--) {
-            $dias->push(Carbon::now()->subDays($i)->format('d')); // Mostra apenas o dia
+            $dias->push(Carbon::now()->subDays($i)->format('d')); // Apenas o dia numérico
         }
 
-        // Consulta ajustada para SQLite
+        // Verifica qual banco de dados está sendo usado
+        $driver = DB::connection()->getPDO()->getAttribute(\PDO::ATTR_DRIVER_NAME);
+
+        // Define a função correta de extração do dia
+        $diaFormat = $driver === 'sqlite' ? "strftime('%d', created_at)" : "DAY(created_at)";
+
+        // Consulta dinâmica baseada no banco de dados
         $faturamento = Caixa::where('unidade_id', $unidade_id)
             ->where('status', 0) // Apenas caixas fechados
-            ->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()) // Filtra últimos 7 dias
-            ->selectRaw("strftime('%d', created_at) as dia, SUM(valor_final) as total") // Exibe apenas o dia
+            ->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()) // Filtra últimos 30 dias
+            ->selectRaw("$diaFormat as dia, SUM(valor_final) as total") // Exibe apenas o dia
             ->groupBy('dia')
             ->orderBy('dia', 'asc')
             ->get()
@@ -418,7 +424,6 @@ class PainelAnaliticos extends Controller
             'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
         ]);
     }
-
 
 
     /**

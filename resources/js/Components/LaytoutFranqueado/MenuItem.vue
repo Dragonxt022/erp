@@ -41,6 +41,8 @@
         (showSubmenu || isAnySubmenuActive)
       "
       class="submenu"
+      @mouseenter="handleMouseEnter"
+      @mouseleave="handleMouseLeave"
     >
       <div v-for="(submenu, submenuIndex) in submenuItems" :key="submenuIndex">
         <Link
@@ -48,9 +50,6 @@
           :href="route(submenu.link)"
           :class="{ active: isSubmenuActive(submenu.link) }"
         >
-          <!-- <div class="icon" :class="{ 'rotate-icon': isIconRotated }">
-            <img :src="icon" alt="icon" />
-          </div> -->
           <div class="label">{{ submenu.label }}</div>
         </Link>
       </div>
@@ -92,7 +91,7 @@ const handleMouseLeave = () => {
   delayTimeout.value = setTimeout(() => {
     showSubmenu.value = false;
     saveSubmenuState(); // Atualiza o estado no localStorage
-  }, 4000); // 4 segundos de atraso
+  }, 200);
 };
 
 // Função para carregar o estado do submenu do localStorage

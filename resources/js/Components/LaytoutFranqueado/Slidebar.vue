@@ -57,32 +57,32 @@ const menuCategories = [
     ],
   },
   // Ferramentas
-  {
-    name: 'Ferramentas',
-    items: [
-      {
-        label: 'E-mail',
-        icon: '/storage/images/email.svg',
-        link: 'franqueado.email',
-        isLogout: false,
-        isActive: false,
-      },
-      {
-        label: 'Comunidade',
-        icon: '/storage/images/diversity_4.svg',
-        link: 'franqueado.comunidade',
-        isLogout: false,
-        isActive: false,
-      },
-      {
-        label: 'Mídias',
-        icon: '/storage/images/perm_media.svg',
-        link: 'franqueado.midias',
-        isLogout: false,
-        isActive: false,
-      },
-    ],
-  },
+  // {
+  //   name: 'Ferramentas',
+  //   items: [
+  //     {
+  //       label: 'E-mail',
+  //       icon: '/storage/images/email.svg',
+  //       link: 'franqueado.email',
+  //       isLogout: false,
+  //       isActive: false,
+  //     },
+  //     {
+  //       label: 'Comunidade',
+  //       icon: '/storage/images/diversity_4.svg',
+  //       link: 'franqueado.comunidade',
+  //       isLogout: false,
+  //       isActive: false,
+  //     },
+  //     {
+  //       label: 'Mídias',
+  //       icon: '/storage/images/perm_media.svg',
+  //       link: 'franqueado.midias',
+  //       isLogout: false,
+  //       isActive: false,
+  //     },
+  //   ],
+  // },
 
   // Gestão da loja
   {
