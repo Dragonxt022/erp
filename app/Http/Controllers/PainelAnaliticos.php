@@ -328,11 +328,13 @@ class PainelAnaliticos extends Controller
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
             $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
 
-            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->format('Y-m-d');
-            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->format('Y-m-d');
+            // Converter para Carbon e garantir que as datas incluam todo o período do dia
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
+
 
         // Função para calcular o valor baseado na unidade (kg ou unidade)
         $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
@@ -394,11 +396,17 @@ class PainelAnaliticos extends Controller
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
+
+        $startDateConverted = Carbon::parse($startDate)->startOfDay(); // Começa em 00:00:00
+        $endDateConverted = Carbon::parse($endDate)->endOfDay(); // Termina em 23:59:59
+
         // 2. Somar todos os caixas fechados no período
         $totalCaixas = Caixa::where('unidade_id', $unidade_id)
             ->where('status', 0) // Apenas caixas fechados
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_final');
+
+
 
         // 3. Quantidade de pedidos e faturamento
         $pedidos = CanalVenda::where('unidade_id', $unidade_id)

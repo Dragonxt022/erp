@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FechamentoCaixa;
 use App\Models\FluxoCaixa;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,116 +15,98 @@ class CaixaAnaliticoController extends Controller
 
     public function listarMetodosPagamento(Request $request)
     {
-        // Obter as datas de início e fim, caso não sejam enviadas, usa a data atual
-        $startDate = $request->input('start_date', now()->format('d-m-Y'));
-        $endDate = $request->input('end_date', now()->format('d-m-Y'));
-
-        // Validar o período (padrão: 'total' caso não seja enviado)
-        $periodo = $request->input('periodo', 'total');
-
-        // Validar entrada do período
-        if (!in_array($periodo, ['almoco', 'janta', 'total'])) {
-            return response()->json(['error' => 'Período inválido. Use "almoco", "janta" ou "total".'], 400);
-        }
-
-        // Tentar converter as datas recebidas para o formato do banco (Y-m-d)
         try {
-            $startDateConverted = \Carbon\Carbon::createFromFormat('d-m-Y', $startDate)->format('Y-m-d');
-            $endDateConverted = \Carbon\Carbon::createFromFormat('d-m-Y', $endDate)->format('Y-m-d');
+            // Obter as datas de início e fim, se não forem enviadas, usa a data atual
+            $startDate = $request->input('start_date', now()->format('d-m-Y'));
+            $endDate = $request->input('end_date', now()->format('d-m-Y'));
+
+            // Validar período (padrão: 'total' caso não seja enviado)
+            $periodo = $request->input('periodo', 'total');
+
+            if (!in_array($periodo, ['almoco', 'janta', 'total'])) {
+                return response()->json(['error' => 'Período inválido. Use "almoco", "janta" ou "total".'], 400);
+            }
+
+            // Converter as datas para Carbon e aplicar início e fim do dia
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
+
+            // Definir horários específicos para "almoço" e "janta"
+            if ($periodo === 'almoco') {
+                $horarioInicio = $startDateConverted->copy()->setHour(5)->setMinute(0)->setSecond(0);
+                $horarioFim = $startDateConverted->copy()->setHour(15)->setMinute(30)->setSecond(59);
+            } elseif ($periodo === 'janta') {
+                $horarioInicio = $startDateConverted->copy()->setHour(15)->setMinute(30)->setSecond(0);
+                $horarioFim = $endDateConverted;
+            } else {
+                // Período total: inclui todas as horas do dia
+                $horarioInicio = $startDateConverted;
+                $horarioFim = $endDateConverted;
+            }
+
+            // Consultar métodos de pagamento e somar valores
+            $metodosPagamento = FechamentoCaixa::select(
+                'metodo_pagamento_id',
+                DB::raw('SUM(valor_total_vendas) as total_vendas')
+            )
+                ->where('unidade_id', Auth::user()->unidade_id)
+                ->whereBetween('created_at', [$horarioInicio, $horarioFim])
+                ->groupBy('metodo_pagamento_id')
+                ->with('metodoPagamento')
+                ->get();
+
+            // Calcular o total geral de vendas
+            $totalVendas = $metodosPagamento->sum('total_vendas');
+
+            // Formatar os dados e calcular a porcentagem
+            $dadosFormatados = $metodosPagamento->map(function ($item) use ($totalVendas) {
+                return [
+                    'img_icon' => $item->metodoPagamento->img_icon ?? null,
+                    'nome' => $item->metodoPagamento->nome ?? 'Método não definido',
+                    'valor' => 'R$ ' . number_format($item->total_vendas, 2, ',', '.'),
+                    'valor_raw' => $item->total_vendas,
+                    'porcentagem' => ($totalVendas > 0) ? number_format(($item->total_vendas / $totalVendas) * 100, 2, ',', '.') . '%' : '0%',
+                ];
+            });
+
+            // Preparar os dados para o gráfico
+            $graficoLabels = $dadosFormatados->pluck('nome');
+            $graficoPorcentagem = $dadosFormatados->pluck('porcentagem');
+            $graficoData = $dadosFormatados->pluck('valor_raw');
+
+            // Consultar histórico de Fluxo de Caixa e associar o nome do responsável
+            $historico = FluxoCaixa::with('responsavel')
+                ->where('unidade_id', Auth::user()->unidade_id)
+                ->whereBetween('created_at', [$horarioInicio, $horarioFim])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Formatar os dados do histórico
+            $historicoFormatado = $historico->map(function ($item) {
+                return [
+                    'operacao' => $item->operacao,
+                    'valor' => 'R$' . number_format($item->valor, 2, ',', '.'),
+                    'motivo' => $item->motivo,
+                    'responsavel' => $item->responsavel->name ?? 'Responsável não definido',
+                    'hora' => Carbon::parse($item->hora)->format('H:i'),
+                ];
+            });
+
+            // Retornar resposta com os dados do histórico, métodos de pagamento e gráfico
+            return response()->json([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'metodos' => $dadosFormatados,
+                'total' => 'R$ ' . number_format($totalVendas, 2, ',', '.'),
+                'grafico' => [
+                    'labels' => $graficoLabels,
+                    'porcentagem' => $graficoPorcentagem,
+                    'data' => $graficoData,
+                ],
+                'historico' => $historicoFormatado,
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+            return response()->json(['error' => 'Erro interno ao processar os dados.'], 500);
         }
-
-        // Definir horários com base nas datas de início e fim
-        $inicioDoDia = $startDateConverted . ' 05:00:00';
-        $meioDia = $startDateConverted . ' 15:30:00';
-        $fimDoDia = $endDateConverted . ' 23:59:59';
-
-
-        // Lógica para definir o intervalo de tempo, caso o período seja "almoco" ou "janta"
-        if ($periodo === 'almoco') {
-            $horarioInicio = $inicioDoDia;
-            $horarioFim = $meioDia;
-        } elseif ($periodo === 'janta') {
-            $horarioInicio = $meioDia;
-            $horarioFim = $fimDoDia;
-        } else {
-            // Se o período for "total", usa o dia inteiro
-            $horarioInicio = $inicioDoDia;
-            $horarioFim = $fimDoDia;
-        }
-
-        // Consultar métodos de pagamento e somar valores
-        $metodosPagamento = FechamentoCaixa::select(
-            'metodo_pagamento_id',
-            DB::raw('SUM(valor_total_vendas) as total_vendas')
-        )
-            ->where('unidade_id', Auth::user()->unidade_id) // FILTRO POR UNIDADE
-            ->whereBetween('created_at', [$horarioInicio, $horarioFim])
-            ->groupBy('metodo_pagamento_id')
-            ->with('metodoPagamento')
-            ->get();
-
-
-        // Calcular o total geral de vendas
-        $totalVendas = $metodosPagamento->sum('total_vendas');
-
-        // Formatar os dados e calcular a porcentagem
-        $dadosFormatados = $metodosPagamento->map(function ($item) use ($totalVendas) {
-            $valorFormatado = number_format($item->total_vendas, 2, ',', '.');
-
-            // Calcular a porcentagem
-            $porcentagem = ($totalVendas > 0) ? number_format(($item->total_vendas / $totalVendas) * 100, 2, ',', '.') : 0;
-
-            return [
-                'img_icon' => $item->metodoPagamento->img_icon ?? null,
-                'nome' => $item->metodoPagamento->nome ?? 'Método não definido',
-                'valor' => 'R$ ' . $valorFormatado,
-                'valor_raw' => $item->total_vendas,
-                'porcentagem' => $porcentagem . '%' // Adiciona a porcentagem
-            ];
-        });
-
-        // Formatar o total geral
-        $totalGeral = number_format($totalVendas, 2, ',', '.');
-
-        // Preparar os dados para o gráfico
-        $graficoLabels = $dadosFormatados->pluck('nome');
-        $graficoPorcentagem = $dadosFormatados->pluck('porcentagem');
-        $graficoData = $dadosFormatados->pluck('valor_raw');
-
-        // Consultar histórico de Fluxo de Caixa e associar o nome do responsável
-        $historico = FluxoCaixa::with('responsavel')
-            ->where('unidade_id', Auth::user()->unidade_id) // FILTRO POR UNIDADE
-            ->whereBetween('created_at', [$horarioInicio, $horarioFim])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Formatar os dados do histórico
-        $historicoFormatado = $historico->map(function ($item) {
-            $valorFormatado = number_format($item->valor, 2, ',', '.');
-
-            return [
-                'operacao' => $item->operacao,
-                'valor' => 'R$' . $valorFormatado,
-                'motivo' => $item->motivo,
-                'responsavel' => $item->responsavel->name ?? 'Responsável não definido',
-                'hora' => \Carbon\Carbon::parse($item->hora)->format('H:i'),
-            ];
-        });
-
-        // Retornar resposta com os dados do histórico, métodos de pagamento e gráfico
-        return response()->json([
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'metodos' => $dadosFormatados,
-            'total' => 'R$ ' . $totalGeral,
-            'grafico' => [
-                'labels' => $graficoLabels,
-                'porcentagem' => $graficoPorcentagem,
-                'data' => $graficoData,
-            ],
-            'historico' => $historicoFormatado,
-        ]);
     }
 }

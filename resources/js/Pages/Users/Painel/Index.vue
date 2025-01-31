@@ -218,18 +218,24 @@ const navigateToContasApagar = () => {
   Inertia.replace(route('franqueado.contasApagar'));
 };
 // Função para buscar os dados analíticos
-const fetchDataAnalitico = async (
-  startDate = '01-01-2025',
-  endDate = '31-01-2025'
-) => {
+const fetchDataAnalitico = async (startDate = null, endDate = null) => {
   try {
-    // Passa os filtros para a API
-    const response = await axios.get(
-      `/api/painel-analitycos/calcular-cmv-caixas-tickets?start_date=${startDate}&end_date=${endDate}`
-    );
+    // Monta a URL condicionalmente
+    let url = `/api/painel-analitycos/calcular-cmv-caixas-tickets`;
+    const params = [];
+
+    if (startDate) params.push(`start_date=${startDate}`);
+    if (endDate) params.push(`end_date=${endDate}`);
+
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+
+    // Faz a requisição para a API
+    const response = await axios.get(url);
     const data = response.data;
 
-    // Se a resposta contiver os dados analíticos, atualize os refs
+    // Se a resposta contiver os dados analíticos, atualiza os refs
     if (data.saldo_estoque_inicial) {
       saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
       entradasDurantePeriodo.value = data.entradas_durante_periodo || '0,00';
@@ -249,20 +255,20 @@ const fetchDataAnalitico = async (
   }
 };
 
-// Chama a função ao montar o componente
+// Chama a função ao montar o componente com valores padrão
 onMounted(() => {
-  fetchDataAnalitico(); // Chama com valores padrão ao montar o componente
-  fetchData(); // Carrega os dados do faturamento por semana
+  fetchDataAnalitico(); // Agora aceita chamadas sem parâmetros
+  fetchData();
   fetchDados();
 });
 
 // Função que lida com a atualização dos filtros
 const handleFilterUpdate = (filters) => {
   console.log('Filtros atualizados:', filters);
-  const { startDate, endDate } = filters; // Extrai as datas do filtro
+  const { startDate, endDate } = filters;
 
-  // Passa as novas datas para a função de busca
-  fetchDataAnalitico(startDate, endDate); // Atualiza os dados com as datas fornecidas
+  // Chama a API com os filtros fornecidos (ou sem filtros se forem nulos)
+  fetchDataAnalitico(startDate, endDate);
 };
 
 // Buscar as contas da API
