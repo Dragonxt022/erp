@@ -80,6 +80,29 @@ class UnidadeEstoqueController extends Controller
                 }
             }
 
+            $unidade_id = Auth::user()->unidade_id;
+
+            // Dados principais do painel
+            $estoque = UnidadeEstoque::where('unidade_id', $unidade_id)->where('quantidade', '>', 0)->get();
+            $valorInsumos = $estoque->reduce(function ($total, $item) {
+                $preco = $item->preco_insumo;
+                $quantidade = $item->quantidade;
+                return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
+            }, 0);
+
+            $saldoAtual = $valorInsumos;
+
+
+            DB::table('controle_saldo_estoques')->insert([
+                'ajuste_saldo' => $saldoAtual,
+                'data_ajuste' => now(),
+                'motivo_ajuste' => 'Atualização após Retirada',
+                'unidade_id' => $unidade_id,
+                'responsavel_id' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             DB::commit();
 
             // Fazendo o logout da sessão (não afeta o token de API)
@@ -263,14 +286,14 @@ class UnidadeEstoqueController extends Controller
 
             // Calcular a soma do valor total do lote (valor unitário * quantidade)
             $valorTotalLotes = $lotesDisponiveis->sum(function ($lote) {
-                return ($lote->preco_insumo / 100) * $lote->quantidade;
+                return ($lote->preco_insumo) * $lote->quantidade;
             });
 
             // Calcular a soma do valor pago por quilo para os produtos 'a_granel'
             $valorPagoPorQuiloLote = null;
             if ($insumo->unidadeDeMedida === 'a_granel') {
                 $valorPagoPorQuiloLote = $lotesDisponiveis->sum(function ($lote) {
-                    return ($lote->preco_insumo / 100); // Soma apenas o valor unitário (não multiplicado pela quantidade)
+                    return ($lote->preco_insumo); // Soma apenas o valor unitário (não multiplicado pela quantidade)
                 });
             }
 
@@ -282,7 +305,7 @@ class UnidadeEstoqueController extends Controller
                 'unidadeDeMedida' => $insumo->unidadeDeMedida,
                 'lotes' => $lotesDisponiveis->map(function ($lote) use ($insumo) {
                     // Calcular o valor unitário
-                    $valorUnitario = $lote->preco_insumo / 100;
+                    $valorUnitario = $lote->preco_insumo;
                     $valorTotal = $valorUnitario * $lote->quantidade; // Valor total do lote
 
                     // Calcular o valor pago por quilo, se for 'a_granel'
@@ -300,7 +323,7 @@ class UnidadeEstoqueController extends Controller
                         'valor_total' => 'R$ ' . number_format($valorTotal, 2, ',', '.'),
                         // Adicionando cálculo do valor pago por quilo para produtos 'kg'
                         'valor_pago_por_quilo' => $lote->unidade === 'kg'
-                            ? 'R$ ' . number_format(($lote->preco_insumo / 100) / $lote->quantidade, 2, ',', '.')
+                            ? 'R$ ' . number_format(($lote->preco_insumo) / $lote->quantidade, 2, ',', '.')
                             : null,
                     ];
                 }),
@@ -349,7 +372,7 @@ class UnidadeEstoqueController extends Controller
 
             // Calcular a soma do valor total do lote (valor unitário * quantidade)
             $valorTotalLotes = $lotesDisponiveis->sum(function ($lote) {
-                return ($lote->preco_insumo / 100) * $lote->quantidade;
+                return ($lote->preco_insumo) * $lote->quantidade;
             });
 
             // Calcular a soma da quantidade total para este produto
@@ -360,7 +383,7 @@ class UnidadeEstoqueController extends Controller
             $valorPagoPorQuiloLote = null;
             if ($insumo->unidadeDeMedida === 'a_granel') {
                 $valorPagoPorQuiloLote = $lotesDisponiveis->sum(function ($lote) {
-                    return ($lote->preco_insumo / 100); // Soma apenas o valor unitário (não multiplicado pela quantidade)
+                    return ($lote->preco_insumo); // Soma apenas o valor unitário (não multiplicado pela quantidade)
                 });
             }
 
@@ -372,7 +395,7 @@ class UnidadeEstoqueController extends Controller
                 'unidadeDeMedida' => $insumo->unidadeDeMedida,
                 'lotes' => $lotesDisponiveis->map(function ($lote) use ($insumo) {
                     // Calcular o valor unitário
-                    $valorUnitario = $lote->preco_insumo / 100;
+                    $valorUnitario = $lote->preco_insumo;
                     $valorTotal = $valorUnitario * $lote->quantidade; // Valor total do lote
 
                     // Calcular o valor pago por quilo, se for 'a_granel'
@@ -390,7 +413,7 @@ class UnidadeEstoqueController extends Controller
                         'valor_total' => 'R$ ' . number_format($valorTotal, 2, ',', '.'),
                         // Adicionando cálculo do valor pago por quilo para produtos 'kg'
                         'valor_pago_por_quilo' => $lote->unidade === 'kg'
-                            ? 'R$ ' . number_format(($lote->preco_insumo / 100) / $lote->quantidade, 2, ',', '.')
+                            ? 'R$ ' . number_format(($lote->preco_insumo) / $lote->quantidade, 2, ',', '.')
                             : null,
                     ];
                 }),
@@ -438,7 +461,7 @@ class UnidadeEstoqueController extends Controller
         // Dados principais do painel
         $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->where('quantidade', '>', 0)->get();
         $valorInsumos = $estoque->reduce(function ($total, $item) {
-            $preco = $item->preco_insumo / 100;
+            $preco = $item->preco_insumo;
             $quantidade = $item->quantidade;
             return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
         }, 0);
@@ -497,6 +520,9 @@ class UnidadeEstoqueController extends Controller
         DB::beginTransaction(); // Inicia uma transação
 
         try {
+
+
+
             foreach ($validatedData['itens'] as $item) {
                 $quantidade = floatval($item['quantidade']);
                 $unidadeMedida = $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade';
@@ -528,6 +554,31 @@ class UnidadeEstoqueController extends Controller
                 ]);
             }
 
+            $unidade_id = Auth::user()->unidade_id;
+
+            // Dados principais do painel
+            $estoque = UnidadeEstoque::where('unidade_id', $unidade_id)->where('quantidade', '>', 0)->get();
+            $valorInsumos = $estoque->reduce(function ($total, $item) {
+                $preco = $item->preco_insumo;
+                $quantidade = $item->quantidade;
+                return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
+            }, 0);
+
+            $saldoAtual = $valorInsumos;
+
+
+            DB::table('controle_saldo_estoques')->insert([
+                'ajuste_saldo' => $saldoAtual,
+                'data_ajuste' => now(),
+                'motivo_ajuste' => 'Atualização após entrada',
+                'unidade_id' => $unidade_id,
+                'responsavel_id' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+
+
             DB::commit(); // Confirma a transação
 
             return response()->json(['message' => 'Itens armazenados com sucesso!'], 201);
@@ -557,6 +608,31 @@ class UnidadeEstoqueController extends Controller
         $lote->updated_at = now(); // Atualiza o timestamp
 
         $lote->save();
+
+        // Atualiza o saldo do estoque
+        $unidade_id = Auth::user()->unidade_id;
+
+        // Dados principais do painel
+        $estoque = UnidadeEstoque::where('unidade_id', $unidade_id)->where('quantidade', '>', 0)->get();
+        $valorInsumos = $estoque->reduce(function ($total, $item) {
+            $preco = $item->preco_insumo;
+            $quantidade = $item->quantidade;
+            return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
+        }, 0);
+
+        $saldoAtual = $valorInsumos;
+
+
+        DB::table('controle_saldo_estoques')->insert([
+            'ajuste_saldo' => $saldoAtual,
+            'data_ajuste' => now(),
+            'motivo_ajuste' => 'Atualização após Reajuste',
+            'unidade_id' => $unidade_id,
+            'responsavel_id' => Auth::id(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
 
         return response()->json([
             'message' => 'Quantidade atualizada com sucesso!',

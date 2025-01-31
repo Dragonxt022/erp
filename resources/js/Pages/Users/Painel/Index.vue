@@ -1,120 +1,76 @@
 <template>
   <LayoutFranqueado>
     <Head title="Painel" />
-    <div class="painel-title">Visão geral da loja</div>
-    <div class="painel-subtitle">
-      <p>Acompanhe o desempenho geral</p>
-    </div>
+    <div class="flex justify-between items-center mb-4">
+      <div>
+        <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
+          Visão geral da loja
+        </div>
+        <div class="painel-subtitle">
+          <p class="text-sm sm:text-base md:text-lg">
+            Acompanhe o desempenho geral
+          </p>
+        </div>
+      </div>
 
-    <!-- Conteúdo da página -->
-    <!-- <div class="mt-5 col-span-3">
-        <Calendario />
-      </div> -->
+      <div
+        class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
+      >
+        <div class="flex items-center space-x-2">
+          <img
+            src="/storage/images/calendar_month.svg"
+            alt="Filtro"
+            class="w-5 h-5"
+          />
+          <span class="text-gray-900 text-[17px] font-semibold">
+            <CalendarFilterDiaPainel @update-filters="handleFilterUpdate" />
+          </span>
+        </div>
+      </div>
+    </div>
     <div class="mt-5">
       <div class="grid grid-cols-3 grid-rows-1 gap-4">
         <!-- Primeira coluna -->
-        <div class="row-span-2">
-          <div class="bg-white rounded-lg p-7">
-            <h3 class="text-lg font-semibold text-gray-700 mb-4">
+        <div class="row-span-3">
+          <div class="bg-white rounded-lg p-5">
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">
               Compromissos
             </h3>
-            <div class="flex bg-[#F5FAF4] items-center gap-4 p-3 rounded-lg">
-              <!-- Container para o ícone com fundo mais escuro -->
-              <div
-                class="bg-[#E1FCDE] p-3 rounded-lg flex items-center justify-center shadow-inner"
-              >
-                <img src="/storage/images/groups_2.svg" alt=" " />
-              </div>
-              <!-- Texto ao lado do ícone -->
-              <div>
-                <p
-                  class="text-[#262a27] text-[15px] font-semibold leading-tight"
-                >
-                  Holerites
-                </p>
-                <p class="text-sm text-gray-500">3 outubro</p>
-              </div>
-              <!-- Valor à direita -->
-              <p class="text-[#3B622B] ml-auto font-semibold leading-tight">
-                R$ 17.620,85
-              </p>
-            </div>
-            <!-- Segundo item -->
+            <!-- Contêiner com altura máxima e rolagem -->
             <div
-              class="flex bg-[#F5FAF4] items-center gap-4 p-3 rounded-lg mt-4"
+              class="compromissos-container flex flex-col gap-2 overflow-hidden"
             >
-              <!-- Container para o ícone com fundo mais escuro -->
+              <!-- Container de compromissos -->
               <div
-                class="bg-[#FCF0DE] p-3 rounded-lg flex items-center justify-center shadow-inner"
+                v-for="conta in dados"
+                :key="conta.id"
+                @click="navigateToContasApagar"
+                class="flex justify-between items-center bg-[#F5FAF4] p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-all ease-in-out duration-300"
               >
-                <img src="/storage/images/electric_bolt.svg" alt=" " />
-              </div>
-              <!-- Texto ao lado do ícone -->
-              <div>
-                <p
-                  class="text-[#262a27] text-[15px] font-semibold leading-tight"
-                >
-                  Energia Elétrica
-                </p>
-                <p class="text-sm text-gray-500">10 outubro</p>
-              </div>
-              <!-- Valor à direita -->
-              <p class="text-[#3B622B] ml-auto font-semibold leading-tight">
-                R$ 720,86
-              </p>
-            </div>
+                <!-- Informações da conta -->
+                <div class="flex flex-col">
+                  <p class="text-[14px] font-medium text-gray-900">
+                    {{ conta.nome }}
+                  </p>
+                  <p class="text-sm text-gray-600">
+                    {{ conta.valor_formatado }} - Vencimento
+                    {{ formatarData(conta.vencimento) }}
+                  </p>
+                </div>
 
-            <!-- Terceiro item -->
-            <div
-              class="flex bg-[#F5FAF4] items-center gap-4 p-3 rounded-lg mt-4"
-            >
-              <!-- Container para o ícone com fundo mais escuro -->
-              <div
-                class="bg-[#F3DEFC] p-3 rounded-lg flex items-center justify-center shadow-inner"
-              >
-                <img src="/storage/images/handshake.svg" alt=" " />
+                <!-- Ícone de status -->
+                <div>
+                  <img
+                    :src="getStatusIcon(conta.status)"
+                    :alt="'Status: ' + conta.status"
+                    class="w-6 h-6 object-contain transition-transform transform hover:scale-105"
+                  />
+                </div>
               </div>
-              <!-- Texto ao lado do ícone -->
-              <div>
-                <p
-                  class="text-[#262a27] text-[15px] font-semibold leading-tight"
-                >
-                  Fornecedor
-                </p>
-                <p class="text-sm text-gray-500">20 outubro</p>
-              </div>
-              <!-- Valor à direita -->
-              <p class="text-[#3B622B] ml-auto font-semibold leading-tight">
-                R$ 10.250,40
-              </p>
-            </div>
-
-            <!-- Quarto item -->
-            <div
-              class="flex bg-[#F5FAF4] items-center gap-4 p-3 rounded-lg mt-4"
-            >
-              <!-- Container para o ícone com fundo mais escuro -->
-              <div
-                class="bg-[#BFE1EB] p-3 rounded-lg flex items-center justify-center shadow-inner"
-              >
-                <img src="/storage/images/propane_tank.svg" alt=" " />
-              </div>
-              <!-- Texto ao lado do ícone -->
-              <div>
-                <p
-                  class="text-[#262a27] text-[15px] font-semibold leading-tight"
-                >
-                  Gás
-                </p>
-                <p class="text-sm text-gray-500">25 outubro</p>
-              </div>
-              <!-- Valor à direita -->
-              <p class="text-[#3B622B] ml-auto font-semibold leading-tight">
-                R$ 1.210,00
-              </p>
             </div>
           </div>
         </div>
+
         <!-- Segunda coluna -->
         <div class="bg-white rounded-lg p-7">
           <h3 class="text-lg font-semibold text-gray-700 mb-4">Faturamento</h3>
@@ -122,21 +78,21 @@
           <div
             class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 217.113,95
+            R$ {{ totalCaixas }}
           </div>
 
           <div class="flex items-center gap-2 mt-[35px]">
             <!-- Ícone com fundo mais escuro -->
             <div class="w-6 h-6 rounded-full flex items-center justify-center">
               <!-- Substitua pelo ícone desejado -->
-              <img src="/storage/images/trending_up.svg" alt="" />
+              <!-- <img src="/storage/images/trending_up.svg" alt="" /> -->
             </div>
 
             <!-- Texto de descrição -->
             <div
               class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
             >
-              12% maior que no período anterior
+              0% coletando dados
             </div>
           </div>
         </div>
@@ -147,21 +103,21 @@
           <div
             class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 65.113,90
+            R$ {{ cmv }}
           </div>
 
           <div class="flex items-center gap-2 mt-[35px]">
             <!-- Ícone com fundo mais escuro -->
             <div class="w-6 h-6 rounded-full flex items-center justify-center">
               <!-- Substitua pelo ícone desejado -->
-              <img src="/storage/images/trending_up.svg" alt="" />
+              <!-- <img src="/storage/images/trending_up.svg" alt="" /> -->
             </div>
 
             <!-- Texto de descrição -->
             <div
               class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
             >
-              7% maior que no período anterior
+              0% coletando dados
             </div>
           </div>
         </div>
@@ -173,21 +129,21 @@
           <div
             class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            R$ 154,30
+            R$ {{ ticketMedio }}
           </div>
 
           <div class="flex items-center gap-2 mt-[35px]">
             <!-- Ícone com fundo mais escuro -->
             <div class="w-6 h-6 rounded-full flex items-center justify-center">
               <!-- Substitua pelo ícone desejado -->
-              <img src="/storage/images/trending_down.svg" alt="" />
+              <!-- <img src="/storage/images/trending_down.svg" alt="" /> -->
             </div>
 
             <!-- Texto de descrição -->
             <div
               class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
             >
-              3% menor que no período anterior
+              0% coletando dados
             </div>
           </div>
         </div>
@@ -197,21 +153,21 @@
           <div
             class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
-            1142
+            {{ quantidadePedidos }}
           </div>
 
           <div class="flex items-center gap-2 mt-[35px]">
             <!-- Ícone com fundo mais escuro -->
             <div class="w-6 h-6 rounded-full flex items-center justify-center">
               <!-- Substitua pelo ícone desejado -->
-              <img src="/storage/images/trending_up.svg" alt="" />
+              <!-- <img src="/storage/images/trending_up.svg" alt="" /> -->
             </div>
 
             <!-- Texto de descrição -->
             <div
               class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
             >
-              10% maior que no período anterior
+              0% coletando dados
             </div>
           </div>
         </div>
@@ -233,57 +189,170 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
+import { Inertia } from '@inertiajs/inertia';
 import { Chart, registerables } from 'chart.js';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
+import CalendarFilterDiaPainel from '@/Components/Filtros/CalendarFilterDiaPainel.vue';
 
 // Registrar todos os componentes necessários do Chart.js
 Chart.register(...registerables);
 
+// Referência para o elemento canvas do gráfico
 const barChart = ref(null);
+const chartInstance = ref(null); // Armazena a instância do gráfico
+const faturamentoDias = ref([]); // Valores de faturamento diário
+const diasLabels = ref([]); // Labels dos últimos 7 dias
 
-onMounted(() => {
-  if (barChart.value) {
-    new Chart(barChart.value.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: Array.from({ length: 31 }, (_, i) => i + 1), // Labels de 1 a 31
-        datasets: [
-          {
-            label: 'Faturamento',
-            data: [
-              12000, 19000, 3000, 5000, 20000, 15000, 8000, 11000, 7000, 9000,
-              18000, 16000, 14000, 17000, 20000, 13000, 21000, 22000, 23000,
-              24000, 25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000,
-              33000, 34000, 35000,
-            ],
-            backgroundColor: 'rgba(75, 192, 75, 0.6)', // Tom de verde
-            borderColor: 'rgba(75, 192, 75, 1)', // Cor da borda verde
-            borderWidth: 2,
-            borderRadius: 8, // Arredondar as pontas
-            borderSkipped: false, // Aplicar bordas arredondadas em todas as extremidades
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false, // Permite que o gráfico se ajuste ao tamanho do contêiner
-        plugins: {
-          legend: {
-            position: 'top',
-          },
-          tooltip: {
-            enabled: true,
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-          },
-        },
-      },
-    });
+const dados = ref([]);
+
+// Dados do painel analítico
+const saldoEstoqueInicial = ref('0,00');
+const entradasDurantePeriodo = ref('0,00');
+const saldoEstoqueFinal = ref('0,00');
+const cmv = ref('0,00');
+const totalCaixas = ref('0,00');
+const quantidadePedidos = ref(0);
+const ticketMedio = ref('0,00');
+
+const navigateToContasApagar = () => {
+  Inertia.replace(route('franqueado.contasApagar'));
+};
+// Função para buscar os dados analíticos
+const fetchDataAnalitico = async (
+  startDate = '01-01-2025',
+  endDate = '31-01-2025'
+) => {
+  try {
+    // Passa os filtros para a API
+    const response = await axios.get(
+      `/api/painel-analitycos/calcular-cmv-caixas-tickets?start_date=${startDate}&end_date=${endDate}`
+    );
+    const data = response.data;
+
+    // Se a resposta contiver os dados analíticos, atualize os refs
+    if (data.saldo_estoque_inicial) {
+      saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
+      entradasDurantePeriodo.value = data.entradas_durante_periodo || '0,00';
+      saldoEstoqueFinal.value = data.saldo_estoque_final || '0,00';
+      cmv.value = data.cmv || '0,00';
+      totalCaixas.value = data.total_caixas || '0,00';
+      quantidadePedidos.value = data.quantidade_pedidos || 0;
+      ticketMedio.value = data.ticket_medio || '0,00';
+
+      // Atualiza os gráficos ou outras informações conforme necessário
+      updateChart();
+    } else {
+      console.warn('Dados analíticos não encontrados.');
+    }
+  } catch (error) {
+    console.error('Erro ao buscar dados analíticos:', error);
   }
+};
+
+// Chama a função ao montar o componente
+onMounted(() => {
+  fetchDataAnalitico(); // Chama com valores padrão ao montar o componente
+  fetchData(); // Carrega os dados do faturamento por semana
+  fetchDados();
 });
+
+// Função que lida com a atualização dos filtros
+const handleFilterUpdate = (filters) => {
+  console.log('Filtros atualizados:', filters);
+  const { startDate, endDate } = filters; // Extrai as datas do filtro
+
+  // Passa as novas datas para a função de busca
+  fetchDataAnalitico(startDate, endDate); // Atualiza os dados com as datas fornecidas
+};
+
+// Buscar as contas da API
+const fetchDados = async () => {
+  try {
+    const response = await axios.get('/api/cursto/listar-contas-a-pagar');
+    dados.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao carregar os dados:', error);
+  }
+};
+
+// Função para buscar os dados do backend
+const fetchData = async () => {
+  try {
+    const response = await axios.get(
+      '/api/painel-analitycos/faturamento-por-semana'
+    );
+    const data = response.data;
+
+    if (data.faturamento) {
+      diasLabels.value = data.faturamento.map((item) => item.dia);
+      faturamentoDias.value = data.faturamento.map((item) => item.total);
+      updateChart();
+    }
+  } catch (error) {
+    console.error('Erro ao buscar dados:', error);
+  }
+};
+
+// Formatar a data
+const formatarData = (data) => {
+  const partes = data.split('-'); // Divide "YYYY-MM-DD"
+  return `${partes[2]}/${partes[1]}/${partes[0]}`; // Retorna "DD/MM/YYYY"
+};
+
+// Retornar o ícone do status
+const getStatusIcon = (status) => {
+  return status === 'pendente'
+    ? '/storage/images/check_circle_laranja.svg'
+    : '/storage/images/check_circle_verde.svg';
+};
+
+// Função para atualizar o gráfico com os dados reais
+const updateChart = () => {
+  if (chartInstance.value) {
+    chartInstance.value.destroy(); // Destroi o gráfico anterior antes de criar um novo
+  }
+
+  chartInstance.value = new Chart(barChart.value.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: diasLabels.value, // Dias numerados de 1 a 7
+      datasets: [
+        {
+          label: 'Faturamento Diário',
+          data: faturamentoDias.value,
+          backgroundColor: 'rgba(75, 192, 75, 0.6)', // Cor de fundo das barras
+          borderColor: 'rgba(75, 192, 75, 1)', // Cor das bordas
+          borderWidth: 2,
+          borderRadius: 8, // Arredondamento das bordas
+          borderSkipped: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (value) {
+              return value >= 1000 ? `${value / 1000}mil` : value; // Formatação para mostrar milhar
+            },
+          },
+        },
+      },
+    },
+  });
+};
+//
 </script>
 
 <style lang="css" scoped>
@@ -300,5 +369,19 @@ onMounted(() => {
   line-height: 25px;
   color: #6d6d6e; /* Cor secundária */
   max-width: 600px; /* Limita a largura do subtítulo */
+}
+.compromissos-container {
+  max-height: 400px; /* Defina a altura máxima desejada para a coluna */
+  overflow-y: auto; /* Habilita rolagem vertical */
+}
+
+/* Esconde a barra de rolagem */
+.compromissos-container::-webkit-scrollbar {
+  display: none; /* Esconde a barra de rolagem no Chrome, Safari, e Edge */
+}
+
+.compromissos-container {
+  -ms-overflow-style: none; /* Esconde a barra de rolagem no Internet Explorer */
+  scrollbar-width: none; /* Esconde a barra de rolagem no Firefox */
 }
 </style>

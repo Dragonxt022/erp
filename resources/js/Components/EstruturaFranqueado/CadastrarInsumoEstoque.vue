@@ -127,17 +127,22 @@ const unidadePlaceholder = computed(() => {
 
 // Validação da quantidade
 const validarQuantidade = () => {
-  let regex = /^[0-9]+(\.[0-9]+)?$/; // Aceita números inteiros e fracionados
+  // Regra básica: aceita números decimais ou inteiros
+  let regex = /^[0-9]+(\.[0-9]+)?$/;
+
+  // Se a unidade de medida for "unidade", aceita apenas números inteiros
   if (props.produtoSelecionado.unidadeDeMedida === 'unidade') {
     regex = /^[0-9]+$/; // Aceita apenas números inteiros
   }
 
+  // Validar a quantidade com a regex definida
   quantidadeInvalida.value = !regex.test(quantidade.value);
 
-  // Se for unidade "a_granel" e um número inteiro, adicionar ".0"
+  // Se a unidade for "a_granel" e a quantidade for inteira, adicionar ".0"
   if (props.produtoSelecionado.unidadeDeMedida === 'a_granel') {
+    // Garantir que a quantidade tenha casas decimais
     if (!quantidade.value.includes('.')) {
-      quantidade.value = `${quantidade.value}.0`; // Adiciona o zero ao lado direito
+      quantidade.value = `${quantidade.value}`; // Adiciona ".0" se não houver ponto
     }
   }
 };

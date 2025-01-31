@@ -25,7 +25,7 @@ class ContasSeeder extends Seeder
             // Categorias para cada grupo
             $categorias = match ($grupo) {
                 'Custos Fixos' => [
-                    'Folha de pagamento',
+
                     'Internet',
                     'Energia',
                     'Aluguel',
@@ -39,6 +39,7 @@ class ContasSeeder extends Seeder
                     'FGTS',
                 ],
                 'Variáveis' => [
+                    'Folha de pagamento',
                     'Royalties',
                     'Fundo de propaganda',
                     'Taxa de Crédito',
@@ -48,7 +49,7 @@ class ContasSeeder extends Seeder
                     'Voucher Alimentação',
                 ],
                 'Outros' => [
-                    'Não especificado anteriormente',
+                    'Outros',
                 ],
                 default => [],
             };

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FechamentoCaixa;
 use App\Models\FluxoCaixa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CaixaAnaliticoController extends Controller
@@ -34,9 +35,10 @@ class CaixaAnaliticoController extends Controller
         }
 
         // Definir horários com base nas datas de início e fim
-        $inicioDoDia = $startDateConverted . ' 00:00:00';
-        $fimDoDia = $endDateConverted . ' 23:59:59';
+        $inicioDoDia = $startDateConverted . ' 05:00:00';
         $meioDia = $startDateConverted . ' 12:00:00';
+        $fimDoDia = $endDateConverted . ' 23:59:59';
+
 
         // Lógica para definir o intervalo de tempo, caso o período seja "almoco" ou "janta"
         if ($periodo === 'almoco') {
@@ -56,10 +58,12 @@ class CaixaAnaliticoController extends Controller
             'metodo_pagamento_id',
             DB::raw('SUM(valor_total_vendas) as total_vendas')
         )
+            ->where('unidade_id', Auth::user()->unidade_id) // FILTRO POR UNIDADE
             ->whereBetween('created_at', [$horarioInicio, $horarioFim])
             ->groupBy('metodo_pagamento_id')
-            ->with('metodoPagamento') // Relacionamento com DefaultPaymentMethod
+            ->with('metodoPagamento')
             ->get();
+
 
         // Calcular o total geral de vendas
         $totalVendas = $metodosPagamento->sum('total_vendas');
@@ -90,6 +94,7 @@ class CaixaAnaliticoController extends Controller
 
         // Consultar histórico de Fluxo de Caixa e associar o nome do responsável
         $historico = FluxoCaixa::with('responsavel')
+            ->where('unidade_id', Auth::user()->unidade_id) // FILTRO POR UNIDADE
             ->whereBetween('created_at', [$horarioInicio, $horarioFim])
             ->orderBy('created_at', 'desc')
             ->get();

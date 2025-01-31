@@ -15,6 +15,7 @@ use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
+use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -34,8 +35,6 @@ Route::prefix('api')->middleware([
 
     // Principais
     Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
-
-    // Métodos de pagamentos
 });
 
 // Rotas protegidas por autenticação Administrador
@@ -148,6 +147,7 @@ Route::prefix('api')->middleware([
     Route::prefix('categorias')->group(function () {
         Route::get('/lista', [CategoriaController::class, 'index']);
         Route::post('/contas-a-pagar', [CategoriaController::class, 'store']);
+        Route::get('/listar-por-grupo', [CategoriaController::class, 'listarPorGrupo']);
     });
 
     // contas a pagar
@@ -155,8 +155,17 @@ Route::prefix('api')->middleware([
         Route::post('/contas-a-pagar', [ContaAPagarController::class, 'store']);
         Route::post('/contas-a-pagar/{id}/pagar', [ContaAPagarController::class, 'marcarComoPago']);
         Route::delete('/contas-a-pagar/{id}', [ContaAPagarController::class, 'destroy']);
-
-
         Route::get('/listar-contas-a-pagar', [ContaAPagarController::class, 'index']);
+    });
+
+    // Painel de Analitycos
+    Route::prefix('painel-analitycos')->group(function () {
+        Route::get('/calcular-cmv', [PainelAnaliticos::class, 'calcularCMV'])->name('calcularCMV');
+        Route::get('/calcular-fluxo-caixa', [PainelAnaliticos::class, 'somarTodosOsCaixas'])->name('somarTodosOsCaixas');
+        Route::get('/faturamento-por-semana', [PainelAnaliticos::class, 'faturamentoUltimos7Dias'])->name('faturamentoPorMes');
+        Route::get('/calculo-ticket-medio-quantidade', [PainelAnaliticos::class, 'calcularTicketMedioEQuantidadePedidos'])->name('calcularTicketMedioEQuantidadePedidos');
+
+        Route::get('/calcular-cmv-caixas-tickets', [PainelAnaliticos::class, 'calcularIndicadores'])->name('calcularIndicadores');
+        Route::get('/calcula-cmv-soma-caixas-mes', [PainelAnaliticos::class, 'calcularCMVESomarCaixas'])->name('calcularCMVESomarCaixas');
     });
 });

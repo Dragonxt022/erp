@@ -176,21 +176,24 @@ const ativarEdicao = (index) => {
 };
 
 const valorPorQuilo = (item) => {
-  const valorTotal = parseFloat(
-    (item.valor || '0').replace('R$', '').replace(',', '.')
-  );
+  // Remove o "R$" e formata o valor para float
+  const valorTotal = parseFloat(item.valor.replace('R$', '').replace(',', '.'));
+
+  // Calcula o valor por quilo, dividindo pelo peso, garantindo que a quantidade seja > 0
   return item.quantidade > 0 ? valorTotal / item.quantidade : 0;
 };
 
 const calcularTotal = (item) => {
+  // Se a unidade de medida for "a_granel", calcula o valor total multiplicando o valor por quilo pela quantidade
   if (item.unidadeDeMedida === 'a_granel') {
     const valorPorKG = valorPorQuilo(item);
     return valorPorKG * item.quantidade;
   } else {
-    return (
-      item.quantidade *
-      parseFloat(item.valor.replace('R$', '').replace(',', '.'))
+    // Caso contrário, calcula o total multiplicando a quantidade pelo valor unitário
+    const valorUnitario = parseFloat(
+      item.valor.replace('R$', '').replace(',', '.')
     );
+    return item.quantidade * valorUnitario;
   }
 };
 
@@ -206,10 +209,11 @@ const enviarEntrada = async () => {
         nome: item.nome,
         quantidade: item.quantidade,
         unidadeDeMedida: item.unidadeDeMedida,
-        valorUnitario: Math.round(
-          parseFloat(item.valor.replace('R$', '').replace(',', '.')) * 100
-        ), // Convertendo para centavos
-        total: Math.round(calcularTotal(item) * 100), // Convertendo para centavos
+        // Ajustando a conversão para decimal
+        valorUnitario: parseFloat(
+          item.valor.replace('R$', '').replace(',', '.')
+        ), // Deixando no formato decimal
+        total: parseFloat(calcularTotal(item).toFixed(2)), // Garantindo que o total seja um número decimal com 2 casas
       })),
     };
 

@@ -22,8 +22,6 @@ class MovimentacoesEstoque extends Model
         'unidade_id'
 
 
-
-
     ];
 
     // Relacionamento com o insumo (produto)
