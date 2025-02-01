@@ -26,6 +26,7 @@ return new class extends Migration
                     'pix',
                     'ticket',
                     'drex',
+                    'pagamento_online',
                     'vr_alimentacao',
                 ]
             );

@@ -115,13 +115,13 @@ const menuCategories = [
         isActive: false,
       },
 
-      {
-        label: 'Supervisão de resíduos',
-        icon: '/storage/images/delete_branco.svg',
-        link: 'franqueado.supervisaoResidos',
-        isLogout: false,
-        isActive: false,
-      },
+      // {
+      //   label: 'Supervisão de resíduos',
+      //   icon: '/storage/images/delete_branco.svg',
+      //   link: 'franqueado.supervisaoResidos',
+      //   isLogout: false,
+      //   isActive: false,
+      // },
 
       {
         label: 'Gestão de equipe',
@@ -149,13 +149,13 @@ const menuCategories = [
         isActive: false,
       },
 
-      {
-        label: 'Taiksu IA',
-        icon: '/storage/images/TAIKSU_IA_ICONE.svg',
-        link: 'franqueado.midias',
-        isLogout: false,
-        isActive: false,
-      },
+      // {
+      //   label: 'Taiksu IA',
+      //   icon: '/storage/images/TAIKSU_IA_ICONE.svg',
+      //   link: 'franqueado.midias',
+      //   isLogout: false,
+      //   isActive: false,
+      // },
     ],
   },
 

@@ -37,7 +37,7 @@
             </div>
 
             <!-- Container de cards -->
-            <div class="space-y-4">
+            <div class="space-y-4 compromissos-container overflow-hidden">
               <div
                 v-for="produto in filteredProdutos"
                 :key="produto.id"
@@ -177,6 +177,20 @@ onMounted(fetchProdutos);
 </script>
 
 <style scoped>
+.compromissos-container {
+  max-height: 450px; /* Defina a altura máxima desejada para a coluna */
+  overflow-y: auto; /* Habilita rolagem vertical */
+}
+
+/* Esconde a barra de rolagem */
+.compromissos-container::-webkit-scrollbar {
+  display: none; /* Esconde a barra de rolagem no Chrome, Safari, e Edge */
+}
+
+.compromissos-container {
+  -ms-overflow-style: none; /* Esconde a barra de rolagem no Internet Explorer */
+  scrollbar-width: none; /* Esconde a barra de rolagem no Firefox */
+}
 .botao-container {
   position: fixed;
   bottom: 20px;

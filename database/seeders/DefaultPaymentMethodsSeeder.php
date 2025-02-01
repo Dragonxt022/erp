@@ -21,6 +21,7 @@ class DefaultPaymentMethodsSeeder extends Seeder
             ['nome' => 'PIX', 'tipo' => 'pix', 'img_icon' => 'storage/images/pix.svg'],
             ['nome' => 'Ticket', 'tipo' => 'ticket', 'img_icon' => 'storage/images/ticket.svg'],
             ['nome' => 'Drex', 'tipo' => 'drex', 'img_icon' => 'storage/images/drex.svg'],
+            ['nome' => 'Pagamento Online', 'tipo' => 'pagamento_online', 'img_icon' => 'storage/images/onlinepay.svg'],
             ['nome' => 'VR Alimentação', 'tipo' => 'vr_alimentacao', 'img_icon' => 'storage/images/vr_alimentacao.svg'],
         ];
 

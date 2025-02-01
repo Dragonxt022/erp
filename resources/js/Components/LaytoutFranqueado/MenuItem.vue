@@ -74,27 +74,31 @@ const props = defineProps({
 });
 
 const showSubmenu = ref(false);
-const delayTimeout = ref(null);
-const isIconRotated = computed(() => showSubmenu.value); // Verifica se o submenu está aberto
+const openTimeout = ref(null);
+const closeTimeout = ref(null);
+const isIconRotated = computed(() => showSubmenu.value);
 
 const handleMouseEnter = () => {
-  // Cancela qualquer timeout existente para fechar o menu
-  if (delayTimeout.value) {
-    clearTimeout(delayTimeout.value);
-    delayTimeout.value = null;
+  if (closeTimeout.value) {
+    clearTimeout(closeTimeout.value);
+    closeTimeout.value = null;
   }
-  showSubmenu.value = true; // Abre o menu imediatamente
+  openTimeout.value = setTimeout(() => {
+    showSubmenu.value = true;
+  }, 500);
 };
 
 const handleMouseLeave = () => {
-  // Adiciona um atraso de 4 segundos antes de fechar
-  delayTimeout.value = setTimeout(() => {
+  if (openTimeout.value) {
+    clearTimeout(openTimeout.value);
+    openTimeout.value = null;
+  }
+  closeTimeout.value = setTimeout(() => {
     showSubmenu.value = false;
-    saveSubmenuState(); // Atualiza o estado no localStorage
+    saveSubmenuState();
   }, 200);
 };
 
-// Função para carregar o estado do submenu do localStorage
 const loadSubmenuState = () => {
   const storedState = localStorage.getItem(`submenu-${props.link}`);
   if (storedState !== null) {
@@ -102,7 +106,6 @@ const loadSubmenuState = () => {
   }
 };
 
-// Função para salvar o estado do submenu no localStorage
 const saveSubmenuState = () => {
   localStorage.setItem(
     `submenu-${props.link}`,
@@ -110,57 +113,46 @@ const saveSubmenuState = () => {
   );
 };
 
-// Função para alternar o submenu
 const toggleSubmenu = () => {
   showSubmenu.value = !showSubmenu.value;
-  saveSubmenuState(); // Salva o estado no localStorage
+  saveSubmenuState();
 };
 
-// Aplica a classe 'submenu-active' quando o submenu estiver ativo
 const menuItemClass = computed(() => {
   return isAnySubmenuActive.value || props.isActive ? 'submenu-active' : '';
 });
 
-// Verifica se algum submenu está ativo
 const isSubmenuActive = (subLink) => {
   const currentPath = window.location.pathname;
   const resolvedPath = new URL(route(subLink), window.location.origin).pathname;
   return currentPath === resolvedPath;
 };
 
-// Verifica se qualquer submenu está ativo
 const isAnySubmenuActive = computed(() => {
   return props.submenuItems.some((item) => isSubmenuActive(item.link));
 });
 
-// Função de logout
 const handleLogout = () => {
   if (props.isLogout) {
-    router.post(route('logout')); // Envia a requisição POST para a rota de logout
+    router.post(route('logout'));
   }
 };
 
-// Carregar o estado do submenu quando o componente é montado
 loadSubmenuState();
 
-// Função para verificar e fechar automaticamente o submenu se não houver navegação nos submenus
 const checkSubmenuStatus = () => {
-  // Caso não esteja navegando no submenu, fechamos o submenu
   if (!isAnySubmenuActive.value) {
     nextTick(() => {
       showSubmenu.value = false;
-      saveSubmenuState(); // Atualiza o estado no localStorage
+      saveSubmenuState();
     });
   }
 };
 
-// Verificar automaticamente o estado do submenu após o carregamento ou navegação
 watch(isAnySubmenuActive, checkSubmenuStatus);
 
-// Para garantir que o estado de visibilidade do submenu seja atualizado após qualquer mudança
 watch(showSubmenu, (newValue) => {
   nextTick(() => {
-    // Certifique-se de que a atualização do submenu esteja no próximo ciclo de renderização
     saveSubmenuState();
   });
 });
