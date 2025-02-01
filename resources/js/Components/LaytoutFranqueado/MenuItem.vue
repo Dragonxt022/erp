@@ -6,9 +6,7 @@
       class="menu-item"
       :class="[menuItemClass, { active: isActive || isAnySubmenuActive }]"
       :href="link || '#'"
-      @click.prevent="link && toggleSubmenu"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
+      @click="handleClick"
     >
       <div class="icon">
         <img :src="icon" alt="icon" />
@@ -41,8 +39,6 @@
         (showSubmenu || isAnySubmenuActive)
       "
       class="submenu"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
     >
       <div v-for="(submenu, submenuIndex) in submenuItems" :key="submenuIndex">
         <Link
@@ -74,29 +70,18 @@ const props = defineProps({
 });
 
 const showSubmenu = ref(false);
-const openTimeout = ref(null);
-const closeTimeout = ref(null);
 const isIconRotated = computed(() => showSubmenu.value);
 
-const handleMouseEnter = () => {
-  if (closeTimeout.value) {
-    clearTimeout(closeTimeout.value);
-    closeTimeout.value = null;
+const handleClick = (e) => {
+  if (props.submenuItems && props.submenuItems.length > 0) {
+    e.preventDefault();
+    toggleSubmenu();
   }
-  openTimeout.value = setTimeout(() => {
-    showSubmenu.value = true;
-  }, 500);
 };
 
-const handleMouseLeave = () => {
-  if (openTimeout.value) {
-    clearTimeout(openTimeout.value);
-    openTimeout.value = null;
-  }
-  closeTimeout.value = setTimeout(() => {
-    showSubmenu.value = false;
-    saveSubmenuState();
-  }, 200);
+const toggleSubmenu = () => {
+  showSubmenu.value = !showSubmenu.value;
+  saveSubmenuState();
 };
 
 const loadSubmenuState = () => {
@@ -111,11 +96,6 @@ const saveSubmenuState = () => {
     `submenu-${props.link}`,
     JSON.stringify(showSubmenu.value)
   );
-};
-
-const toggleSubmenu = () => {
-  showSubmenu.value = !showSubmenu.value;
-  saveSubmenuState();
 };
 
 const menuItemClass = computed(() => {
@@ -151,7 +131,7 @@ const checkSubmenuStatus = () => {
 
 watch(isAnySubmenuActive, checkSubmenuStatus);
 
-watch(showSubmenu, (newValue) => {
+watch(showSubmenu, () => {
   nextTick(() => {
     saveSubmenuState();
   });
@@ -160,8 +140,8 @@ watch(showSubmenu, (newValue) => {
 
 <style scoped>
 .rotate-icon {
-  transform: rotate(90deg); /* Rotaciona o ícone em 180 graus */
-  transition: transform 0.3s ease-in-out; /* Animação suave para a rotação */
+  transform: rotate(90deg);
+  transition: transform 0.3s ease-in-out;
 }
 
 .menu-item {
@@ -200,16 +180,15 @@ watch(showSubmenu, (newValue) => {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Estilo para o submenu */
 .submenu {
-  margin-left: 0px; /* Distância à esquerda dos subitens */
+  margin-left: 0px;
   padding: 5px 0;
 }
 
 .submenu-item {
   display: flex;
   align-items: center;
-  height: 44px; /* Mesmo tamanho dos itens do menu */
+  height: 44px;
   padding-left: 14px;
   padding-right: 14px;
   cursor: pointer;
@@ -220,7 +199,7 @@ watch(showSubmenu, (newValue) => {
 }
 
 .submenu-item.active {
-  background-color: #568f4063; /* Mesma cor de fundo quando ativo */
+  background-color: #568f4063;
 }
 
 .submenu-item .icon {
@@ -243,12 +222,7 @@ watch(showSubmenu, (newValue) => {
 }
 
 .submenu-item:hover {
-  background-color: rgba(
-    255,
-    255,
-    255,
-    0.1
-  ); /* Cor de hover igual aos itens principais */
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .submenu-item a {
@@ -268,7 +242,6 @@ watch(showSubmenu, (newValue) => {
     padding-right: 5%;
     border-radius: 10px;
     margin-bottom: 10px;
-    /* justify-content: center;  */
   }
 
   .menu-item.active {
