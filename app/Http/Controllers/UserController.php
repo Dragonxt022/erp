@@ -134,7 +134,7 @@ class UserController extends Controller
         return $pin;
     }
 
-
+    // Delete user
     public function destroy($id)
     {
         try {
@@ -162,5 +162,22 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erro ao deletar o usuário.', 'details' => $e->getMessage()], 500);
         }
+    }
+
+    // Lista os colaboradores
+    public function listColaboradores()
+    {
+        $user = Auth::user(); // Usuário autenticado
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuário não autenticado.'], 401);
+        }
+
+        // Buscar todos os usuários que pertencem à mesma unidade_id do usuário autenticado
+        $colaboradores = User::where('unidade_id', $user->unidade_id)
+            ->where('id', '!=', $user->id) // Exclui o próprio usuário autenticado da lista
+            ->get();
+
+        return response()->json($colaboradores);
     }
 }

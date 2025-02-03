@@ -25,34 +25,40 @@ class PainelAnaliticos extends Controller
      */
     public function calcularCMV(Request $request)
     {
-        // Identifica o usuário autenticado
         $usuario = Auth::user();
         $unidade_id = $usuario->unidade_id;
 
-        // Obter as datas de início e fim, caso não sejam enviadas, usa a data atual
-        $startDate = $request->input('start_date', now()->format('d-m-Y'));
-        $endDate = $request->input('end_date', now()->format('d-m-Y'));
-
-        // Tentar converter as datas recebidas para o formato do banco (Y-m-d)
+        // Obter as datas de início e fim
         try {
-            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->format('Y-m-d');
-            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->format('Y-m-d');
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+            // Converter para Carbon e garantir que as datas incluam todo o período do dia
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
+
+
         // Função para calcular o valor baseado na unidade (kg ou unidade)
         $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
             if ($unidade == 'kg') {
-                // Calcular o preço por quilo
-                $precoPorQuilo = $preco / $quantidade; // preço total dividido pela quantidade de quilos
-                return $quantidade * $precoPorQuilo;  // Multiplica pela quantidade de kg, agora com o preço por quilo
+                // Evita divisão por zero
+                if ($quantidade == 0) {
+                    return 0;
+                }
+                $precoPorQuilo = $preco / $quantidade;
+                return $quantidade * $precoPorQuilo;
             } else {
-                // Para as unidades, multiplicamos a quantidade pela preço unitário
-                return $quantidade * $preco;  // Multiplica a quantidade pela preço unitário
+                return $quantidade * $preco;
             }
         };
 
+
+        // 1. Calcular o CMV
+        // Saldo inicial de estoque
         $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
             ->whereDate('data_ajuste', '=', $startDateConverted)
             ->orderBy('data_ajuste', 'desc')
@@ -64,70 +70,56 @@ class PainelAnaliticos extends Controller
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
-            // Se ainda não encontrar registros, define um valor padrão (exemplo)
             if (!$saldoInicial) {
                 $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
                     ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                     ->first();
 
                 if (!$saldoInicial) {
-                    // Lança uma exceção ou retorna um erro
-                    throw new \Exception('Não há saldo inicial disponível para esta unidade.');
+                    return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
                 }
             }
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
 
-        // Compras (entradas) no período (do dia seguinte ao inicial até o dia final)
+        // Compras no período
         $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
-            ->where('operacao', 'Entrada')  // Garantir que seja "Entrada"
-            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])  // Intervalo entre o dia seguinte ao inicial até o final
+            ->where('operacao', 'Entrada')
+            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
             ->get();
 
         $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
             return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
         });
 
+        // Estoque final
         $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
             ->whereDate('created_at', '<=', $endDateConverted)
             ->get();
-
-        if ($estoqueFinal->isEmpty()) {
-            $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
-                ->whereDate('data_ajuste', '<=', $endDateConverted) // Inclui ajustes até a data final
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Se ainda não encontrar registros, define um valor padrão
-            if ($estoqueFinal->isEmpty()) {
-                $estoqueFinal = collect(); // Array vazio
-            }
-        }
 
         $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
             return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
         });
 
-        // Tratamento de erros (exemplo)
-        try {
-            // ... código ...
-        } catch (\Exception $e) {
-            Log::error($e); // Registra o erro
-            return response()->json(['error' => 'Erro ao calcular estoque'], 500);
-        }
-
-        // Aplicando a fórmula do CMV (Compras + Estoque Inicial - Estoque Final - Vendas)
+        // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
-        // Retorno da API em formato JSON
+        Log::info('Calculando CMV', [
+            'estoqueInicialValor' => $estoqueInicialValor,
+            'comprasValor' => $comprasValor,
+            'estoqueFinalValor' => $estoqueFinalValor
+        ]);
+
+        // Retornar os resultados em um único JSON
         return response()->json([
             'start_date' => $startDate,
             'end_date' => $endDate,
             'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
-            'entradas_durante_período' => number_format($comprasValor, 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
             'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
-            'cmv' => number_format($cmv, 2, ',', '.') // Formata o valor para melhor leitura
+            'cmv' => number_format($cmv, 2, ',', '.'),
+
         ]);
     }
 
@@ -160,10 +152,24 @@ class PainelAnaliticos extends Controller
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtro por data
             ->sum('valor_final');
 
+        // 3. Quantidade de pedidos e faturamento
+        $pedidos = CanalVenda::where('unidade_id', $unidade_id)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->get();
+
+        $quantidadePedidos = $pedidos->sum('quantidade_vendas_feitas'); // Total de pedidos realizados
+        $faturamentoTotal = $pedidos->sum('valor_total_vendas'); // Faturamento total durante o período
+
+        // 4. Calcular o Ticket Médio
+        $ticketMedio = $quantidadePedidos > 0 ? $faturamentoTotal / $quantidadePedidos : 0;
+
         return response()->json([
             'start_date' => $startDateConverted,
             'end_date' => $endDateConverted,
             'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
+            'quantidade_pedidos' => $quantidadePedidos,
+            'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
+
 
         ]);
     }

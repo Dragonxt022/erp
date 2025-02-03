@@ -85,6 +85,11 @@ Route::prefix('api')->middleware([
     CheckFranqueado::class
 ])->group(function () {
 
+    // Rotas do usuário
+    Route::prefix('usuarios')->group(function () {
+        Route::get('/colaboradores', [UserController::class, 'listColaboradores'])->name('listColaboradores');
+    });
+
     // Lista de Produtos
     Route::prefix('estoque')->group(function () {
         Route::get('/lista', [UnidadeEstoqueController::class, 'index'])->name('listaEstoque.index');

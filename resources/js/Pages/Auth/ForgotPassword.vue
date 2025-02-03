@@ -246,7 +246,7 @@ label {
             Enviar Link de Redefinição
           </ButtonPrimary>
         </form>
-        <Link :href="route('entrar')" class="cursor-pointer">
+        <Link :href="route('login')" class="cursor-pointer">
           <p class="forgot-password">Lembrei minha senha</p>
         </Link>
       </div>
