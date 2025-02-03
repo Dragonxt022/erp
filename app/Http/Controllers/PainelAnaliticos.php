@@ -195,12 +195,13 @@ class PainelAnaliticos extends Controller
         $driver = DB::connection()->getPDO()->getAttribute(\PDO::ATTR_DRIVER_NAME);
 
         // Define a função correta de extração do dia
-        $diaFormat = $driver === 'sqlite' ? "strftime('%d', created_at)" : "DAY(created_at)";
+        $diaFormat = $driver === 'mysql' ? "DAY(created_at)" : "strftime('%d', created_at)";
 
         // Consulta dinâmica baseada no banco de dados
         $faturamento = Caixa::where('unidade_id', $unidade_id)
             ->where('status', 0) // Apenas caixas fechados
-            ->where('created_at', '>=', Carbon::now()->subDays(30)->startOfDay()) // Filtra últimos 30 dias
+            ->whereDate('created_at', '>=', Carbon::now()->subDays(30)->toDateString()) // Considera apenas a data (sem horário)
+            ->whereDate('created_at', '<=', Carbon::now()->toDateString()) // Até o dia atual
             ->selectRaw("$diaFormat as dia, SUM(valor_final) as total") // Exibe apenas o dia
             ->groupBy('dia')
             ->orderBy('dia', 'asc')
@@ -211,7 +212,7 @@ class PainelAnaliticos extends Controller
         $faturamentoPorDia = $dias->map(function ($dia) use ($faturamento) {
             return [
                 'dia' => $dia,
-                'total' => $faturamento[$dia]->total ?? 0,
+                'total' => $faturamento[$dia]->total ?? 1,
             ];
         });
 
@@ -221,6 +222,8 @@ class PainelAnaliticos extends Controller
             'faturamento' => $faturamentoPorDia
         ]);
     }
+
+
 
 
     /**

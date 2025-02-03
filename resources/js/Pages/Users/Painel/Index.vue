@@ -167,6 +167,10 @@
                   <span class="font-semibold">CMV:</span>
                   R$ {{ cmv }}
                 </p>
+                <p>
+                  Parametros: Saldo Inicial + Entradas nesse periodo - Saldo
+                  Final = Total CMV
+                </p>
               </div>
               <button
                 @click="closeModal"
