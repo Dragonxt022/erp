@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Mail\NovoPedidoMail;
+use App\Models\ControleSaldoEstoque;
 use App\Models\Fornecedor;
 use App\Models\HistoricoPedido;
 use App\Models\MovimentacoesEstoque;
 
 use App\Models\UnidadeEstoque;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -440,14 +442,29 @@ class UnidadeEstoqueController extends Controller
     {
         $unidadeId = Auth::user()->unidade_id;
 
-        // Obtém o histórico de movimentações com paginação
+        // Obter as datas de início e fim
+        try {
+            // Verifica se as datas foram passadas, caso contrário usa a data de hoje
+            $startDate = $request->input('start_date', Carbon::now()->startOfDay()->format('d-m-Y'));
+            $endDate = $request->input('end_date', Carbon::now()->endOfDay()->format('d-m-Y'));
+
+            // Converter para Carbon e garantir que as datas incluam todo o período do dia
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+        }
+
+        // Obtém o histórico de movimentações filtrado por data
         $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->where('quantidade', '>', 0)
             ->orderBy('id', 'desc')
-            ->paginate(10); // Retorna registro por pagina
+            ->get(); // Remove a paginação e pega todos os resultados
 
-        $historicoMovimentacoes->getCollection()->transform(function ($estoque) {
+        // Transformação do histórico para o formato correto
+        $historicoMovimentacoes->transform(function ($estoque) {
             return [
                 'operacao' => $estoque->operacao,
                 'unidade' => $estoque->unidade,
@@ -457,6 +474,7 @@ class UnidadeEstoqueController extends Controller
                 'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
             ];
         });
+
 
         // Dados principais do painel
         $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->where('quantidade', '>', 0)->get();
@@ -469,12 +487,180 @@ class UnidadeEstoqueController extends Controller
             return $item->unidade === 'kg' ? $total + 1 : $total + $item->quantidade;
         }, 0);
 
+
+
+        // Função para calcular o valor baseado na unidade (kg ou unidade)
+        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
+            if ($unidade == 'kg') {
+                // Evita divisão por zero
+                if ($quantidade == 0) {
+                    return 0;
+                }
+                $precoPorQuilo = $preco / $quantidade;
+                return $quantidade * $precoPorQuilo;
+            } else {
+                return $quantidade * $preco;
+            }
+        };
+
+
+        // 1. Calcular o CMV
+        // Saldo inicial de estoque
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
+            ->whereDate('data_ajuste', '=', $startDateConverted)
+            ->orderBy('data_ajuste', 'desc')
+            ->first();
+
+        if (!$saldoInicial) {
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
+                ->whereDate('data_ajuste', '<', $startDateConverted)
+                ->orderBy('data_ajuste', 'desc')
+                ->first();
+
+            if (!$saldoInicial) {
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
+                    ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
+                    ->first();
+
+                if (!$saldoInicial) {
+                    return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
+                }
+            }
+        }
+
+        $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
+
+        // Compras no período
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
+            ->where('operacao', 'Entrada')
+            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->get();
+
+        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
+            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+        });
+
+        // Estoque final
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->whereDate('created_at', '<=', $endDateConverted)
+            ->get();
+
+        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
+            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+        });
+
+        // Calcular o CMV
+        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
+
+        Log::info('Calculando CMV', [
+            'estoqueInicialValor' => $estoqueInicialValor,
+            'comprasValor' => $comprasValor,
+            'estoqueFinalValor' => $estoqueFinalValor
+        ]);
+
         return response()->json([
             'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
             'itensNoEstoque' => $itensNoEstoque,
             'historicoMovimentacoes' => $historicoMovimentacoes,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
+            'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
+            'cmv' => number_format($cmv, 2, ',', '.'),
         ]);
     }
+
+    public function painelInicialEstoque8(Request $request)
+    {
+        $unidadeId = Auth::user()->unidade_id;
+
+        // Obter as datas de início e fim, garantindo formato correto
+        try {
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Formato de data inválido. Use DD-MM-YYYY.'], 400);
+        }
+
+        // Obtém o histórico de movimentações paginado e filtrado por data
+        $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
+            ->where('unidade_id', $unidadeId)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->where('quantidade', '>', 0)
+            ->orderBy('id', 'desc')
+            ->paginate(10); // Paginação para otimizar resposta
+
+        // Transformação do histórico para o formato correto
+        $historicoMovimentacoes->getCollection()->transform(function ($estoque) {
+            return [
+                'operacao' => $estoque->operacao,
+                'unidade' => $estoque->unidade,
+                'quantidade' => $estoque->quantidade,
+                'item' => $estoque->insumo->nome ?? 'N/A',
+                'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
+                'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
+            ];
+        });
+
+        // Calculando o valor total dos insumos no estoque
+        $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)
+            ->get();
+
+        $valorInsumos = $estoque->sum(fn($item) => ($item->unidade === 'kg' ? $item->preco_insumo : $item->preco_insumo * $item->quantidade));
+        $itensNoEstoque = $estoque->sum(fn($item) => ($item->unidade === 'kg' ? 1 : $item->quantidade));
+
+        // 1. Calcular o CMV
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
+            ->whereDate('data_ajuste', '<=', $startDateConverted)
+            ->orderBy('data_ajuste', 'desc')
+            ->first();
+
+        $estoqueInicialValor = $saldoInicial->ajuste_saldo ?? 0;
+
+        // Compras no período filtradas por data
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
+            ->where('operacao', 'Entrada')
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->get();
+
+        $comprasValor = $compras->sum(fn($item) => $item->quantidade * $item->preco_insumo);
+
+        // Estoque final filtrado por data
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->whereDate('created_at', '<=', $endDateConverted)
+            ->get();
+
+        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->quantidade * $item->preco_insumo);
+
+        // Calcular o CMV
+        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
+
+        // Log para depuração
+        Log::info('CMV Calculado', [
+            'Estoque Inicial' => $estoqueInicialValor,
+            'Compras' => $comprasValor,
+            'Estoque Final' => $estoqueFinalValor,
+            'CMV' => $cmv
+        ]);
+
+        return response()->json([
+            'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
+            'itensNoEstoque' => $itensNoEstoque,
+            'historicoMovimentacoes' => $historicoMovimentacoes, // Mantendo paginação
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
+            'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
+            'cmv' => number_format($cmv, 2, ',', '.'),
+        ]);
+    }
+
 
     // Lista os fornecederes
     public function unidadeForencedores()

@@ -173,9 +173,10 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuário não autenticado.'], 401);
         }
 
-        // Buscar todos os usuários que pertencem à mesma unidade_id do usuário autenticado
+        // Buscar todos os usuários da mesma unidade_id e carregar permissões
         $colaboradores = User::where('unidade_id', $user->unidade_id)
-            ->where('id', '!=', $user->id) // Exclui o próprio usuário autenticado da lista
+            ->where('id', '!=', $user->id) // Exclui o próprio usuário autenticado
+            ->with('userPermission') // Carrega as permissões do usuário
             ->get();
 
         return response()->json($colaboradores);

@@ -102,7 +102,7 @@ class User extends Authenticatable
         $this->notify(new ResetPasswordNotification($token));
     }
 
-    public function permissions()
+    public function userPermission()
     {
         return $this->hasOne(UserPermission::class);
     }

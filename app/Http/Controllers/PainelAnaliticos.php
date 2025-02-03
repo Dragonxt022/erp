@@ -104,6 +104,8 @@ class PainelAnaliticos extends Controller
 
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
+        // $cmv = max(0, $estoqueInicialValor + $comprasValor - $estoqueFinalValor);
+
 
         Log::info('Calculando CMV', [
             'estoqueInicialValor' => $estoqueInicialValor,

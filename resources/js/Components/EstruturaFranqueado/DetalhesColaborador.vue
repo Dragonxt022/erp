@@ -90,45 +90,28 @@
           </div>
         </div>
         <div
-          class="bg-[#d9d9d9] p-3 px-8 w-full rounded-bl-[20px] rounded-br-[20px]"
+          class="bg-[#EFEFEF] p-3 px-8 w-full rounded-bl-[20px] rounded-br-[20px]"
         >
-          <div class="flex justify-between items-center">
+          <div
+            v-for="chave in Object.keys(dados.user_permission).filter(
+              (k) => !ocultarCampos.includes(k)
+            )"
+            :key="chave"
+            class="flex justify-between items-center"
+          >
             <!-- Coluna 1 -->
             <div class="flex flex-col w-2/3">
               <LabelModel
                 class="font-semibold text-gray-900"
-                text="Nome da permissão 1"
+                :text="formatarPermissao(chave)"
               />
             </div>
             <!-- Coluna 2 -->
             <div class="w-1/2 flex justify-end">
-              <Deslizante v-model:status="status" @click="atualizarMetodo" />
-            </div>
-          </div>
-          <div class="flex justify-between items-center">
-            <!-- Coluna 1 -->
-            <div class="flex flex-col w-2/3">
-              <LabelModel
-                class="font-semibold text-gray-900"
-                text="Nome da permissão 2"
+              <Deslizante
+                v-model:status="dados.user_permission[chave]"
+                @click="atualizarMetodo(chave, dados.user_permission[chave])"
               />
-            </div>
-            <!-- Coluna 2 -->
-            <div class="w-1/2 flex justify-end">
-              <Deslizante v-model:status="status" @click="atualizarMetodo" />
-            </div>
-          </div>
-          <div class="flex justify-between items-center">
-            <!-- Coluna 1 -->
-            <div class="flex flex-col w-2/3">
-              <LabelModel
-                class="font-semibold text-gray-900"
-                text="Nome da permissão 3"
-              />
-            </div>
-            <!-- Coluna 2 -->
-            <div class="w-1/2 flex justify-end">
-              <Deslizante v-model:status="status" @click="atualizarMetodo" />
             </div>
           </div>
         </div>
@@ -154,7 +137,6 @@
 import { defineProps, ref } from 'vue';
 import { defineEmits } from 'vue';
 import LabelModel from '../Label/LabelModel.vue';
-import ButtonClaroMedio from '../Button/ButtonClaroMedio.vue';
 import { useToast } from 'vue-toastification';
 import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 import Deslizante from '../Button/Deslizante.vue';
@@ -177,8 +159,31 @@ const isConfirmExlusaoDialogVisible = ref(false);
 const motivo = ref('');
 const listaCargos = ref(['função 1', 'Função 2', 'Função 3']);
 
-// Configuração do diálogo de confirmação
+// Sistema de permissão
+// Lista de campos que devem ser ocultados
+const ocultarCampos = ['id', 'user_id', 'created_at', 'updated_at'];
 
+// Mapeia os nomes das permissões para exibição mais amigável
+const formatarPermissao = (chave) => {
+  const mapeamento = {
+    controle_estoque: 'Controle de Estoque',
+    controle_saida_estoque: 'Saída de Estoque',
+    gestao_equipe: 'Gestão de Equipe',
+    fluxo_caixa: 'Fluxo de Caixa',
+    dre: 'DRE',
+    contas_pagar: 'Contas a Pagar',
+  };
+
+  return mapeamento[chave] || chave;
+};
+
+// Atualiza a permissão no banco de dados
+const atualizarMetodo = (chave, valor) => {
+  console.log(`Alterando ${chave} para`, valor);
+  // Aqui você pode fazer a requisição para atualizar no backend
+};
+
+// Configuração do diálogo de confirmação
 const showConfirmDialog = (motivoParam) => {
   motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
   isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
