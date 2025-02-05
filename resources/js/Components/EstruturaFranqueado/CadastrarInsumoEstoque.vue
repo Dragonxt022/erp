@@ -53,7 +53,7 @@
         <LabelModel :text="unidadeLabel" />
         <InputModel
           v-model="quantidade"
-          :placeholder="unidadePlaceholder"
+          placeholder="0,000"
           @input="validarQuantidade"
         />
         <p v-if="quantidadeInvalida" class="text-red-500 text-sm text-center">

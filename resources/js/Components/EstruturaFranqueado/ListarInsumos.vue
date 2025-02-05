@@ -101,13 +101,27 @@ export default {
       this.$emit('produto-selecionado', produto);
     },
 
+    // Método para arredondar as quantidades de acordo com a unidade de medida
+    arredondarQuantidade(valor, unidadeDeMedida) {
+      const casasDecimais = unidadeDeMedida === 'a_granel' ? 3 : 0; //
+      return parseFloat(valor).toFixed(casasDecimais); // Arredonda de acordo com a unidade de medida
+    },
+
     // Calcula a quantidade total de todos os lotes de um produto
     getQuantidadeTotal(lotes) {
       if (!Array.isArray(lotes)) {
         console.warn('getQuantidadeTotal recebeu um valor inválido:', lotes);
         return 0; // Retorna 0 caso lotes seja inválido
       }
-      return lotes.reduce((total, lote) => total + (lote.quantidade || 0), 0);
+      // Soma todas as quantidades e arredonda o total de acordo com a unidade de medida
+      const total = lotes.reduce(
+        (total, lote) => total + (lote.quantidade || 0),
+        0
+      );
+      return this.arredondarQuantidade(
+        total,
+        lotes[0]?.unidadeDeMedida || 'unitario'
+      ); // Arredonda com base na unidade de medida
     },
   },
   computed: {

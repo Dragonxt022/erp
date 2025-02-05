@@ -210,22 +210,41 @@ const calcularTotal = (item) => {
 
 const enviarEntrada = async () => {
   isLoading.value = true;
-  isSending.value = true;
   try {
     // Organizando os dados para enviar
     const dadosEntrada = {
       fornecedor_id: props.carrinho[0]?.fornecedor_id || null,
-      itens: props.carrinho.map((item) => ({
-        id: item.id,
-        nome: item.nome,
-        quantidade: item.quantidade,
-        unidadeDeMedida: item.unidadeDeMedida,
-        // Ajustando a conversão para decimal
-        valorUnitario: parseFloat(
-          item.valor.replace('R$', '').replace(',', '.')
-        ), // Deixando no formato decimal
-        total: parseFloat(calcularTotal(item).toFixed(2)), // Garantindo que o total seja um número decimal com 2 casas
-      })),
+      itens: props.carrinho.map((item) => {
+        // Converter a quantidade para número decimal corretamente (remover formatação) SOMENTE NA HORA DE ENVIAR
+        const quantidadeDecimal = parseFloat(
+          item.quantidade.replace(/\./g, '').replace(',', '.')
+        );
+
+        // Ajustando o valor unitário para decimal corretamente (remover formatação) SOMENTE NA HORA DE ENVIAR
+        let valorUnitario = parseFloat(
+          item.valor.replace('R$', '').replace(/\./g, '').replace(',', '.')
+        );
+
+        // Garantir que o valor unitário tenha 2 casas decimais
+        valorUnitario = valorUnitario.toFixed(2);
+
+        // Calcular o total com a função ajustada
+        const total = parseFloat(calcularTotal(item).toFixed(2));
+
+        // Verifique se a quantidade, valorUnitario e total estão corretos
+        console.log('Quantidade:', quantidadeDecimal);
+        console.log('Valor Unitário:', valorUnitario);
+        console.log('Total:', total);
+
+        return {
+          id: item.id,
+          nome: item.nome,
+          quantidade: quantidadeDecimal, // Envia a quantidade como número decimal
+          unidadeDeMedida: item.unidadeDeMedida,
+          valorUnitario: valorUnitario, // Envia o valor unitário como número decimal
+          total: total, // Total também em formato float
+        };
+      }),
     };
 
     console.log('Dados enviados:', JSON.stringify(dadosEntrada, null, 2));
@@ -241,12 +260,11 @@ const enviarEntrada = async () => {
       console.log('Resposta da API:', response.data);
 
       // Redirecionando para a rota de inventário
-      Inertia.visit(route('franqueado.inventario'));
+      // Inertia.visit(route('franqueado.inventario'));
 
       // Notificando o sucesso
       toast.success('Lista de insumos salvas em seu estoque.');
     } else {
-      // Caso a resposta da API não seja bem-sucedida
       toast.error('Erro ao salvar no estoque, tente novamente.');
     }
   } catch (error) {
