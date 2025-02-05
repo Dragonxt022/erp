@@ -373,7 +373,6 @@ const fetchDados = async () => {
   }
 };
 
-// Função para buscar os dados do backend
 const fetchData = async () => {
   try {
     const response = await axios.get(
@@ -381,8 +380,17 @@ const fetchData = async () => {
     );
     const data = response.data;
 
-    // Converte o objeto faturamento em um array
-    const faturamentoArray = Object.values(data.faturamento);
+    // Obtém o mês atual no formato "MM"
+    const mesAtual = new Date().getMonth() + 1; // getMonth() retorna de 0 a 11, por isso somamos 1
+
+    // Filtra apenas os dias do mês vigente
+    const faturamentoArray = Object.values(data.faturamento)
+      .filter((item) => {
+        const mesDoItem =
+          parseInt(item.dia) <= new Date().getDate() ? mesAtual : mesAtual - 1; // Se o dia for maior que o dia atual, provavelmente é do mês anterior
+        return mesDoItem === mesAtual;
+      })
+      .sort((a, b) => a.dia - b.dia); // Ordena do menor para o maior
 
     if (Array.isArray(faturamentoArray)) {
       diasLabels.value = faturamentoArray.map((item) => item.dia);
