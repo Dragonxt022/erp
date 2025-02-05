@@ -119,31 +119,31 @@ const unidadeLabel = computed(() => {
     : 'Quantidade';
 });
 
-const unidadePlaceholder = computed(() => {
-  return props.produtoSelecionado.unidadeDeMedida === 'a_granel'
-    ? 'Digite o peso (ex: 1.5)'
-    : 'Digite a quantidade';
-});
-
 // Validação da quantidade
 const validarQuantidade = () => {
-  // Regra básica: aceita números decimais ou inteiros
-  let regex = /^[0-9]+(\.[0-9]+)?$/;
-
-  // Se a unidade de medida for "unidade", aceita apenas números inteiros
-  if (props.produtoSelecionado.unidadeDeMedida === 'unidade') {
-    regex = /^[0-9]+$/; // Aceita apenas números inteiros
+  // Se o campo estiver vazio, reseta tudo
+  if (!quantidade.value.trim()) {
+    quantidadeInvalida.value = false;
+    return;
   }
 
-  // Validar a quantidade com a regex definida
+  let regex = /^[0-9]+([.,][0-9]+)?$/; // Aceita números decimais e inteiros
+
+  if (props.produtoSelecionado.unidadeDeMedida === 'unidade') {
+    regex = /^[0-9]+$/; // Apenas números inteiros
+  }
+
   quantidadeInvalida.value = !regex.test(quantidade.value);
 
-  // Se a unidade for "a_granel" e a quantidade for inteira, adicionar ".0"
-  if (props.produtoSelecionado.unidadeDeMedida === 'a_granel') {
-    // Garantir que a quantidade tenha casas decimais
-    if (!quantidade.value.includes('.')) {
-      quantidade.value = `${quantidade.value}`; // Adiciona ".0" se não houver ponto
-    }
+  // Se a unidade for "a_granel" ou "quilo", tratar como centavos
+  if (
+    ['a_granel', 'quilo'].includes(props.produtoSelecionado.unidadeDeMedida)
+  ) {
+    let quantidadeNumerica = quantidade.value.replace(/\D/g, ''); // Remove tudo que não for número
+    let inteiro = quantidadeNumerica.slice(0, -3) || '0'; // Parte inteira
+    let centavos = quantidadeNumerica.slice(-3).padStart(3, '0'); // Parte decimal
+
+    quantidade.value = `${Number(inteiro).toLocaleString('pt-BR')},${centavos}`;
   }
 };
 
