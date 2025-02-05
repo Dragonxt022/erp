@@ -103,7 +103,11 @@ export default {
 
     // Calcula a quantidade total de todos os lotes de um produto
     getQuantidadeTotal(lotes) {
-      return lotes.reduce((total, lote) => total + lote.quantidade, 0);
+      if (!Array.isArray(lotes)) {
+        console.warn('getQuantidadeTotal recebeu um valor inválido:', lotes);
+        return 0; // Retorna 0 caso lotes seja inválido
+      }
+      return lotes.reduce((total, lote) => total + (lote.quantidade || 0), 0);
     },
   },
   computed: {
