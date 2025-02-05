@@ -86,7 +86,7 @@ export default {
         console.log('Produtos carregados:', response.data);
         this.produtos = Object.values(response.data); // Converte o objeto em array
       } catch (error) {
-        console.error('Erro ao carregar os produtos:', error);
+        console.error('Erro ao carregar os itens:', error);
       }
     },
     // Método para gerar a URL correta da imagem
