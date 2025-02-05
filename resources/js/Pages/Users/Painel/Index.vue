@@ -377,31 +377,28 @@ const fetchDados = async () => {
 const fetchData = async () => {
   try {
     const response = await axios.get(
-      '/api/painel-analitycos/faturamento-por-semana'
+      '/api/painel-analitycos/faturamento-por-dia-mes'
     );
     const data = response.data;
 
-    if (data.faturamento) {
-      diasLabels.value = data.faturamento.map((item) => item.dia);
-      faturamentoDias.value = data.faturamento.map((item) => item.total);
+    // Converte o objeto faturamento em um array
+    const faturamentoArray = Object.values(data.faturamento);
+
+    if (Array.isArray(faturamentoArray)) {
+      diasLabels.value = faturamentoArray.map((item) => item.dia);
+      faturamentoDias.value = faturamentoArray.map((item) =>
+        parseFloat(item.total)
+      ); // Converte "total" para número
       updateChart();
+    } else {
+      console.error(
+        'Erro: Os dados recebidos não estão no formato esperado.',
+        data
+      );
     }
   } catch (error) {
     console.error('Erro ao buscar dados:', error);
   }
-};
-
-// Formatar a data
-const formatarData = (data) => {
-  const partes = data.split('-'); // Divide "YYYY-MM-DD"
-  return `${partes[2]}/${partes[1]}/${partes[0]}`; // Retorna "DD/MM/YYYY"
-};
-
-// Retornar o ícone do status
-const getStatusIcon = (status) => {
-  return status === 'pendente'
-    ? '/storage/images/check_circle_laranja.svg'
-    : '/storage/images/check_circle_verde.svg';
 };
 
 // Função para atualizar o gráfico com os dados reais
@@ -413,15 +410,15 @@ const updateChart = () => {
   chartInstance.value = new Chart(barChart.value.getContext('2d'), {
     type: 'bar',
     data: {
-      labels: diasLabels.value, // Dias numerados de 1 a 7
+      labels: diasLabels.value,
       datasets: [
         {
           label: 'Faturamento Diário',
           data: faturamentoDias.value,
-          backgroundColor: 'rgba(75, 192, 75, 0.6)', // Cor de fundo das barras
-          borderColor: 'rgba(75, 192, 75, 1)', // Cor das bordas
+          backgroundColor: 'rgba(75, 192, 75, 0.6)',
+          borderColor: 'rgba(75, 192, 75, 1)',
           borderWidth: 2,
-          borderRadius: 8, // Arredondamento das bordas
+          borderRadius: 8,
           borderSkipped: false,
         },
       ],
@@ -442,7 +439,7 @@ const updateChart = () => {
           beginAtZero: true,
           ticks: {
             callback: function (value) {
-              return value >= 1000 ? `${value / 1000}mil` : value; // Formatação para mostrar milhar
+              return value >= 1000 ? `${value / 1000} mil` : value; // Formatação para milhar
             },
           },
         },
@@ -450,7 +447,19 @@ const updateChart = () => {
     },
   });
 };
-//
+
+// Formatar a data
+const formatarData = (data) => {
+  const partes = data.split('-'); // Divide "YYYY-MM-DD"
+  return `${partes[2]}/${partes[1]}/${partes[0]}`; // Retorna "DD/MM/YYYY"
+};
+
+// Retornar o ícone do status
+const getStatusIcon = (status) => {
+  return status === 'pendente'
+    ? '/storage/images/check_circle_laranja.svg'
+    : '/storage/images/check_circle_verde.svg';
+};
 </script>
 
 <style lang="css" scoped>

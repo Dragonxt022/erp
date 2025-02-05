@@ -98,7 +98,7 @@ class ContaAPagarController extends Controller
             'emitida_em' => 'required|date',
             'vencimento' => 'required|date|after_or_equal:emitida_em',
             'descricao' => 'nullable|string',
-            'arquivo' => 'nullable|file|mimes:jpeg,png,jpg,gif|max:2048',
+            'arquivo' => 'nullable|max:4048',
             'dias_lembrete' => 'required|integer|min:0',
             'categoria_id' => 'required|exists:categorias,id',
         ]);

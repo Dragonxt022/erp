@@ -100,9 +100,14 @@ const menuCategories = [
             link: 'franqueado.inventario',
           },
           {
+            label: 'Saida de estoque',
+            link: 'login.pagina.estoque',
+          },
+          {
             label: 'Fornecedores',
             link: 'franqueado.fornecedores',
           },
+
           {
             label: 'Novo Pedidos',
             link: 'franqueado.pedidos',

@@ -178,55 +178,46 @@ class PainelAnaliticos extends Controller
 
 
     /**
-     * Retorna o faturamento dos últimos 7 dias
+     * Retorna o faturamento dos últimos 30 dias
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function faturamentoUltimos7Dias()
+    public function diasDoMes()
     {
         $usuario = Auth::user();
         $unidade_id = $usuario->unidade_id;
 
-        // Obtém os últimos 30 dias
-        $dias = collect();
-        for ($i = 30; $i >= 0; $i--) {
-            $dias->push(Carbon::now()->subDays($i)->format('d')); // Apenas o dia numérico
-        }
+        // Geração da lista de dias numéricos do último mês
+        $dias = collect(range(0, 30))->map(function ($i) {
+            return Carbon::now()->subDays($i)->format('d');
+        })->reverse();
 
-        // Verifica qual banco de dados está sendo usado
+        // Detecta o banco de dados e ajusta o formato do dia
         $driver = DB::connection()->getPDO()->getAttribute(\PDO::ATTR_DRIVER_NAME);
-
-        // Define a função correta de extração do dia
         $diaFormat = $driver === 'mysql' ? "DAY(created_at)" : "strftime('%d', created_at)";
 
-        // Consulta dinâmica baseada no banco de dados
+        // Consulta o faturamento diário do caixa fechado
         $faturamento = Caixa::where('unidade_id', $unidade_id)
-            ->where('status', 0) // Apenas caixas fechados
-            ->whereDate('created_at', '>=', Carbon::now()->subDays(30)->toDateString()) // Considera apenas a data (sem horário)
-            ->whereDate('created_at', '<=', Carbon::now()->toDateString()) // Até o dia atual
-            ->selectRaw("$diaFormat as dia, SUM(valor_final) as total") // Exibe apenas o dia
+            ->where('status', 0)
+            ->whereBetween('created_at', [Carbon::now()->subDays(30), Carbon::now()])
+            ->selectRaw("$diaFormat as dia, SUM(valor_final) as total")
             ->groupBy('dia')
             ->orderBy('dia', 'asc')
             ->get()
-            ->keyBy('dia');
+            ->mapWithKeys(fn($item) => [(int) $item->dia => $item->total]); // Converte a chave para inteiro
 
         // Garante que todos os dias apareçam, mesmo se não houver faturamento
-        $faturamentoPorDia = $dias->map(function ($dia) use ($faturamento) {
-            return [
-                'dia' => $dia,
-                'total' => $faturamento[$dia]->total ?? 1,
-            ];
-        });
+        $faturamentoPorDia = $dias->map(fn($dia) => [
+            'dia' => $dia,
+            'total' => $faturamento[(int) $dia] ?? 0, // Retorna 0 se não houver faturamento
+        ]);
 
         return response()->json([
             'status' => 'sucesso',
             'data_resposta' => now()->format('d-m-Y H:i:s'),
-            'faturamento' => $faturamentoPorDia
+            'faturamento' => $faturamentoPorDia,
         ]);
     }
-
-
-
 
     /**
      * Calcula o CMV e soma o valor de todos os caixas de uma unidade no mesmo período

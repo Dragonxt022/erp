@@ -167,7 +167,7 @@ Route::prefix('api')->middleware([
     Route::prefix('painel-analitycos')->group(function () {
         Route::get('/calcular-cmv', [PainelAnaliticos::class, 'calcularCMV'])->name('calcularCMV');
         Route::get('/calcular-fluxo-caixa', [PainelAnaliticos::class, 'somarTodosOsCaixas'])->name('somarTodosOsCaixas');
-        Route::get('/faturamento-por-semana', [PainelAnaliticos::class, 'faturamentoUltimos7Dias'])->name('faturamentoPorMes');
+        Route::get('/faturamento-por-dia-mes', [PainelAnaliticos::class, 'diasDoMes'])->name('diasDoMes');
         Route::get('/calculo-ticket-medio-quantidade', [PainelAnaliticos::class, 'calcularTicketMedioEQuantidadePedidos'])->name('calcularTicketMedioEQuantidadePedidos');
 
         Route::get('/calcular-cmv-caixas-tickets', [PainelAnaliticos::class, 'calcularIndicadores'])->name('calcularIndicadores');
