@@ -88,6 +88,13 @@ Route::prefix('api')->middleware([
     // Rotas do usuário
     Route::prefix('usuarios')->group(function () {
         Route::get('/colaboradores', [UserController::class, 'listColaboradores'])->name('listColaboradores');
+        Route::get('/cargos', [UserController::class, 'listarCargos'])->name('listarCargos.get');
+        Route::post('/cadastrar-colaborador', [UserController::class, 'novoColaborador'])->name('cadastrar.novoColaborador');
+
+        Route::post('/upsert-permissions', [UserController::class, 'upsertPermissions'])->name('upsertPermissions.upsert');
+        Route::post('/regenera-pin', [UserController::class, 'atualizarPin'])->name('atualizarPin.regenera');
+
+        Route::delete('/delete/{id}', [UserController::class, 'destroy']);
     });
 
     // Lista de Produtos

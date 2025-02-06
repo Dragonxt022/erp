@@ -7,7 +7,11 @@
     <div class="painel-subtitle">
       <p>Gerencie a sua equipe e permissões aqui</p>
     </div>
-
+    <ButtonPrimaryMedio
+      text="Cadastrar colaborador"
+      class="w-full"
+      @click="toggleCadastro"
+    />
     <!-- Lista de usuários -->
     <div
       v-for="usuario in usuarios"
@@ -34,15 +38,27 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
 
-const emit = defineEmits(['usuario-selecionado']);
+const emit = defineEmits(['usuario-selecionado', 'abrir-cadastro']);
 const usuarios = ref([]);
 
 // Buscar os usuários da API
 const fetchUsuarios = async () => {
   try {
     const response = await axios.get('/api/usuarios/colaboradores');
-    usuarios.value = response.data; // Ajustado para refletir corretamente a resposta JSON
+    usuarios.value = response.data.map((usuario) => ({
+      ...usuario,
+      permissions: usuario.permissions || {
+        // Define permissões padrão se não existirem
+        controle_estoque: false,
+        controle_saida_estoque: false,
+        gestao_equipe: false,
+        fluxo_caixa: false,
+        dre: false,
+        contas_pagar: false,
+      },
+    }));
   } catch (error) {
     console.error('Erro ao carregar os usuários:', error);
   }
@@ -54,6 +70,11 @@ onMounted(fetchUsuarios);
 // Selecionar um usuário
 const selecionarUsuario = (usuario) => {
   emit('usuario-selecionado', usuario);
+};
+
+// Alternar entre a tela de cadastro e a listagem
+const toggleCadastro = () => {
+  emit('abrir-cadastro');
 };
 </script>
 

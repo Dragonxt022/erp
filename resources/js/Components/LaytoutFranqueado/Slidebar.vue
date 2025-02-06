@@ -146,13 +146,6 @@ const menuCategories = [
         ],
         isActive: false,
       },
-      {
-        label: 'DRE Gerencial',
-        icon: '/storage/images/analitic.svg',
-        link: 'franqueado.dreGerencial',
-        isLogout: false,
-        isActive: false,
-      },
 
       // {
       //   label: 'Taiksu IA',
@@ -200,6 +193,13 @@ const menuCategories = [
             link: 'franqueado.historicoContas',
           },
         ],
+        isActive: false,
+      },
+      {
+        label: 'DRE Gerencial',
+        icon: '/storage/images/analitic.svg',
+        link: 'franqueado.dreGerencial',
+        isLogout: false,
         isActive: false,
       },
     ],

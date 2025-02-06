@@ -22,10 +22,13 @@ return new class extends Migration
             $table->foreignId('unidade_id')->nullable()->constrained('infor_unidade')->onDelete('set null');
             $table->string('cpf')->nullable();  // Novo campo para o CPF do usuário
             $table->string('profile_photo_path', 2048)->nullable();
-
+            $table->decimal('salario', 10, 2)->nullable();  // Novo campo para o salário do usuário
             $table->boolean('franqueadora')->default(false);
             $table->boolean('franqueado')->default(false);
             $table->boolean('controle_retirada_produto')->default(false);
+            $table->boolean('colaborador')->default(false);
+            // Adicionando o campo cargo_id (relacionamento com cargos)
+            $table->foreignId('cargo_id')->nullable()->constrained('cargos')->onDelete('set null');
 
 
             $table->timestamps();

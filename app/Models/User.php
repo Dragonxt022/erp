@@ -33,6 +33,10 @@ class User extends Authenticatable
         'pin',         // Novo campo para PIN
         'cpf',         // Novo campo para CPF
         'profile_photo_path',
+        'cargo_id',    // Novo campo para cargo
+        'salario',     // Novo campo para salário
+        'franqueado',
+        'colaborador'
     ];
 
     /**
@@ -105,5 +109,10 @@ class User extends Authenticatable
     public function userPermission()
     {
         return $this->hasOne(UserPermission::class);
+    }
+
+    public function cargo()
+    {
+        return $this->belongsTo(Cargo::class); // Assumindo que o usuário tem um cargo
     }
 }

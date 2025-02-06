@@ -210,6 +210,8 @@ const calcularTotal = (item) => {
 
 const enviarEntrada = async () => {
   isLoading.value = true;
+  isSending.value = true;
+
   try {
     // Organizando os dados para enviar
     const dadosEntrada = {
@@ -260,7 +262,7 @@ const enviarEntrada = async () => {
       console.log('Resposta da API:', response.data);
 
       // Redirecionando para a rota de inventário
-      // Inertia.visit(route('franqueado.inventario'));
+      Inertia.visit(route('franqueado.inventario'));
 
       // Notificando o sucesso
       toast.success('Lista de insumos salvas em seu estoque.');

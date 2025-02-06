@@ -79,7 +79,9 @@ export default {
     async fetchUsuarios() {
       try {
         const response = await axios.get('/api/usuarios');
-        this.usuarios = response.data; // Atualiza os dados
+
+        // Filtra os usuários que NÃO são colaboradores
+        this.usuarios = response.data.filter((user) => !user.colaborador);
       } catch (error) {
         console.error('Erro ao carregar usuários:', error);
       }

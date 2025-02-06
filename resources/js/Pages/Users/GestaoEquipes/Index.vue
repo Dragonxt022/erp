@@ -2,38 +2,26 @@
   <LayoutFranqueado>
     <Head title="Gestão de Equipe" />
 
-    <!-- Botão para alternar entre Cadastro e Listagem -->
-    <div v-if="!showCadastro" class="fixed bottom-6 right-6">
-      <ButtonPrimaryMedio
-        text="Cadastrar colaborador"
-        class="w-full"
-        iconPath="/storage/images/arrow_left_alt.svg"
-        @click="toggleCadastro"
-      />
-    </div>
-
-    <!-- Componente de Cadastro (visível apenas se showCadastro for true) -->
-    <div v-if="showCadastro" class="mt-3">
-      <CadastroContas @voltar="cancelarCadastro" @atualiza="atualizalista" />
-    </div>
-
     <!-- Grid de Listagem e Detalhes (visível apenas se showCadastro for false) -->
-    <div
-      v-if="!showCadastro"
-      class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 h-full"
-    >
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 h-full">
       <!-- Componente de Listagem -->
       <ListarColaboradores
         :key="listaKey"
         ref="listaDados"
         @usuario-selecionado="dadoSelecionado"
+        @abrir-cadastro="toggleCadastro"
       />
+
+      <div v-if="showCadastro" class="mt-3">
+        <CadastroColaborador @voltar="cancelarCadastro" />
+      </div>
 
       <!-- Componente de Detalhes (mostra apenas se houver um item selecionado) -->
       <div v-if="dadosSelecionado">
         <DetalhesColaborador
           :dados="dadosSelecionado"
           @voltar="atualizaConponetes"
+          @atualiza="atualizalista"
         />
       </div>
     </div>
@@ -44,10 +32,10 @@
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
-import CadastroContas from '@/Components/EstruturaFranqueado/CadastroContas.vue';
 import DetalhesColaborador from '@/Components/EstruturaFranqueado/DetalhesColaborador.vue';
 import ListarColaboradores from '@/Components/EstruturaFranqueado/ListarColaboradores.vue';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import CadastroColaborador from '@/Components/EstruturaFranqueado/CadastroColaborador.vue';
 
 const listaKey = ref(0);
 const dadosSelecionado = ref(null);
@@ -80,5 +68,6 @@ const atualizaConponetes = () => {
 
 const atualizalista = () => {
   listaKey.value += 1;
+  dadoSelecionado.value = null;
 };
 </script>

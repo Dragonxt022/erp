@@ -16,30 +16,29 @@ import { ref, defineEmits, defineProps, watch } from 'vue';
 // Define as propriedades que o componente recebe do pai
 const props = defineProps({
   status: {
-    type: Boolean,
-    default: false, // Definindo um valor padrão para status
+    type: [Boolean, Number], // Permite booleanos e números (0 ou 1)
+    default: false,
   },
 });
 
 // Emite o evento de mudança do estado
 const emit = defineEmits(['update:status']);
 
-// Estado do toggle (inicia com o valor passado via props)
-const isActive = ref(props.status);
+// Estado do toggle (inicia com o valor convertido para Booleano)
+const isActive = ref(Boolean(props.status));
 
 // Observa mudanças na propriedade 'status' passada pelo componente pai
 watch(
   () => props.status,
   (newStatus) => {
-    // Garantindo que o valor de isActive seja atualizado para true ou false
-    isActive.value = newStatus;
+    isActive.value = Boolean(newStatus); // Converte qualquer valor para Booleano
   }
 );
 
 // Alterna o estado do toggle
 const toggle = () => {
   isActive.value = !isActive.value;
-  emit('update:status', isActive.value); // Passa o valor para o componente pai
+  emit('update:status', isActive.value); // Passa o valor atualizado ao componente pai
 };
 </script>
 
