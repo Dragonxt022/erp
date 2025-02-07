@@ -280,7 +280,7 @@ const submitForm = async () => {
 
       toast.success('Colaborador atualizado com sucesso!');
       console.log('Colaborador atualizado:', response.data);
-
+      emit('voltar');
       // Limpar o formulário
       cancelForm();
     } catch (error) {

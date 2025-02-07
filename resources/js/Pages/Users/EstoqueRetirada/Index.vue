@@ -175,7 +175,7 @@
             <!-- Retirada -->
             <td class="text-[16px] text-gray-900 font-semibold text-center">
               <div
-                class="relative w-[200px] h-[56.76px] mx-auto flex items-center justify-between bg-[#efeff4] rounded-xl px-2"
+                class="relative w-[300px] h-[56.76px] mx-auto flex items-center justify-between bg-[#efeff4] rounded-xl px-2"
               >
                 <!-- Botão de menos -->
                 <button
@@ -189,7 +189,7 @@
                 <!-- Input numérico -->
                 <input
                   type="number"
-                  class="w-[90px] h-[42px] text-xl text-center text-[#6d6d6d] bg-transparent border border-gray-100 rounded"
+                  class="w-[150px] h-[42px] text-xl text-center text-[#6d6d6d] bg-transparent border border-gray-100 rounded"
                   :value="carrinho[produto.id]?.quantidade ?? 0"
                   @input="
                     (event) =>
@@ -308,10 +308,10 @@ const atualizarQuantidade = (produtoId, quantidade) => {
     return;
   }
 
-  // Se a unidade for 'a_granel', permite números fracionados (2 casas decimais)
+  // Se a unidade for 'a_granel', permite números fracionados (3 casas decimais)
   if (produto.unidadeDeMedida === 'a_granel') {
-    // Limita a 2 casas decimais para quantidades fracionadas
-    quantidadeNumerica = parseFloat(quantidadeNumerica.toFixed(2));
+    // Limita a 3 casas decimais para quantidades fracionadas
+    quantidadeNumerica = parseFloat(quantidadeNumerica.toFixed(3));
   } else {
     // Para unidades, apenas números inteiros são permitidos
     quantidadeNumerica = Math.floor(quantidadeNumerica); // Força a quantidade para inteiro

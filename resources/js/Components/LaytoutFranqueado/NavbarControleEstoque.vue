@@ -29,7 +29,7 @@
         </div>
       </div>
 
-      <!-- Avatar e informações do usuário -->
+      <!-- Avatar, informações do usuário e botão de logout -->
       <div class="navbar-right">
         <div class="user-info">
           <img :src="profilePhoto" alt="Avatar" class="avatar" />
@@ -38,9 +38,15 @@
             <div class="user-location">
               {{ unidade?.cidade || 'Taiksu Franchising' }}
             </div>
-            <!-- Exibindo a cidade da unidade -->
           </div>
         </div>
+        <button @click="logout" class="logout-button">
+          <img
+            src="/storage/images/botao_sair.svg"
+            alt="Logout"
+            class="logout-icon"
+          />
+        </button>
       </div>
     </div>
   </div>
@@ -49,6 +55,7 @@
 <script lang="js">
 import { ref, onMounted, computed } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { router } from '@inertiajs/vue3';
 
 export default {
   setup() {
@@ -61,6 +68,15 @@ export default {
         await userStore.fetchUserProfile();
       }
     });
+    // Função de Logout usando Inertia.js
+    async function logout() {
+      router.post('/logout', {}, {
+        onFinish: () => {
+          userStore.user = null; // Limpa os dados do usuário no store
+          router.visit('/login-estoque'); // Redireciona para login
+        }
+      });
+    }
 
     // Variáveis reativas para o template
     const user = computed(() => userStore.user);
@@ -79,7 +95,9 @@ export default {
       return initials;
     }
 
-    return { user, profilePhoto, unidade };
+    return { user, profilePhoto, unidade, logout };
+
+
   },
 };
 </script>
@@ -195,5 +213,19 @@ a {
   position: absolute;
   left: 13px;
   top: 13px;
+}
+
+/* Estilo do botão de logout */
+.logout-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+}
+
+.logout-icon {
+  width: 85px; /* Ajuste conforme necessário */
+  height: 85px;
 }
 </style>
