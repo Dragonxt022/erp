@@ -1,9 +1,4 @@
 <template>
-  <div class="painel-title">Editar Método Pagamento</div>
-  <div class="painel-subtitle">
-    <p>Atualize as informações do método de pagamento</p>
-  </div>
-
   <div v-if="isLoading" class="loading-overlay">
     <div class="spinner"></div>
   </div>
