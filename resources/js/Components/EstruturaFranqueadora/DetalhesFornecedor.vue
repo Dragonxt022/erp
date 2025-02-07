@@ -49,7 +49,7 @@
               <div
                 class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
               >
-                ID# {{ (fornecedorData?.id ?? 0).toString().padStart(4, '0') }}
+                ID# {{ (fornecedor?.id ?? 0).toString().padStart(4, '0') }}
               </div>
             </div>
             <div
@@ -65,7 +65,7 @@
               <div
                 class="text-[#262a27] text-base font-semibold font-['Figtree'] leading-[13px] tracking-tight"
               >
-                {{ fornecedorData?.cnpj || 'N/A' }}
+                {{ fornecedor?.cnpj || 'N/A' }}
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.razao_social || 'N/A' }}
+            {{ fornecedor.razao_social || 'N/A' }}
           </div>
         </div>
       </div>
@@ -92,7 +92,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.email || 'N/A' }}
+            {{ fornecedor.email || 'N/A' }}
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.whatsapp || 'N/A' }}
+            {{ fornecedor.whatsapp || 'N/A' }}
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@
           <div
             class="text-[#262a27] text-base font-['Figtree'] leading-[13px] tracking-tight"
           >
-            {{ fornecedorData.estado || 'N/A' }}
+            {{ fornecedor.estado || 'N/A' }}
           </div>
         </div>
       </div>

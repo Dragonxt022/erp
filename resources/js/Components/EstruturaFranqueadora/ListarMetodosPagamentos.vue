@@ -4,11 +4,11 @@
       <div class="spinner"></div>
     </div>
     <!-- Título principal -->
-    <div class="painel-title">Canais de venda</div>
+    <div class="painel-title">Métodos de pagamento</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">
-      <p>Plataformas de e-commerce da sua unidade</p>
+      <p>Gerencie suas formas de pagamento para o fluxo de caixa</p>
     </div>
 
     <!-- Lista de dados -->
@@ -17,6 +17,7 @@
         v-for="dados in filteredDados"
         :key="dados.id"
         class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
+        :class="{ 'bg-gray-300': !dados.status }"
         @click="selecionarDados(dados)"
       >
         <div class="card-inner">
@@ -53,8 +54,9 @@ const isLoading = ref(false);
 // Função para buscar os pedidos da API
 const fetchDados = async () => {
   isLoading.value = true;
+
   try {
-    const response = await axios.get('/api/canais-vendas/lista');
+    const response = await axios.get('/api/admin-metodos-pagamentos/lista');
     dados.value = Object.values(response.data); // Converte o objeto em array
   } catch (error) {
     console.error('Erro ao carregar os dados:', error);
@@ -165,15 +167,21 @@ const filteredDados = computed(() => {
 .card-inner {
   display: flex;
   align-items: center;
-  padding: 12px;
+  padding: 8px;
+}
+.bg-gray-300 {
+  background-color: #f1f0f0; /* Cor cinza claro */
 }
 
 .icon-container {
   position: relative;
   width: 55px;
   height: 55px;
-  top: 5px;
-  margin-right: 5px;
+}
+
+.text-container {
+  margin-left: 14px;
+  flex-grow: 1;
 }
 
 .icon-leaf {
@@ -182,12 +190,6 @@ const filteredDados = computed(() => {
   position: absolute;
   left: 5px;
   top: 10px;
-}
-
-.text-container {
-  margin-left: 14px;
-  flex-grow: 1;
-  margin-bottom: 15px;
 }
 
 .city {

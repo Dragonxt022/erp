@@ -75,6 +75,16 @@ Route::prefix('api')->middleware([
         Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
         Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
     });
+
+    // Metodos de pagamentos
+    Route::prefix('admin-metodos-pagamentos')->group(function () {
+        Route::get('/lista', [DefaultPaymentMethodController::class, 'listaIndex'])->name('metodosPagamentos.admin.index');
+        Route::post('/alternar-status', [DefaultPaymentMethodController::class, 'toggleStatus'])->name('metodosPagamentos.admin.toggleStatus');
+
+        Route::post('/cadastrar', [DefaultPaymentMethodController::class, 'store'])->name('metodosPagamentos.admin.store');
+        Route::post('/atualizar', [DefaultPaymentMethodController::class, 'update'])->name('metodosPagamentos.admin.update');
+        Route::delete('/excluir/{id}', [DefaultPaymentMethodController::class, 'destroy'])->name('metodosPagamentos.admin.destroy');
+    });
 });
 
 // Rotas protegidas por autenticação Usuarios

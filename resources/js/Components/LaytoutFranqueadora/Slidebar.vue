@@ -8,11 +8,12 @@
       <div class="category-title">{{ category.name }}</div>
       <MenuItem
         v-for="item in category.items"
-        :key="item.link"
+        :key="item.link || 'no-link'"
         :label="item.label"
         :icon="item.icon"
-        :link="route(item.link)"
-        :isActive="isActive(route(item.link))"
+        :link="item.link ? route(item.link) : null"
+        :submenuItems="item.submenuItems"
+        :isActive="item.link ? isActive(route(item.link)) : false"
         :isLogout="item.isLogout"
       />
     </div>
@@ -128,6 +129,25 @@ const menuCategories = [
         icon: '/storage/images/inspecionador.svg',
         link: 'franqueadora.inspetor',
         isLogout: false,
+      },
+
+      // Caixas
+      {
+        label: 'Caixa',
+        icon: '/storage/images/fluxo_caixa.svg',
+        link: 'franqueadora.metodosPagamentos',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Métodos de pagamento',
+            link: 'franqueadora.metodosPagamentos',
+          },
+          {
+            label: 'Canais de Vendas',
+            link: 'franqueadora.canaisVendas',
+          },
+        ],
+        isActive: false,
       },
       {
         label: 'Taiksu IA',

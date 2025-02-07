@@ -52,6 +52,17 @@ Route::middleware([
         return Inertia::render('Admin/Inspetor/Index');
     })->name('franqueadora.inspetor');
 
+    // 
+    Route::get('/franqueadora/metodos-pagamentos', function () {
+        return Inertia::render('Admin/MetodosPagamentos/Index');
+    })->name('franqueadora.metodosPagamentos');
+
+    Route::get('/franqueadora/canais-vendas', function () {
+        return Inertia::render('Admin/canaisVendas/Index');
+    })->name('franqueadora.canaisVendas');
+
+    // 
+
     Route::get('/franqueadora/sair', function () {
         return Inertia::render('Admin/sair/Index');
     })->name('franqueadora.sair');

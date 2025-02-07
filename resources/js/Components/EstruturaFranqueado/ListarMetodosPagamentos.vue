@@ -11,23 +11,6 @@
       <p>Ative formas de pagamento para o fluxo de caixa</p>
     </div>
 
-    <!-- Campo de pesquisa -->
-    <!-- <div class="search-container relative flex items-center w-full mb-4">
-      <div class="absolute left-3">
-        <img
-          src="/storage/images/search.svg"
-          alt="Ícone de pesquisa"
-          class="w-5 h-5 text-gray-500"
-        />
-      </div>
-      <input
-        type="text"
-        v-model="searchQuery"
-        placeholder="Buscar de pedidos"
-        class="search-input pl-10 w-full py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-      />
-    </div> -->
-
     <!-- Lista de dados -->
     <div class="card-container">
       <div
@@ -198,6 +181,14 @@ const filteredDados = computed(() => {
   position: absolute;
   left: 0;
   top: 1.33px;
+}
+
+.icon-leaf {
+  width: 55px;
+  height: 55px;
+  position: absolute;
+  left: 5px;
+  top: 10px;
 }
 
 .text-container {

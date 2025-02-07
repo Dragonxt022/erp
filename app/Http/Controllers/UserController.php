@@ -87,8 +87,6 @@ class UserController extends Controller
             // Agora podemos salvar a imagem na pasta personalizada
             $profilePhoto = $request->file('profile_photo');
             $fileName = time() . '_' . $profilePhoto->getClientOriginalName(); // Definir um nome único para o arquivo
-
-            // Mover a imagem para a pasta 'public/storage/images'
             $profilePhoto->move($folderPath, $fileName);
 
             // Garantir que o arquivo tenha as permissões corretas
