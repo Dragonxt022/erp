@@ -90,6 +90,7 @@ Route::prefix('api')->middleware([
         Route::get('/colaboradores', [UserController::class, 'listColaboradores'])->name('listColaboradores');
         Route::get('/cargos', [UserController::class, 'listarCargos'])->name('listarCargos.get');
         Route::post('/cadastrar-colaborador', [UserController::class, 'novoColaborador'])->name('cadastrar.novoColaborador');
+        Route::post('/atualiza-colaborador', [UserController::class, 'atualizarColaborador'])->name('atualizarColaborador.update');
 
         Route::post('/upsert-permissions', [UserController::class, 'upsertPermissions'])->name('upsertPermissions.upsert');
         Route::post('/regenera-pin', [UserController::class, 'atualizarPin'])->name('atualizarPin.regenera');

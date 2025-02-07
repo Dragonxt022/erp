@@ -356,6 +356,7 @@ const excluirConta = async () => {
     // Aqui você pode recarregar a lista de contas ou redirecionar o usuário
   } catch (error) {
     // Em caso de erro, exiba uma notificação de erro
+    toast.error('Erro ao excluir a conta');
     console.error('Erro ao excluir a conta:', error);
   }
 };

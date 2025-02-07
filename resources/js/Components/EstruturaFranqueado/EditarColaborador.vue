@@ -1,7 +1,7 @@
 <template>
-  <div class="painel-title">Cadastrar colaborador</div>
+  <div class="painel-title">Editar colaborador</div>
   <div class="painel-subtitle">
-    <p>Crie uma nova conta para acessar a sua loja</p>
+    <p>Atualize as informações do colaborador</p>
   </div>
 
   <div v-if="isLoading" class="loading-overlay">
@@ -269,7 +269,7 @@ const submitForm = async () => {
 
       // Enviar os dados para o backend
       const response = await axios.post(
-        '/api/usuarios/cadastrar-colaborador',
+        '/api/usuarios/atualiza-colaborador',
         formData,
         {
           headers: {
@@ -279,13 +279,13 @@ const submitForm = async () => {
       );
 
       toast.success('Colaborador atualizado com sucesso!');
-      console.log('Colaborador cadastrado:', response.data);
+      console.log('Colaborador atualizado:', response.data);
 
       // Limpar o formulário
       cancelForm();
     } catch (error) {
-      toast.error('Erro ao cadastrar colaborador');
-      console.error('Erro ao cadastrar colaborador:', error);
+      toast.error('Erro ao atualizar colaborador');
+      console.error('Erro ao atualizar colaborador:', error);
     } finally {
       isLoading.value = false;
     }

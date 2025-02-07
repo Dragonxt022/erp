@@ -362,6 +362,7 @@ class UserController extends Controller
         }
     }
 
+    // Atualiza um colaborador
     public function atualizarColaborador(Request $request)
     {
         try {
