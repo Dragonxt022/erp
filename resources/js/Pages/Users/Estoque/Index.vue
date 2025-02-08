@@ -344,7 +344,9 @@ const fetchDataCMV = async (startDate = null, endDate = null) => {
 
     // Se a resposta contiver os dados analíticos, atualiza os refs
     if (data.saldo_estoque_inicial) {
-      historicoMovimentacoes.value = data.historicoMovimentacoes || [];
+      historicoMovimentacoes.value = Array.isArray(data.historicoMovimentacoes)
+        ? data.historicoMovimentacoes
+        : [];
       start_date.value = data.start_date || 'não informado';
       end_date.value = data.end_date || 'não informado';
       saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
