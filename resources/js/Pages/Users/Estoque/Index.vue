@@ -346,7 +346,7 @@ const fetchDataCMV = async (startDate = null, endDate = null) => {
     if (data.saldo_estoque_inicial) {
       historicoMovimentacoes.value = Array.isArray(data.historicoMovimentacoes)
         ? data.historicoMovimentacoes
-        : [];
+        : Object.values(data.historicoMovimentacoes);
       start_date.value = data.start_date || 'não informado';
       end_date.value = data.end_date || 'não informado';
       saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
