@@ -459,21 +459,34 @@ class UnidadeEstoqueController extends Controller
         $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->where('quantidade', '>', 0)
             ->orderBy('id', 'desc')
             ->get(); // Remove a paginação e pega todos os resultados
 
         // Transformação do histórico para o formato correto
-        $historicoMovimentacoes->transform(function ($estoque) {
+        $historicoMovimentacoes = $historicoMovimentacoes->map(function ($estoque) {
+            // Define o valor da quantidade com sinal correto
+            $quantidade = match ($estoque->operacao) {
+                'Entrada' => $estoque->quantidade,  // Mantém positivo
+                'Retirada' => -$estoque->quantidade, // Torna negativo
+                default => $estoque->quantidade, // Ajuste pode ser positivo ou negativo conforme registrado
+            };
+
+            // Filtra para remover itens com quantidade 0
+            if ($quantidade == 0) {
+                return null;
+            }
+
             return [
                 'operacao' => $estoque->operacao,
                 'unidade' => $estoque->unidade,
-                'quantidade' => $estoque->quantidade,
+                'quantidade' => $quantidade,
                 'item' => $estoque->insumo->nome ?? 'N/A',
                 'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
                 'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
             ];
-        });
+        })->filter(); // Remove os itens nulos (quantidade == 0)
+
+
 
 
         // Dados principais do painel
@@ -775,7 +788,7 @@ class UnidadeEstoqueController extends Controller
         }
     }
 
-
+    // Atualiza a quantidade de um lote
     public function update(Request $request, $loteId)
     {
         // Validação dos dados
@@ -786,8 +799,11 @@ class UnidadeEstoqueController extends Controller
         // Busca o lote pelo ID
         $lote = UnidadeEstoque::findOrFail($loteId);
 
-        // Obtém a nova quantidade
+        // Obtém a nova quantidade informada
         $novaQuantidade = $request->input('quantidade');
+
+        // Calcula a diferença (quantidade adicionada ou removida)
+        $diferencaQuantidade = $novaQuantidade - $lote->quantidade;
 
         // Atualiza a quantidade e o timestamp
         $lote->quantidade = $novaQuantidade;
@@ -808,7 +824,6 @@ class UnidadeEstoqueController extends Controller
 
         $saldoAtual = $valorInsumos;
 
-
         DB::table('controle_saldo_estoques')->insert([
             'ajuste_saldo' => $saldoAtual,
             'data_ajuste' => now(),
@@ -819,6 +834,17 @@ class UnidadeEstoqueController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Registrar a movimentação com a diferença em vez da nova quantidade
+        MovimentacoesEstoque::create([
+            'insumo_id' => $lote->insumo_id,
+            'fornecedor_id' => $lote->fornecedor_id,
+            'usuario_id' => $lote->usuario_id,
+            'quantidade' => $diferencaQuantidade, // Armazena a diferença da quantidade
+            'preco_insumo' => $lote->preco_insumo,
+            'operacao' => 'Ajuste',
+            'unidade' => $lote->unidade,
+            'unidade_id' => Auth::user()->unidade_id,
+        ]);
 
         return response()->json([
             'message' => 'Quantidade atualizada com sucesso!',

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('usuario_id')->constrained('users')->onDelete('cascade');
             $table->float('quantidade', 2, 2);
             $table->decimal('preco_insumo', 10, 2);
-            $table->enum('operacao', ['Retirada', 'Entrada', 'Saida']);
+            $table->enum('operacao', ['Retirada', 'Entrada', 'Saida', 'Ajuste']);
             $table->enum('unidade', ['unidade', 'kg']);
             $table->foreignId('unidade_id')->constrained('infor_unidade')->onDelete('cascade');
             $table->timestamps();

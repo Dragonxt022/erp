@@ -190,18 +190,13 @@
             >
               <span class="flex items-center text-gray-900 font-semibold">
                 <img
-                  :src="
-                    movimentacao.operacao === 'Entrada'
-                      ? '/storage/images/arrow_back_verde.svg'
-                      : '/storage/images/arrow_back_red.svg'
-                  "
+                  :src="statusMap[movimentacao.operacao].icon"
                   alt="icon indicativo"
                   class="mr-3 w-5 h-5"
                 />
-                {{
-                  movimentacao.operacao === 'Entrada' ? 'Entrada' : 'Retirada'
-                }}
+                {{ statusMap[movimentacao.operacao].label }}
               </span>
+
               <span class="text-gray-900 font-semibold">
                 {{ movimentacao.quantidade }}
                 {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
@@ -260,6 +255,21 @@ const filters = ref({
   item: '',
   responsavel: '',
 });
+
+const statusMap = {
+  Entrada: {
+    icon: '/storage/images/arrow_back_verde.svg',
+    label: 'Entrada',
+  },
+  Retirada: {
+    icon: '/storage/images/arrow_back_red.svg',
+    label: 'Retirada',
+  },
+  Ajuste: {
+    icon: '/storage/images/icon_ajustes.svg', // Adicione um ícone para 'Ajuste'
+    label: 'Ajuste',
+  },
+};
 
 // Computed para retornar as movimentações filtradas
 const filteredHistoricoMovimentacoes = computed(() => {
