@@ -838,7 +838,7 @@ class UnidadeEstoqueController extends Controller
         MovimentacoesEstoque::create([
             'insumo_id' => $lote->insumo_id,
             'fornecedor_id' => $lote->fornecedor_id,
-            'usuario_id' => $lote->usuario_id,
+            'usuario_id' => Auth::id(),
             'quantidade' => $diferencaQuantidade, // Armazena a diferença da quantidade
             'preco_insumo' => $lote->preco_insumo,
             'operacao' => 'Ajuste',
