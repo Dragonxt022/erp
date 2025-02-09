@@ -4,21 +4,42 @@
       <div v-if="isLoading" class="loading-overlay">
         <div class="spinner"></div>
       </div>
-      <div class="mt-[80px]"></div>
+
       <div
-        class="w-full h-[100px] p-8 bg-white rounded-[20px] flex flex-col justify-center items-center gap-6"
+        class="w-full h-[100px] p-8 bg-white rounded-[20px] flex flex-col justify-center gap-6"
       >
-        <!-- Ícone e Nome lado a lado -->
-        <div class="flex items-center gap-4">
+        <!-- Ícone, Nome e Botão lado a lado -->
+        <div class="flex items-center gap-4 w-full">
           <img
             :src="getProfilePhotoUrl(dados.img_icon)"
             alt="Ícone"
             class="w-[50px] h-[50px]"
           />
+
           <div
             class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[34px] tracking-tight"
           >
             {{ dados.nome }}
+          </div>
+
+          <!-- Empurra o botão para a direita -->
+          <div class="ml-auto flex items-center">
+            <ConfirmDialog
+              :isVisible="isConfirmDialogVisible"
+              :motivo="motivo"
+              @confirm="handleConfirm"
+              @cancel="handleCancel"
+            />
+            <div
+              class="cursor-pointer"
+              @click="showConfirmDialog('Excluir esse método?')"
+            >
+              <img
+                src="/storage/images/delete.svg"
+                alt="Deletar Usuário"
+                class="w-6 h-6"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -71,6 +92,7 @@ import { useToast } from 'vue-toastification';
 import { onMounted } from 'vue';
 import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
 import EditarMetodoPagamento from '../EstruturaFranqueadora/EditarMetodoPagamento.vue';
+import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 
 const toast = useToast();
 
@@ -82,10 +104,10 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['atualizar']);
-
 const isEditMode = ref(false);
-
 const isLoading = ref(false);
+const isConfirmDialogVisible = ref(false);
+const motivo = ref('');
 
 // Define o status inicial com base nos dados recebidos
 const status = ref(Boolean(props.dados.status));
@@ -97,6 +119,20 @@ watch(
     status.value = Boolean(newStatus);
   }
 );
+
+const showConfirmDialog = (motivoParam) => {
+  motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
+  isConfirmDialogVisible.value = true; // Exibe o diálogo de confirmação
+};
+
+const handleConfirm = () => {
+  deletar();
+  isConfirmDialogVisible.value = false;
+};
+
+const handleCancel = () => {
+  isConfirmDialogVisible.value = false;
+};
 
 // Método para alternar entre modo de edição e visualização
 const cancelEdit = () => {
@@ -133,6 +169,30 @@ const atualizarMetodo = async (newStatus) => {
     emit('atualizar');
   } catch (error) {
     console.error('Erro ao atualizar o método de pagamento:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// deleter método
+const deletar = async () => {
+  try {
+    isLoading.value = true;
+    const response = await axios.delete(
+      `/api/admin-metodos-pagamentos/excluir/${props.dados.id}`
+    ); // URL para deletar o dados
+    console.log(response.data.message); // Mensagem de sucesso do backend
+    toast.success('Método deletado com sucesso!'); // Exibe um toast de sucesso
+    emit('atualizar');
+  } catch (error) {
+    toast.error(
+      'Erro ao deletar o método:',
+      error.response?.data?.error || error.message
+    );
+    console.error(
+      'Erro ao deletar o método:',
+      error.response?.data?.error || error.message
+    );
   } finally {
     isLoading.value = false;
   }

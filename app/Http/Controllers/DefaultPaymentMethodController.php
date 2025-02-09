@@ -63,10 +63,9 @@ class DefaultPaymentMethodController extends Controller
     {
         // Validar os dados da requisição
         $validated = $request->validate([
-            'name' => 'required|string',
+            'nome' => 'required|string',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'tipo' => 'required|string',
-
         ]);
 
         $profilePhotoPath = null;
@@ -74,27 +73,29 @@ class DefaultPaymentMethodController extends Controller
         // Processar a foto de perfil, se fornecida
         if ($request->hasFile('profile_photo')) {
             // Caminho da pasta personalizada de fotos (armazenamento público)
-            $folderPath = public_path('storage/images'); // A pasta dentro de "public/storage/images"
+            $folderPath = public_path('storage/images');
 
-            // Verificar se a pasta existe, caso contrário, cria ela
+            // Verificar se a pasta existe, caso contrário, criar ela
             if (!File::exists($folderPath)) {
-                File::makeDirectory($folderPath, 0755, true); // Permissões para leitura, escrita e execução
+                File::makeDirectory($folderPath, 0755, true);
             }
 
             // Salvar a imagem na pasta personalizada
             $profilePhoto = $request->file('profile_photo');
-            $fileName = time() . '_' . $profilePhoto->getClientOriginalName(); // Nome único para o arquivo
+            $fileName = time() . '_' . $profilePhoto->getClientOriginalName();
             $profilePhoto->move($folderPath, $fileName);
 
             // Garantir que o arquivo tenha as permissões corretas
-            chmod($folderPath . '/' . $fileName, 0644); // Permissões para leitura e escrita para o proprietário e leitura para outros
+            chmod($folderPath . '/' . $fileName, 0644);
 
             // Caminho correto para salvar no banco de dados
-            $profilePhotoPath = 'images/' . $fileName; // Corrigido para 'images/', sem duplicação de 'storage'
+            $profilePhotoPath = 'storage/images/' . $fileName;
         }
 
-        // Criar um novo método de pagamento
-        $paymentMethod = DefaultPaymentMethod::create($validated);
+        // Criar um novo método de pagamento com o caminho da imagem
+        $paymentMethod = DefaultPaymentMethod::create(array_merge($validated, [
+            'img_icon' => $profilePhotoPath
+        ]));
 
         // Retornar o método de pagamento criado
         return response()->json($paymentMethod);
@@ -152,23 +153,28 @@ class DefaultPaymentMethodController extends Controller
     }
 
 
-    // Excluir metodo de pagamento
+    // Excluir método de pagamento
     public function destroy($id)
     {
-        // Buscar o método de pagamento pelo ID
-        $paymentMethod = DefaultPaymentMethod::find($id);
+        try {
+            // Buscar e excluir o método de pagamento
+            $paymentMethod = DefaultPaymentMethod::findOrFail($id);
+            $paymentMethod->delete();
 
-        // Verificar se o método de pagamento foi encontrado
-        if (!$paymentMethod) {
-            return response()->json(['error' => 'Método de pagamento não encontrado.'], 404);
+            // Retornar resposta de sucesso
+            return response()->json([
+                'success' => true,
+                'message' => 'Método de pagamento excluído com sucesso.',
+                'id_excluido' => $id
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erro ao excluir o método de pagamento.',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // Excluir o método de pagamento
-        $paymentMethod->delete();
-
-        // Retornar a resposta de sucesso
-        return response()->json(['success' => true]);
     }
+
 
     public function show($id)
     {

@@ -2,12 +2,22 @@
   <LayoutFranqueadora>
     <!-- Cabeçalho da página -->
     <Head title="Métodos de pagamentos" />
+
+    <!-- Botão para alternar entre Cadastro e Listagem -->
+    <div v-if="!showCadastro" class="fixed bottom-6 right-6">
+      <ButtonPrimaryMedio
+        text="Cadastrar novo método"
+        class="w-full"
+        iconPath="/storage/images/arrow_left_alt.svg"
+        @click="toggleCadastro"
+      />
+    </div>
     <!-- Container principal -->
     <div
       class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"
     >
       <!-- Coluna 1: Listar Unidades -->
-      <div v-if="!showCadastroProduto">
+      <div>
         <ListarMetodosPagamentos
           :key="listaKey"
           ref="listaDados"
@@ -17,13 +27,17 @@
 
       <!-- Coluna 2: Alternar entre Detalhes e Cadastro -->
       <div class="flex flex-col gap-4">
-        <template v-if="!showCadastroProduto">
+        <template v-if="!showCadastro">
           <template v-if="dadosSelecionado">
             <DetalhesMetodosPagamento
               :dados="dadosSelecionado"
               @atualizar="atualizarLista"
             />
           </template>
+        </template>
+
+        <template v-if="showCadastro">
+          <CadastroMetodoPagamento @voltar="atualizarLista" />
         </template>
       </div>
     </div>
@@ -36,12 +50,14 @@ import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import ListarMetodosPagamentos from '@/Components/EstruturaFranqueadora/ListarMetodosPagamentos.vue';
 import DetalhesMetodosPagamento from '@/Components/EstruturaFranqueadora/DetalhesMetodosPagamento.vue';
+import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import CadastroMetodoPagamento from '@/Components/EstruturaFranqueadora/CadastroMetodoPagamento.vue';
 
 // Dados do usuário selecionado
 const dadosSelecionado = ref(null);
 
 const listaKey = ref(0);
-const showCadastroProduto = ref(false);
+const showCadastro = ref(false);
 
 // Define os dados da Inusmos  selecionada
 const dadoSelecionado = (dados) => {
@@ -52,6 +68,15 @@ const dadoSelecionado = (dados) => {
 const atualizarLista = () => {
   listaKey.value += 1;
   dadosSelecionado.value = null;
+  showCadastro.value = false;
+};
+
+// Alterna entre a tela de cadastro e a listagem/detalhes
+const toggleCadastro = () => {
+  showCadastro.value = !showCadastro.value;
+  if (showCadastro.value) {
+    dadosSelecionado.value = null; // Reseta os detalhes ao abrir o cadastro
+  }
 };
 </script>
 
