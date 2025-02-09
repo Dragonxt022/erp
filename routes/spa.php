@@ -85,6 +85,16 @@ Route::prefix('api')->middleware([
         Route::post('/atualizar', [DefaultPaymentMethodController::class, 'update'])->name('metodosPagamentos.admin.update');
         Route::delete('/excluir/{id}', [DefaultPaymentMethodController::class, 'destroy'])->name('metodosPagamentos.admin.destroy');
     });
+
+    // Canais de vendas
+    Route::prefix('admin-canais-vendas')->group(function () {
+        Route::get('/lista', [DefaultCanaisVendaController::class, 'listaIndex'])->name('canaisVendas.admin.index');
+        Route::post('/alternar-status', [DefaultCanaisVendaController::class, 'toggleStatus'])->name('canaisVendas.admin.toggleStatus');
+
+        Route::post('/cadastrar', [DefaultCanaisVendaController::class, 'store'])->name('canaisVendas.admin.store');
+        Route::post('/atualizar', [DefaultCanaisVendaController::class, 'update'])->name('canaisVendas.admin.update');
+        Route::delete('/excluir/{id}', [DefaultCanaisVendaController::class, 'destroy'])->name('canaisVendas.admin.destroy');
+    });
 });
 
 // Rotas protegidas por autenticação Usuarios

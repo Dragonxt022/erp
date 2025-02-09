@@ -1,1 +1,0 @@
-import{_ as e}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{o as a,e as n}from"./app-Cyv_QSeu.js";const o={};function r(c,t){return a(),n("div",null,"Nada aqui ainda")}const d=e(o,[["render",r]]);export{d as default};

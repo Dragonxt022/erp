@@ -22,6 +22,7 @@ return new class extends Migration
                     'anota_ai',
                     'delivery_much',
                     'aiqfome',
+                    'outros',
 
 
                 ]

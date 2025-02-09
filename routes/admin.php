@@ -58,7 +58,7 @@ Route::middleware([
     })->name('franqueadora.metodosPagamentos');
 
     Route::get('/franqueadora/canais-vendas', function () {
-        return Inertia::render('Admin/canaisVendas/Index');
+        return Inertia::render('Admin/CanaisVendas/Index');
     })->name('franqueadora.canaisVendas');
 
     // 
