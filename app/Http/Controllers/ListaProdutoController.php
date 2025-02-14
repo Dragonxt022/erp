@@ -29,8 +29,9 @@ class ListaProdutoController extends Controller
 
         // Agrupar os produtos por categoria
         $produtosAgrupados = $produtos->groupBy(function ($produto) {
-            return $produto->categoriaProduto->nome; // Agrupar por nome da categoria
+            return optional($produto->categoriaProduto)->nome ?? 'Sem Categoria';
         });
+
 
         // Formatar os dados no formato desejado
         $resultados = $produtosAgrupados->map(function ($produtosPorCategoria, $categoriaNome) {
