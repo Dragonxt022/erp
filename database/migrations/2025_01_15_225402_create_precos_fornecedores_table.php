@@ -18,7 +18,8 @@ class CreatePrecosFornecedoresTable extends Migration
             $table->id(); // ID auto incrementável
             $table->foreignId('lista_produto_id')->constrained('lista_produtos')->onDelete('cascade'); // Relacionamento com a tabela lista_produtos
             $table->foreignId('fornecedor_id')->constrained('fornecedores')->onDelete('cascade'); // Relacionamento com a tabela fornecedores
-            $table->float('quantidade', 2, 2)->nullable(); // Quantidade do produto
+            $table->decimal('quantidade', 10, 3)->nullable(); // Quantidade do produto
+            $table->decimal('qtd_minima', 10, 3)->nullable(); // Quantidade minima para pedido
             $table->decimal('preco_unitario', 10, 2)->nullable(); // Preço unitário do produto
             $table->timestamps(); // Colunas created_at e updated_at
         });

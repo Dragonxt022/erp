@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CaixaAnaliticoController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\CategoriaProdutoController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContaAPagarController;
 use App\Http\Controllers\DefaultCanaisVendaController;
@@ -74,6 +75,11 @@ Route::prefix('api')->middleware([
         Route::post('/cadastrar', [ListaProdutoController::class, 'store'])->name('cadastrar.store');
         Route::post('/atualizar', [ListaProdutoController::class, 'update'])->name('atualizarProdutos.update');
         Route::delete('/excluir/{id}', [ListaProdutoController::class, 'destroy'])->name('excluir.produto');
+    });
+
+    // Cadastro de Categorias de Produtos
+    Route::prefix('categorias-produtos')->group(function () {
+        Route::get('/lista', [CategoriaProdutoController::class, 'index']);
     });
 
     // Metodos de pagamentos

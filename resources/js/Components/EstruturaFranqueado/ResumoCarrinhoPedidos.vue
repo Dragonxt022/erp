@@ -99,8 +99,7 @@
                 class="border border-gray-300 rounded px-2 py-1 w-16"
               />
               <span v-else>
-                {{ item.quantidade }}
-                {{ item.unidadeDeMedida === 'a_granel' ? 'KG' : 'UN' }}
+                {{ formatarQuantidade(item) }}
               </span>
             </td>
 
@@ -203,44 +202,60 @@ const ativarEdicao = (index) => {
   indexEditavel.value = index;
 };
 
+const formatarQuantidade = (item) => {
+  const quantidade = Number(item.quantidade) || 0;
+
+  return item.unidadeDeMedida === 'a_granel'
+    ? quantidade.toLocaleString('pt-BR', {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3,
+      }) + ' KG'
+    : quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + ' UN';
+};
+
 const valorPorQuilo = (item) => {
-  return (item.preco || 0) / 100; // Converte centavos para reais
+  const preco = Number(item.preco) || 0;
+
+  return preco.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 const calcularTotal = (item) => {
-  return ((item.quantidade || 0) * (item.preco || 0)) / 100; // Converte o total para reais
+  return (item.quantidade || 0) * (item.preco || 0);
 };
 
-// Função para calcular a soma total do carrinho
+// Função para calcular a soma total do Carrinho
 const calcularSomaTotal = () => {
   return props.carrinho.reduce((total, item) => {
-    return total + ((item.quantidade || 0) * (item.preco || 0)) / 100; // Converte centavos para reais
+    return total + (item.quantidade || 0) * (item.preco || 0);
   }, 0);
 };
 
 const enviarPedido = async () => {
   isLoading.value = true;
-  isSending.value = true;
+  isSending.value = false;
   try {
     // Preparando os dados que serão enviados para a API
     const dadosEntrada = {
       itens: props.carrinho.map((item) => ({
-        fornecedor_id: item.fornecedorId, // ID do fornecedor do item
-        id: item.id, // ID do item
+        fornecedor_id: item.fornecedorId,
+        id: item.id,
         nome: item.nome,
         nomeFornecedor: item.nomeFornecedor,
-        quantidade: item.quantidade, // Quantidade do item
-        valor_unitario: item.preco,
-        valor_total_item: calcularTotal(item), // Valor total do item (em reais)
+        quantidade: parseFloat(item.quantidade),
+        valor_unitario: parseFloat(item.preco),
+        valor_total_item: calcularTotal(item),
         unidadeDeMedida: item.unidadeDeMedida,
       })),
-      valor_total_carrinho: calcularSomaTotal(), // Valor total do carrinho (em reais)
+      valor_total_carrinho: parseFloat(calcularSomaTotal()),
       nomePrimeiroFornecedor: nomePrimeiroFornecedor,
     };
 
     console.log('Dados a ser enviado:', JSON.stringify(dadosEntrada, null, 2));
 
-    // Enviar os dados para o backend via API
+    // Enviar os dados
     const response = await axios.post(
       '/api/estoque/criar-pedido',
       dadosEntrada

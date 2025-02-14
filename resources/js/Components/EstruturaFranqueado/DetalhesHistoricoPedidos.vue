@@ -68,12 +68,7 @@
                 class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
               >
                 <span>
-                  <!-- Verificar se quantidade é um array e somá-los se necessário -->
-                  {{
-                    Array.isArray(item.quantidade)
-                      ? item.quantidade.reduce((acc, val) => acc + val, 0)
-                      : item.quantidade
-                  }}
+                  {{ formatQuantidade(item.quantidade, item.unidadeDeMedida) }}
                   {{ item.unidadeDeMedida === 'a_granel' ? 'KG' : 'UN' }}
                 </span>
               </td>
@@ -90,13 +85,10 @@
                   R$
                   {{
                     Array.isArray(item.valor_unitario)
-                      ? (
-                          item.valor_unitario.reduce(
-                            (acc, val) => acc + val,
-                            0
-                          ) / 100
-                        ).toFixed(2)
-                      : (item.valor_unitario / 100).toFixed(2)
+                      ? item.valor_unitario
+                          .reduce((acc, val) => acc + val, 0)
+                          .toFixed(2)
+                      : item.valor_unitario.toFixed(2)
                   }}
                 </span>
               </td>
@@ -105,7 +97,7 @@
               <td class="px-6 py-4 text-[16px] text-gray-500 text-center">
                 <span>
                   {{
-                    (calcularTotal(item) / 100).toLocaleString('pt-BR', {
+                    calcularTotal(item).toLocaleString('pt-BR', {
                       style: 'currency',
                       currency: 'BRL',
                     })
@@ -143,40 +135,49 @@ const ativarEdicao = (index) => {
 
 // Função para calcular o valor total do item
 const calcularTotal = (item) => {
-  // Se 'valor_unitario' for um array, calcule a soma de todos os valores
+  // Se 'valor_unitario' for um array, calcula a soma de todos os valores
   const valorUnitario = Array.isArray(item.valor_unitario)
     ? item.valor_unitario.reduce((acc, val) => acc + val, 0)
     : parseFloat(item.valor_unitario);
 
-  // Se 'quantidade' for um array, calcule a soma de todas as quantidades
+  // Se 'quantidade' for um array, calcula a soma de todas as quantidades
   const quantidade = Array.isArray(item.quantidade)
     ? item.quantidade.reduce((acc, val) => acc + val, 0)
     : parseFloat(item.quantidade);
 
-  // Verifique se os valores são válidos antes de calcular
+  // Verifica se os valores são válidos antes de calcular
   if (isNaN(valorUnitario) || isNaN(quantidade)) {
-    return 0; // Caso os valores não sejam numéricos, retornar 0
+    return 0; // Caso os valores não sejam numéricos, retorna 0
   }
 
   return valorUnitario * quantidade;
 };
 
-// Função para calcular valor por quilo
+// Função para calcular o valor por quilo (para a_granel) ou por unidade (para unitario)
+// Neste caso, o valor_unitario já representa o preço correto
 const valorPorQuilo = (item) => {
-  const valorUnitario = Array.isArray(item.valor_unitario)
-    ? item.valor_unitario.reduce((acc, val) => acc + val, 0)
-    : parseFloat(item.valor_unitario);
+  return parseFloat(item.valor_unitario);
+};
 
-  const quantidade = Array.isArray(item.quantidade)
-    ? item.quantidade.reduce((acc, val) => acc + val, 0)
-    : parseFloat(item.quantidade);
+// Função para formatar a quantidade conforme a unidade de medida
+const formatQuantidade = (quantidade, unidade) => {
+  // Se quantidade for um array, soma seus valores; caso contrário, converte para número
+  const total = Array.isArray(quantidade)
+    ? quantidade.reduce((acc, val) => acc + val, 0)
+    : parseFloat(quantidade) || 0;
 
-  // Verifique se os valores são válidos antes de calcular
-  if (isNaN(valorUnitario) || isNaN(quantidade)) {
-    return 0;
+  if (unidade === 'a_granel') {
+    // Formata com 3 casas decimais, padrão brasileiro
+    return Number(total).toLocaleString('pt-BR', {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    });
+  } else {
+    // Para unitário, formata como número inteiro
+    return Number(total).toLocaleString('pt-BR', {
+      maximumFractionDigits: 0,
+    });
   }
-
-  return valorUnitario / quantidade;
 };
 </script>
 

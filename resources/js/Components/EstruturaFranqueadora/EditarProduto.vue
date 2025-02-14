@@ -9,6 +9,17 @@
         <form @submit.prevent="submitForm">
           <!-- Upload de Imagem -->
           <div class="flex justify-center mb-6 relative group">
+            <img
+              :src="
+                prioridade
+                  ? '/storage/images/favorito_selecionado.svg'
+                  : '/storage/images/favorito_selecionar.svg'
+              "
+              alt="Favorito"
+              title="Adicionar esse item como prioridade."
+              class="absolute top-2 right-2 w-9 h-9 cursor-pointer"
+              @click.stop="togglePrioridade"
+            />
             <div
               class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
               @click="openFileSelector"
@@ -54,91 +65,51 @@
           <div v-if="errorMessage" class="error-message">
             {{ errorMessage }}
           </div>
-
-          <!-- Prioridade -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Prioridade"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="principal"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+          <div
+            class="flex flex-wrap md:flex-nowrap items-end gap-4 mt-8 w-full"
+          >
+            <div class="flex flex-col w-full md:w-1/2">
+              <LabelModel text="Unidade de medida" class="mb-2" />
+              <select
+                v-model="selectedUnidade"
+                class="h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
               >
-                <div
-                  v-if="categoria === 'principal'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Principal</span>
-            </label>
+                <option value="" disabled selected>
+                  Selecione uma unidade
+                </option>
+                <option
+                  v-for="unidadeMedida in unidadeMedidas"
+                  :key="unidadeMedida.id"
+                  :value="unidadeMedida.id"
+                  class="text-base font-semibold"
+                >
+                  {{ unidadeMedida.nome }}
+                  <!-- Exibe o nome da unidade -->
+                </option>
+              </select>
+            </div>
 
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="secundario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+            <!-- Categoria -->
+            <div class="flex flex-col w-full md:w-1/2">
+              <LabelModel text="Categoria" class="mb-2" />
+              <select
+                v-model="selectedCategoria"
+                class="h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
               >
-                <div
-                  v-if="categoria === 'secundario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Secundário</span>
-            </label>
-          </div>
-
-          <!-- Unidade de medida -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Unidade de medida"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="a_granel"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'a_granel'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>A granel</span>
-            </label>
-
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="unitario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'unitario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Unitário</span>
-            </label>
+                <option value="" disabled selected>
+                  Selecione uma categoria
+                </option>
+                <!-- Opção padrão -->
+                <option
+                  v-for="categoria in categorias"
+                  :key="categoria.id"
+                  :value="categoria.id"
+                  class="text-base font-semibold"
+                >
+                  {{ categoria.nome }}
+                </option>
+              </select>
+            </div>
           </div>
           <!-- Tabela de fornecedores -->
           <div class="mt-8">
@@ -151,9 +122,14 @@
                     Fornecedores
                   </th>
                   <th
-                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider"
                   >
                     Valor
+                  </th>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
+                  >
+                    Qtd.Mínima
                   </th>
                 </tr>
               </thead>
@@ -175,14 +151,33 @@
                       class="border rounded-lg px-2 py-1 w-[110px] h-[38px] text-center"
                     />
                   </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    <input
+                      v-model="qtd_minima_fornecedor[fornecedor.id]"
+                      @blur="formatarQuantidade(fornecedor.id)"
+                      type="text"
+                      :placeholder="
+                        selectedUnidade === 'unitario' ? '0' : '0,000'
+                      "
+                      @input="formatarQuantidade(fornecedor.id)"
+                      class="border rounded-lg px-2 py-1 w-[110px] h-[38px] text-center"
+                    />
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="flex justify-start space-x-1 mt-[8%]">
-            <ButtonCancelar text="Cancelar" @click="cancelForm" />
+            <ButtonCancelar
+              class="w-full"
+              text="Cancelar"
+              @click="cancelForm"
+            />
             <ButtonPrimaryMedio
+              class="w-full"
               text="Atualizar"
               @click="showConfirmDialog('Atualizar esse Produto?')"
             />
@@ -202,7 +197,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import { useToast } from 'vue-toastification';
-import { Inertia } from '@inertiajs/inertia';
 import { defineProps, defineEmits } from 'vue';
 import axios from 'axios';
 import InputModel from '../Inputs/InputModel.vue';
@@ -238,11 +232,18 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['cancelar']);
+const emit = defineEmits(['cancelar', 'atualizar']);
 
 const nome = ref('');
-const categoria = ref('');
-const unidadeDeMedida = ref('');
+const prioridade = ref(null);
+const selectedUnidade = ref('');
+const unidadeMedidas = ref([
+  { nome: 'A granel', id: 'a_granel' },
+  { nome: 'Unitário', id: 'unitario' },
+]);
+const selectedCategoria = ref('');
+const categorias = ref([]);
+
 const profilePhotoUrl = ref('');
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -250,35 +251,16 @@ const fileInput = ref(null);
 const isLoading = ref(false);
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
-const preco_fornecedor = ref([]);
+const preco_fornecedor = ref({}); // Preços dos fornecedores
+const qtd_minima_fornecedor = ref({}); // Quantidade Mínima
 const fornecedores = ref([]);
 
 const { produto } = toRefs(props);
 
-// Atualiza os campos quando o produto é alterado
-// Atualiza os campos quando o produto é alterado
-watch(
-  () => props.produto,
-  (novoProduto) => {
-    if (novoProduto) {
-      nome.value = novoProduto.nome || '';
-      categoria.value = novoProduto.categoria || '';
-      unidadeDeMedida.value = novoProduto.unidadeDeMedida || '';
-      profilePhotoUrl.value = novoProduto.profile_photo || '';
-
-      // Inicializa preco_fornecedor com os dados de preco do produto
-      preco_fornecedor.value = novoProduto.precos.reduce((acc, preco) => {
-        // Verifica se o preço do fornecedor existe e formata
-        acc[preco.fornecedor_id] = preco.preco_unitario
-          ? formatarValorMoeda(preco.preco_unitario)
-          : ''; // Deixa o campo vazio se não houver preço
-        return acc;
-      }, {});
-    }
-  },
-  { immediate: true }
-);
-
+const togglePrioridade = () => {
+  prioridade.value = !prioridade.value;
+  console.log('Prioridade:', prioridade.value, typeof prioridade.value);
+};
 // Função para carregar fornecedores da API
 const fetchFornecedores = async () => {
   try {
@@ -296,11 +278,64 @@ const fetchFornecedores = async () => {
   }
 };
 
-// Chama a função quando o componente for montado
+// Função que carrega as listas de categoria
+const fetchCategorias = async () => {
+  try {
+    const response = await axios.get('/api/categorias-produtos/lista'); // Chamada à API
+    categorias.value = response.data; // Armazenando categorias no ref
+  } catch (error) {
+    toast.error('Erro ao carregar categorias.');
+  }
+};
+
+// Atualiza os campos quando o produto é alterado
+const atualizarProduto = (novoProduto) => {
+  if (!novoProduto) return;
+
+  nome.value = novoProduto.nome || '';
+  prioridade.value = Boolean(novoProduto.prioridade);
+  selectedCategoria.value = novoProduto.categoria_id || '';
+  selectedUnidade.value = novoProduto.unidadeDeMedida || '';
+  profilePhotoUrl.value = novoProduto.profile_photo || '';
+
+  // Preenche a lista de fornecedores e categorias
+  fornecedores.value = novoProduto.fornecedores || [];
+  categorias.value = novoProduto.categorias || [];
+
+  // Inicializa preco_fornecedor com os dados de preço do produto
+  preco_fornecedor.value = novoProduto.precos.reduce((acc, preco) => {
+    acc[preco.fornecedor_id] = preco.preco_unitario
+      ? formatarValorMoeda(preco.preco_unitario)
+      : '';
+    return acc;
+  }, {});
+
+  // Inicializa qtd_minima_fornecedor com as quantidades mínimas dos fornecedores
+  qtd_minima_fornecedor.value = novoProduto.precos.reduce((acc, preco) => {
+    acc[preco.fornecedor_id] = preco.qtd_minima || '';
+    return acc;
+  }, {});
+};
+
+// Observa mudanças no ID do produto e atualiza os dados
+watch(
+  () => props.produto?.id,
+  (novoId) => {
+    if (novoId) {
+      atualizarProduto(props.produto);
+      fetchFornecedores();
+      fetchCategorias();
+    }
+  },
+  { immediate: true }
+);
+
+// Garante que os dados sejam carregados na montagem do componente
 onMounted(() => {
   fetchFornecedores();
+  fetchCategorias();
 });
-// Função para envio do formulário
+
 const submitForm = async () => {
   if (!nome.value) {
     toast.error('O campo nome é obrigatório.');
@@ -312,47 +347,39 @@ const submitForm = async () => {
 
     const formData = new FormData();
 
+    const prioridadeEnvio = prioridade.value ? 1 : 0;
+    console.log('Prioridade enviada:', prioridadeEnvio, typeof prioridadeEnvio);
+
+    const dadosProduto = {
+      fornecedores: fornecedores.value.map((fornecedor) => ({
+        fornecedor_id: fornecedor.id,
+        preco_unitario: preco_fornecedor.value[fornecedor.id] || null,
+        qtd_minima: qtd_minima_fornecedor.value[fornecedor.id] || null,
+      })),
+    };
+
+    console.log(dadosProduto); // Verifique no console antes de enviar
+
     // Passando os dados do produto
     formData.append('id', props.produto.id);
     formData.append('nome', nome.value);
-    formData.append('categoria', categoria.value);
-    formData.append('unidadeDeMedida', unidadeDeMedida.value);
+    formData.append('prioridade', prioridadeEnvio);
+    formData.append('categoria_id', selectedCategoria.value);
+    formData.append('unidadeDeMedida', selectedUnidade.value);
+    formData.append('precos', JSON.stringify(dadosProduto));
 
     // Verificar se a imagem foi alterada
     if (selectedFile.value) {
       formData.append('profile_photo', selectedFile.value);
     }
 
-    // Enviar os preços com base nos fornecedores, incluindo fornecedor_id e preco_unitario
-    Object.entries(preco_fornecedor.value).forEach(([fornecedorId, valor]) => {
-      if (fornecedorId === 'undefined' || fornecedorId === null) {
-        return;
-      }
-
-      const valorCentavos = valor.replace(/\D/g, ''); // Remove não números
-
-      formData.append(
-        'precos[]',
-        JSON.stringify({
-          preco_id: null,
-          fornecedor_id: fornecedorId,
-          preco_unitario: valorCentavos,
-        })
-      );
-    });
-
     const response = await axios.post(`/api/produtos/atualizar`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-
-    Inertia.replace(route('franqueadora.insumos'), {
-      produto: response.data.produto,
-      preserveState: true,
-    });
-
     toast.success('Produto atualizado com sucesso!');
+    emit('atualizar');
   } catch (error) {
     // Log detalhado do erro
     console.error('Erro ao atualizar o produto:', error);
@@ -385,6 +412,37 @@ const formatarValor = (fornecedor) => {
   preco_fornecedor.value[fornecedor] = `R$ ${valorFormatado}`;
 };
 
+const formatarQuantidade = (fornecedor) => {
+  let valor = qtd_minima_fornecedor.value[fornecedor] || ''; // Recupera o valor atual da quantidade mínima
+
+  if (!valor.trim()) {
+    qtd_minima_fornecedor.value[fornecedor] = ''; // Se o campo for apagado, mantém vazio
+    return;
+  }
+
+  // Verifica a unidade de medida (unitário ou a granel)
+  if (selectedUnidade.value === 'unitario') {
+    // Se for 'unitario', o campo deve permitir apenas números inteiros
+    let quantidadeInteira = valor.replace(/\D/g, ''); // Remove tudo que não for número
+    qtd_minima_fornecedor.value[fornecedor] = quantidadeInteira; // Atualiza com os números inteiros
+  } else if (selectedUnidade.value === 'a_granel') {
+    // Se for 'a granel', o campo deve permitir valores com até 3 casas decimais
+    let quantidadeNumerica = valor.replace(/\D/g, ''); // Remove tudo que não for número
+    if (!quantidadeNumerica) {
+      qtd_minima_fornecedor.value[fornecedor] = ''; // Se não houver números, mantém vazio
+      return;
+    }
+
+    // Separa a parte inteira e a parte decimal da quantidade
+    let inteiro = quantidadeNumerica.slice(0, -3) || '0'; // Parte inteira
+    let centavos = quantidadeNumerica.slice(-3).padStart(3, '0'); // Parte decimal (centavos)
+
+    // Atualiza com o valor formatado (parte inteira + parte decimal)
+    qtd_minima_fornecedor.value[fornecedor] = `${Number(inteiro).toLocaleString(
+      'pt-BR'
+    )},${centavos}`;
+  }
+};
 // Método para gerar a URL correta da imagem
 const getProfilePhotoUrl = (profilePhoto) => {
   if (!profilePhoto) {

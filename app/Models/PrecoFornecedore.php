@@ -12,6 +12,7 @@ class PrecoFornecedore extends Model
         'lista_produto_id', // Relacionamento com o produto
         'fornecedor_id', // Relacionamento com o fornecedor
         'quantidade', // Quantidade do produto
+        'qtd_minima',
         'preco_unitario', // Preço unitário
     ];
 

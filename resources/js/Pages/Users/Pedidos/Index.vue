@@ -85,14 +85,8 @@ const fetchUnidades = () => {
 
 // Define os dados da Inusmos  selecionada
 const ProdutoSelecionado = (produto) => {
-  if (produto && typeof produto === 'object') {
-    produtoSelecionado.value = produto;
-  } else {
-    console.warn(
-      'Dados inválidos recebidos no evento produto-selecionado:',
-      produto
-    );
-  }
+  produtoSelecionado.value = produto;
+  console.info('Dados recebidos produto-selecionado:', produto);
 };
 </script>
 

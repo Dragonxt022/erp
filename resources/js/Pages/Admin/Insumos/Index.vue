@@ -11,6 +11,7 @@
       <!-- Coluna 1: Listar Unidades -->
       <div>
         <ListarInsumos
+          :key="listaKey"
           ref="listarUnidades"
           @unidade-cadastrada="fetchUnidades"
           @produto-selecionado="ProdutoSelecionado"
@@ -22,7 +23,10 @@
         <template v-if="!showCadastroProduto">
           <!-- Passa os dados do usuário selecionado apenas se existirem -->
           <template v-if="produtoSelecionado">
-            <DetalhesProduto :produto="produtoSelecionado" />
+            <DetalhesProduto
+              :produto="produtoSelecionado"
+              @atualizar="atualizarLista"
+            />
           </template>
 
           <div class="absolute bottom-4 right-4">
@@ -48,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, defineEmits } from 'vue';
 import AppLayout from '@/Layouts/LayoutFranqueadora.vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
@@ -58,7 +62,7 @@ import CadastroProduto from '@/Components/EstruturaFranqueadora/CadastroProduto.
 
 // Dados do usuário selecionado
 const produtoSelecionado = ref(null);
-
+const listaKey = ref(0);
 const showCadastroProduto = ref(false);
 
 // Alterna a visibilidade entre Cadastro e Detalhes
@@ -70,6 +74,11 @@ const toggleCadastro = () => {
 const handleCadastro = () => {
   fetchUnidades();
   showCadastroProduto.value = false;
+};
+
+const atualizarLista = () => {
+  listaKey.value += 1;
+  produtoSelecionado.value = null;
 };
 
 // Atualiza a lista de unidades

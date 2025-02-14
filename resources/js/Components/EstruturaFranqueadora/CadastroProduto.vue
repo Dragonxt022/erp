@@ -9,6 +9,19 @@
         <form @submit.prevent="submitForm">
           <!-- Upload de Imagem -->
           <div class="flex justify-center mb-6 relative group">
+            <!-- Ícone de Favorito no canto superior direito -->
+
+            <img
+              :src="
+                prioridade
+                  ? '/storage/images/favorito_selecionado.svg'
+                  : '/storage/images/favorito_selecionar.svg'
+              "
+              alt="Favorito"
+              title="Adicionar esse item como prioridade."
+              class="absolute top-2 right-2 w-9 h-9 cursor-pointer"
+              @click.stop="togglePrioridade"
+            />
             <div
               class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
               @click="openFileSelector"
@@ -17,6 +30,7 @@
                 <img
                   :src="profilePhotoUrl"
                   alt="Imagem selecionada"
+                  title="Foto do item"
                   class="w-full h-full object-cover"
                 />
                 <div
@@ -55,90 +69,51 @@
             {{ errorMessage }}
           </div>
 
-          <!-- Prioridade -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Prioridade"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="principal"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+          <div
+            class="flex flex-wrap md:flex-nowrap items-end gap-4 mt-8 w-full"
+          >
+            <!-- Unidade de Medida -->
+            <div class="flex flex-col w-full md:w-1/2">
+              <LabelModel text="Unidade de medida" class="mb-2" />
+              <select
+                v-model="selectedUnidade"
+                class="h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
               >
-                <div
-                  v-if="categoria === 'principal'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Principal</span>
-            </label>
+                <option value="" disabled selected>
+                  Selecione uma unidade
+                </option>
+                <option
+                  v-for="unidadeMedida in unidadeMedidas"
+                  :key="unidadeMedida.id"
+                  :value="unidadeMedida.id"
+                  class="text-base font-semibold"
+                >
+                  {{ unidadeMedida.nome }}
+                </option>
+              </select>
+            </div>
 
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="categoria"
-                value="secundario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
+            <!-- Categoria -->
+            <div class="flex flex-col w-full md:w-1/2">
+              <LabelModel text="Categoria" class="mb-2" />
+              <select
+                v-model="selectedCategoria"
+                class="h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
               >
-                <div
-                  v-if="categoria === 'secundario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Secundário</span>
-            </label>
-          </div>
-
-          <!-- Unidade de medida -->
-          <LabelModel
-            class="font-semibold text-gray-800 mt-8"
-            text="Unidade de medida"
-          />
-          <div class="flex items-center space-x-4 mt-2">
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="a_granel"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'a_granel'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>A granel</span>
-            </label>
-
-            <label class="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="radio"
-                v-model="unidadeDeMedida"
-                value="unitario"
-                class="hidden"
-              />
-              <div
-                class="w-5 h-5 rounded-full border-2 border-green-500 flex items-center justify-center"
-              >
-                <div
-                  v-if="unidadeDeMedida === 'unitario'"
-                  class="w-3 h-3 rounded-full bg-green-500"
-                ></div>
-              </div>
-              <span>Unitário</span>
-            </label>
+                <option value="" disabled selected>
+                  Selecione uma categoria
+                </option>
+                <!-- Opção padrão -->
+                <option
+                  v-for="categoria in categorias"
+                  :key="categoria.id"
+                  :value="categoria.id"
+                  class="text-base font-semibold"
+                >
+                  {{ categoria.nome }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <!-- Tabela de fornecedores -->
@@ -152,9 +127,14 @@
                     Fornecedor
                   </th>
                   <th
-                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider"
                   >
                     Valor
+                  </th>
+                  <th
+                    class="px-6 py-2 text-[15px] font-semibold text-[#1d5915] uppercase tracking-wider rounded-tr-2xl"
+                  >
+                    Qtd.Mínima
                   </th>
                 </tr>
               </thead>
@@ -176,14 +156,32 @@
                       class="border rounded-lg px-2 py-1 w-[110px] h-[38px] text-center"
                     />
                   </td>
+                  <td
+                    class="px-6 py-2 text-[16px] text-gray-800 font-semibold text-center"
+                  >
+                    <input
+                      v-model="qtd_minima_fornecedor[fornecedor.id]"
+                      type="text"
+                      :placeholder="
+                        selectedUnidade === 'unitario' ? '0' : '0,000'
+                      "
+                      @input="formatarQuantidade(fornecedor.id)"
+                      class="border rounded-lg px-2 py-1 w-[110px] h-[38px] text-center"
+                    />
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <div class="flex justify-start space-x-1 mt-[15%]">
-            <ButtonCancelar text="Cancelar" @click="cancelForm" />
+            <ButtonCancelar
+              class="w-full"
+              text="Cancelar"
+              @click="cancelForm"
+            />
             <ButtonPrimaryMedio
+              class="w-full"
               text="Cadastrar"
               @click="showConfirmDialog('Criar novo Produto?')"
             />
@@ -225,8 +223,15 @@ const emit = defineEmits(['cancelar']);
 
 const nome = ref('');
 const profilePhotoUrl = ref('');
-const categoria = ref('');
-const unidadeDeMedida = ref('');
+const prioridade = ref(false);
+const selectedCategoria = ref('');
+const categorias = ref([]);
+
+const selectedUnidade = ref('');
+const unidadeMedidas = ref([
+  { nome: 'A granel', id: 'a_granel' },
+  { nome: 'Unitário', id: 'unitario' },
+]);
 
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -234,10 +239,10 @@ const fileInput = ref(null);
 const isLoading = ref(false);
 
 const preco_fornecedor = ref({}); // Preços dos fornecedores
-
+const qtd_minima_fornecedor = ref({}); // Quantidade Mínima
 const fornecedores = ref([]); // Armazenar fornecedores
-
 const isConfirmDialogVisible = ref(false);
+
 const motivo = ref('');
 
 onMounted(async () => {
@@ -263,8 +268,17 @@ onMounted(async () => {
   });
 });
 
-// Funções
+// Buscas as categorias dos produtos
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/categorias-produtos/lista'); // Chamada à API
+    categorias.value = response.data; // Armazenando categorias no ref
+  } catch (error) {
+    toast.error('Erro ao carregar categorias.');
+  }
+});
 
+// Funções
 const formatarValor = (fornecedorId) => {
   let valor = preco_fornecedor.value[fornecedorId] || '';
   valor = valor.toString().replace(/\D/g, ''); // Remove tudo que não for número
@@ -277,6 +291,35 @@ const formatarValor = (fornecedorId) => {
   }).format(valor);
 
   preco_fornecedor.value[fornecedorId] = `R$ ${valorFormatado}`;
+};
+
+const formatarQuantidade = (fornecedorId) => {
+  let valor = qtd_minima_fornecedor.value[fornecedorId] || '';
+
+  if (!valor.trim()) {
+    qtd_minima_fornecedor.value[fornecedorId] = ''; // Se o campo for apagado, mantém vazio
+    return;
+  }
+
+  if (selectedUnidade.value === 'unitario') {
+    // Se for unitário, o campo deve permitir apenas números inteiros
+    let quantidadeInteira = valor.replace(/\D/g, ''); // Remove tudo que não for número
+    qtd_minima_fornecedor.value[fornecedorId] = quantidadeInteira; // Mantém somente os inteiros
+  } else if (selectedUnidade.value === 'a_granel') {
+    // Se for a granel (quilo), o campo deve permitir valores com 3 casas decimais
+    let quantidadeNumerica = valor.replace(/\D/g, ''); // Remove tudo que não for número
+    if (!quantidadeNumerica) {
+      qtd_minima_fornecedor.value[fornecedorId] = ''; // Se não houver números, mantém vazio
+      return;
+    }
+
+    let inteiro = quantidadeNumerica.slice(0, -3) || '0'; // Parte inteira
+    let centavos = quantidadeNumerica.slice(-3).padStart(3, '0'); // Parte decimal
+
+    qtd_minima_fornecedor.value[fornecedorId] = `${Number(
+      inteiro
+    ).toLocaleString('pt-BR')},${centavos}`;
+  }
 };
 
 const openFileSelector = () => {
@@ -320,17 +363,27 @@ const cancelForm = () => {
   emit('cancelar');
 };
 
+const togglePrioridade = () => {
+  prioridade.value = !prioridade.value;
+};
+
 const resetForm = () => {
   nome.value = '';
-  categoria.value = '';
-  unidadeDeMedida.value = '';
+
+  selectedCategoria.value = '';
+  selectedUnidade.value = '';
   profilePhotoUrl.value = '';
   selectedFile.value = null;
   errorMessage.value = '';
 };
 
 const validateForm = () => {
-  if (!nome.value || !selectedFile.value || !unidadeDeMedida || !categoria) {
+  if (
+    !nome.value ||
+    !selectedFile.value ||
+    !selectedUnidade.value ||
+    !selectedCategoria.value
+  ) {
     toast.error('Por favor, preencha todos os campos obrigatórios.');
     errorMessage.value = 'Por favor, preencha todos os campos obrigatórios.';
     return false;
@@ -345,18 +398,18 @@ const submitForm = async () => {
     isLoading.value = true;
     const formData = new FormData();
     formData.append('nome', nome.value);
-    formData.append('categoria', categoria.value);
-    formData.append('unidadeDeMedida', unidadeDeMedida.value);
+    formData.append('prioridade', prioridade.value);
+    formData.append('categoria_id', selectedCategoria.value);
+    formData.append('unidadeDeMedida', selectedUnidade.value);
     formData.append('profile_photo', selectedFile.value);
 
-    // Verificar se preco_fornecedor possui valores antes de adicionar ao formData
+    // Enviando preços dos fornecedores
     if (
       preco_fornecedor.value &&
       Object.keys(preco_fornecedor.value).length > 0
     ) {
       Object.entries(preco_fornecedor.value).forEach(
         ([fornecedorId, valorCentavos]) => {
-          // Verifica se o preço tem um valor válido
           if (
             valorCentavos &&
             valorCentavos !== '' &&
@@ -368,6 +421,21 @@ const submitForm = async () => {
       );
     }
 
+    // Enviando quantidades mínimas dos fornecedores
+    if (
+      qtd_minima_fornecedor.value &&
+      Object.keys(qtd_minima_fornecedor.value).length > 0
+    ) {
+      Object.entries(qtd_minima_fornecedor.value).forEach(
+        ([fornecedorId, qtd]) => {
+          if (qtd && qtd !== '') {
+            formData.append(`quantidades[${fornecedorId}]`, qtd);
+          }
+        }
+      );
+    }
+
+    // Enviar o formData com todos os dados
     const response = await axios.post('/api/produtos/cadastrar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

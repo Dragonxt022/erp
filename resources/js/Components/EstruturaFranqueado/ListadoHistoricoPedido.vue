@@ -71,8 +71,8 @@ const fetchDados = async () => {
 onMounted(fetchDados);
 
 // Método para selecionar o pedido
-const selecionarDados = (dados) => {
-  emit('dado-selecionado', dados);
+const selecionarDados = (dado) => {
+  emit('dado-selecionado', dado);
 };
 
 // Computed para filtrar os pedidos com base na pesquisa
@@ -84,6 +84,11 @@ const filteredDados = computed(() => {
       pedido.fornecedor_nome.toLowerCase().includes(query) // Verifica se o nome do fornecedor inclui a pesquisa
     );
   });
+});
+
+// Computed para ordenar os pedidos em ordem decrescente (por exemplo, pelo ID)
+const sortedDados = computed(() => {
+  return filteredDados.value.slice().sort((a, b) => b.id - a.id);
 });
 </script>
 

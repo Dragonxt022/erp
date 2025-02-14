@@ -28,83 +28,137 @@
     </div>
 
     <!-- Container de cards -->
-    <div class="card-container">
+    <div class="category-container">
       <div
-        v-for="produto in filteredProdutos"
-        :key="produto.id"
-        class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
-        @click="selecionarProduto(produto)"
+        v-for="(categoria, categoriaNome) in filteredProdutos"
+        :key="categoriaNome"
+        class="categoria-group"
       >
-        <div class="card-inner">
-          <div class="icon-container">
-            <div class="icon-bg"></div>
-            <div class="icon-leaf">
-              <img
-                :src="getProfilePhotoUrl(produto.profile_photo)"
-                alt="Imagem do produto"
-                class="w-12 h-12 rounded-lg"
-              />
+        <!-- Nome da categoria -->
+        <div
+          class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-8 mb-1"
+        >
+          {{ categoriaNome }}
+        </div>
+
+        <!-- Produtos dentro de cada categoria -->
+        <div class="card-container">
+          <div
+            v-for="produto in categoria.produtos"
+            :key="produto.id"
+            class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
+            @click="selecionarProduto(produto)"
+          >
+            <div class="card-inner">
+              <div class="icon-container">
+                <div class="icon-bg"></div>
+                <div class="icon-leaf">
+                  <img
+                    :src="getProfilePhotoUrl(produto.profile_photo)"
+                    alt="Imagem do produto"
+                    class="w-12 h-12 rounded-lg"
+                  />
+                </div>
+              </div>
+              <div class="text-container">
+                <!-- Nome do produto e estrela -->
+                <div class="city">
+                  {{ produto.nome }}
+                  <span v-if="produto.estrela" class="estrela">★</span>
+                </div>
+              </div>
+              <div class="action-icon"></div>
             </div>
           </div>
-          <div class="text-container">
-            <!-- Nome do fornecedor -->
-            <div class="city">
-              {{ produto.nome }}
-              <span v-if="produto.estrela" class="estrela">★</span>
-            </div>
-          </div>
-          <div class="action-icon"></div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, computed, defineEmits } from 'vue';
 import axios from 'axios';
 
-export default {
-  data() {
-    return {
-      produtos: [], // Armazena os produtos
-      searchQuery: '', // Campo de pesquisa
-    };
-  },
-  mounted() {
-    this.fetchProdutos();
-  },
-  methods: {
-    // Busca os produtos da API
-    async fetchProdutos() {
-      try {
-        const response = await axios.get('/api/produtos/lista-insumos');
-        console.log('Produtos carregados:', response.data);
-        this.produtos = response.data; // Atualiza os dados
-      } catch (error) {
-        console.error('Erro ao carregar os produtos:', error);
-      }
-    },
-    // Método para gerar a URL correta da imagem
-    getProfilePhotoUrl(profilePhoto) {
-      if (!profilePhoto) {
-        return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
-      }
-      return new URL(profilePhoto, window.location.origin).href;
-    },
+// Variáveis reativas
+const produtos = ref({}); // Produtos agrupados por categoria
+const searchQuery = ref(''); // Campo de pesquisa
 
-    selecionarProduto(produto) {
-      this.$emit('produto-selecionado', produto);
-    },
-  },
-  computed: {
-    filteredProdutos() {
-      const query = this.searchQuery.toLowerCase();
-      return this.produtos.filter((produto) =>
-        produto.nome.toLowerCase().includes(query)
+const emit = defineEmits(['produto-selecionado']);
+
+// Função que é chamada quando o componente é montado
+onMounted(() => {
+  fetchProdutos();
+});
+
+// Busca os produtos da API
+async function fetchProdutos() {
+  try {
+    const response = await axios.get('/api/produtos/lista-insumos');
+    console.log('Produtos carregados:', response.data);
+
+    // Verificar se a resposta é um objeto
+    if (typeof response.data === 'object' && response.data !== null) {
+      produtos.value = groupByCategoria(response.data); // Agrupar os produtos por categoria
+    } else {
+      console.error(
+        'Esperava um objeto de categorias de produtos, mas recebi:',
+        response.data
       );
-    },
-  },
-};
+    }
+  } catch (error) {
+    console.error('Erro ao carregar os produtos:', error);
+  }
+}
+
+// Método para agrupar os produtos por categoria
+function groupByCategoria(produtosData) {
+  const categorias = Object.keys(produtosData); // Obtém as categorias (Mercearia, Legumes, etc.)
+  const produtosAgrupados = {};
+
+  categorias.forEach((categoria) => {
+    produtosAgrupados[categoria] = {
+      categoria_nome: produtosData[categoria].categoria_nome,
+      produtos: produtosData[categoria].produtos || [], // Garante que os produtos sejam um array
+    };
+  });
+
+  return produtosAgrupados;
+}
+
+// Método para gerar a URL correta da imagem
+function getProfilePhotoUrl(profilePhoto) {
+  if (!profilePhoto) {
+    return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
+  }
+  return new URL(profilePhoto, window.location.origin).href;
+}
+
+// Função para selecionar o produto
+function selecionarProduto(produto) {
+  emit('produto-selecionado', produto);
+}
+
+// Computed property para filtrar os produtos conforme a pesquisa
+const filteredProdutos = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  const resultado = {};
+
+  // Filtra as categorias e seus produtos
+  Object.keys(produtos.value).forEach((categoriaNome) => {
+    const produtosFiltrados = produtos.value[categoriaNome].produtos.filter(
+      (produto) => produto.nome.toLowerCase().includes(query)
+    );
+    if (produtosFiltrados.length > 0) {
+      resultado[categoriaNome] = {
+        categoria_nome: produtos.value[categoriaNome].categoria_nome,
+        produtos: produtosFiltrados,
+      };
+    }
+  });
+
+  return resultado;
+});
 </script>
 
 <style scoped>
@@ -118,6 +172,14 @@ export default {
   font-weight: 700;
   color: #262a27; /* Cor escura para título */
   line-height: 30px;
+}
+
+.categoria-title {
+  font-size: 15px;
+  margin-bottom: 2px;
+  margin-top: 20px;
+  color: #6d6d6e; /* Cor secundária */
+  max-width: 600px; /* Limita a largura do subtítulo */
 }
 
 .painel-subtitle {

@@ -37,38 +37,54 @@
             </div>
 
             <!-- Container de cards -->
-            <div class="space-y-4 compromissos-container overflow-hidden">
+            <div class="category-container">
               <div
-                v-for="produto in filteredProdutos"
-                :key="produto.id"
-                class="flex items-center p-4 bg-white rounded-lg cursor-pointer"
-                @click="selecionarProduto(produto)"
+                v-for="(categoria, categoriaNome) in filteredProdutos"
+                :key="categoriaNome"
+                class="categoria-group"
               >
-                <div class="flex-shrink-0">
-                  <img
-                    :src="getProfilePhotoUrl(produto.profile_photo)"
-                    alt="Imagem do produto"
-                    class="w-12 h-12 rounded-lg"
-                  />
+                <!-- Nome da categoria -->
+                <div
+                  class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-8 mb-1"
+                >
+                  {{ categoriaNome }}
                 </div>
-                <div class="ml-4 flex-1">
-                  <div class="text-lg font-semibold flex items-center">
-                    {{ produto.nome }}
 
-                    <span
-                      v-if="quantidadeNoCarrinho(produto.id) > 0"
-                      class="ml-5 text-xs bg-green-100 text-green-600 font-bold rounded-full px-2 py-1"
-                    >
-                      {{ quantidadeNoCarrinho(produto.id) }}
-                    </span>
+                <!-- Produtos dentro de cada categoria -->
+                <div class="card-container">
+                  <div
+                    v-for="produto in categoria.produtos"
+                    :key="produto.id"
+                    class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
+                    @click="selecionarProduto(produto)"
+                  >
+                    <div class="card-inner">
+                      <div class="icon-container">
+                        <div class="icon-bg"></div>
+                        <div class="icon-leaf">
+                          <img
+                            :src="getProfilePhotoUrl(produto.profile_photo)"
+                            alt="Imagem do produto"
+                            class="w-12 h-12 rounded-lg"
+                          />
+                        </div>
+                      </div>
+                      <div class="text-container">
+                        <!-- Nome do produto e estrela -->
+                        <div class="city">
+                          {{ produto.nome }}
+                          <span v-if="produto.estrela" class="estrela">★</span>
 
-                    <span
-                      v-if="produto.estrela"
-                      class="mr-2 ml-5 text-yellow-500"
-                      title="Essa estrela sigifinica que esse insumo e um produto princial"
-                    >
-                      ★
-                    </span>
+                          <span
+                            v-if="quantidadeNoCarrinho(produto.id) > 0"
+                            class="ml-5 text-xs bg-green-100 text-green-600 font-bold rounded-full px-2 py-1"
+                          >
+                            {{ quantidadeNoCarrinho(produto.id) }}
+                          </span>
+                        </div>
+                      </div>
+                      <div class="action-icon"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -135,22 +151,46 @@ const confirmarEntrada = () => {
 };
 
 const fetchProdutos = async () => {
-  isLoading.value = true;
   try {
     const response = await axios.get('/api/produtos/lista');
-    produtos.value = response.data;
+    console.log('Produtos carregados:', response.data);
+
+    // Verificar se a resposta é um objeto
+    if (typeof response.data === 'object' && response.data !== null) {
+      produtos.value = groupByCategoria(response.data); // Agrupar os produtos por categoria
+    } else {
+      console.error(
+        'Esperava um objeto de categorias de produtos, mas recebi:',
+        response.data
+      );
+    }
   } catch (error) {
     console.error('Erro ao carregar os produtos:', error);
-  } finally {
-    isLoading.value = false;
   }
 };
 
-const getProfilePhotoUrl = (profilePhoto) => {
-  return profilePhoto
-    ? new URL(profilePhoto, window.location.origin).href
-    : '/storage/images/no_imagem.svg';
-};
+// Método para agrupar os produtos por categoria
+function groupByCategoria(produtosData) {
+  const categorias = Object.keys(produtosData); // Obtém as categorias (Mercearia, Legumes, etc.)
+  const produtosAgrupados = {};
+
+  categorias.forEach((categoria) => {
+    produtosAgrupados[categoria] = {
+      categoria_nome: produtosData[categoria].categoria_nome,
+      produtos: produtosData[categoria].produtos || [], // Garante que os produtos sejam um array
+    };
+  });
+
+  return produtosAgrupados;
+}
+
+// Método para gerar a URL correta da imagem
+function getProfilePhotoUrl(profilePhoto) {
+  if (!profilePhoto) {
+    return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
+  }
+  return new URL(profilePhoto, window.location.origin).href;
+}
 
 const selecionarProduto = (produto) => {
   produtoSelecionado.value = produto;
@@ -165,12 +205,26 @@ const adicionarAoCarrinho = (produto) => {
   produtoSelecionado.value = null; // Fecha o formulário após adicionar
 };
 
-// Computados
-const filteredProdutos = computed(() =>
-  produtos.value.filter((produto) =>
-    produto.nome.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
-);
+// Computed property para filtrar os produtos conforme a pesquisa
+const filteredProdutos = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  const resultado = {};
+
+  // Filtra as categorias e seus produtos
+  Object.keys(produtos.value).forEach((categoriaNome) => {
+    const produtosFiltrados = produtos.value[categoriaNome].produtos.filter(
+      (produto) => produto.nome.toLowerCase().includes(query)
+    );
+    if (produtosFiltrados.length > 0) {
+      resultado[categoriaNome] = {
+        categoria_nome: produtos.value[categoriaNome].categoria_nome,
+        produtos: produtosFiltrados,
+      };
+    }
+  });
+
+  return resultado;
+});
 
 // Lifecycle
 onMounted(fetchProdutos);

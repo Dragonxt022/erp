@@ -241,6 +241,7 @@ const enviarEntrada = async () => {
         return {
           id: item.id,
           nome: item.nome,
+          categoria_id: item.categoria_id,
           quantidade: quantidadeDecimal, // Envia a quantidade como número decimal
           unidadeDeMedida: item.unidadeDeMedida,
           valorUnitario: valorUnitario, // Envia o valor unitário como número decimal

@@ -15,6 +15,7 @@ class UnidadeEstoque extends Model
         'insumo_id',
         'fornecedor_id',
         'usuario_id',
+        'categoria_id',
         'quantidade',
         'preco_insumo',
         'operacao',
@@ -23,6 +24,11 @@ class UnidadeEstoque extends Model
     ];
 
     // Relacionamento com insumos (produtos)
+    public function categoriaProduto()
+    {
+        return $this->belongsTo(CategoriaProduto::class, 'categoria_id');
+    }
+
     public function insumo()
     {
         return $this->belongsTo(ListaProduto::class, 'insumo_id');

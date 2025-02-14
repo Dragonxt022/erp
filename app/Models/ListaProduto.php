@@ -10,8 +10,16 @@ class ListaProduto extends Model
         'nome',
         'profile_photo',
         'categoria',
+        'categoria_id',
+        'prioridade',
         'unidadeDeMedida',
     ];
+
+    // Relacionamento pertence a CategoriaProduto
+    public function categoriaProduto()
+    {
+        return $this->belongsTo(CategoriaProduto::class, 'categoria_id');
+    }
 
     public function precos()
     {

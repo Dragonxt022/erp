@@ -66,12 +66,13 @@
       :produto="produto"
       @dadosProduto="fetchProdutos"
       @cancelar="cancelEdit"
+      @atualizar="atualizarComponete"
     />
   </div>
 </template>
 
 <script setup>
-import { defineProps, ref } from 'vue';
+import { defineProps, ref, defineEmits } from 'vue';
 import axios from 'axios';
 import { Inertia } from '@inertiajs/inertia';
 import { useToast } from 'vue-toastification';
@@ -80,6 +81,8 @@ import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 import EditarProduto from './EditarProduto.vue';
 
 const toast = useToast();
+
+const emit = defineEmits(['atualizar']);
 
 const props = defineProps({
   produto: {
@@ -96,7 +99,7 @@ const isEditMode = ref(false);
 const isLoading = ref(false);
 
 const fetchProdutos = () => {
-  const dadosProduto = ref.dadosProduto;
+  const dadosrPoduto = ref.dadosProduto;
   dadosProduto.fetchProduto();
 };
 
@@ -152,6 +155,12 @@ const handleCancel = () => {
 const cancelEdit = () => {
   isEditMode.value = false;
   showCadastroProduto.value = true;
+};
+
+const atualizarComponete = () => {
+  isEditMode.value = false;
+  showCadastroProduto.value = true;
+  emit('atualizar');
 };
 </script>
 

@@ -19,18 +19,17 @@
         class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
         @click="selecionarDados(dados)"
       >
-        <div class="card-inner">
-          <div class="icon-container">
-            <div class="icon-bg"></div>
-            <div class="icon-leaf">
-              <img :src="getProfilePhotoUrl(dados.img_icon)" alt="Ícone" />
-            </div>
+        <div class="card-inner flex items-center justify-center">
+          <div class="icon-container flex items-center justify-center">
+            <img
+              :src="getProfilePhotoUrl(dados.img_icon)"
+              alt="Ícone"
+              class="w-[42px] h-[42px] object-contain"
+            />
           </div>
           <div class="text-container">
             <!-- Cidade da unidade -->
-            <div class="city">{{ dados.nome }}</div>
-
-            <!-- Usuários ou mensagem de unidade sem franqueado -->
+            <div class="city font-bold">{{ dados.nome }}</div>
           </div>
           <div class="action-icon"></div>
         </div>

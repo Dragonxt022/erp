@@ -30,33 +30,50 @@
     <!-- Container de cards -->
     <div class="card-container compromissos-container overflow-hidden">
       <div
-        v-for="produto in filteredProdutos"
-        :key="produto.id"
-        class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
-        @click="selecionarProduto(produto)"
+        v-for="(categoria, categoriaNome) in filteredProdutos"
+        :key="categoriaNome"
+        class="categoria-group"
       >
-        <div class="card-inner">
-          <div class="icon-container">
-            <div class="icon-bg"></div>
-            <div class="icon-leaf">
-              <img
-                :src="getProfilePhotoUrl(produto.profile_photo)"
-                alt="Imagem do produto"
-                class="w-12 h-12 rounded-lg"
-              />
-            </div>
-          </div>
-          <div class="text-container flex justify-between items-center p-2">
-            <!-- Nome do insumo -->
-            <div class="city">
-              {{ produto.nome }}
-            </div>
-            <!-- Quantidade -->
-            <div class="quantidade text-gray-600 font-semibold">
-              <div class="text-gray-600 font-semibold">
-                {{ getQuantidadeTotal(produto.lotes) }}
-                {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
+        <!-- Nome da categoria -->
+        <div
+          class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-8 mb-1"
+        >
+          {{ categoriaNome }}
+        </div>
+
+        <!-- Produtos dentro de cada categoria -->
+        <div class="card-container">
+          <div
+            v-for="produto in categoria.produtos"
+            :key="produto.id"
+            class="card cursor-pointer transform transition-transform duration-200 hover:shadow-lg"
+            @click="selecionarProduto(produto)"
+          >
+            <div class="card-inner">
+              <div class="icon-container">
+                <div class="icon-bg"></div>
+                <div class="icon-leaf">
+                  <img
+                    :src="getProfilePhotoUrl(produto.profile_photo)"
+                    alt="Imagem do produto"
+                    class="w-12 h-12 rounded-lg"
+                  />
+                </div>
               </div>
+              <div class="text-container flex justify-between items-center">
+                <!-- Nome do produto e estrela -->
+                <div class="city">
+                  {{ produto.nome }}
+                </div>
+                <!-- Quantidade -->
+                <div class="quantidade text-gray-600 font-semibold">
+                  <div class="text-gray-600 font-semibold">
+                    {{ getQuantidadeTotal(produto.lotes) }}
+                    {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
+                  </div>
+                </div>
+              </div>
+              <div class="action-icon"></div>
             </div>
           </div>
         </div>
@@ -65,74 +82,109 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, computed, defineEmits } from 'vue';
 import axios from 'axios';
 
-export default {
-  data() {
-    return {
-      produtos: [], // Armazena os produtos
-      searchQuery: '', // Campo de pesquisa
-    };
-  },
-  mounted() {
-    this.fetchProdutos();
-  },
-  methods: {
-    // Busca os produtos da API
-    async fetchProdutos() {
-      try {
-        const response = await axios.get('/api/estoque/lista');
-        console.log('Produtos carregados:', response.data);
-        this.produtos = Object.values(response.data); // Converte o objeto em array
-      } catch (error) {
-        console.error('Erro ao carregar os itens:', error);
-      }
-    },
-    // Método para gerar a URL correta da imagem
-    getProfilePhotoUrl(profilePhoto) {
-      if (!profilePhoto) {
-        return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
-      }
-      return new URL(profilePhoto, window.location.origin).href;
-    },
+const emit = defineEmits(['produto-selecionado']);
 
-    selecionarProduto(produto) {
-      this.$emit('produto-selecionado', produto);
-    },
+const produtos = ref([]); // Armazena os produtos
+const searchQuery = ref(''); // Campo de pesquisa
 
-    // Método para arredondar as quantidades de acordo com a unidade de medida
-    arredondarQuantidade(valor, unidadeDeMedida) {
-      const casasDecimais = unidadeDeMedida === 'a_granel' ? 3 : 0; //
-      return parseFloat(valor).toFixed(casasDecimais); // Arredonda de acordo com a unidade de medida
-    },
+// Função para buscar os produtos da API
+const fetchProdutos = async () => {
+  try {
+    const response = await axios.get('/api/estoque/lista');
+    console.log('Produtos carregados:', response.data);
 
-    // Calcula a quantidade total de todos os lotes de um produto
-    getQuantidadeTotal(lotes) {
-      if (!Array.isArray(lotes)) {
-        console.warn('getQuantidadeTotal recebeu um valor inválido:', lotes);
-        return 0; // Retorna 0 caso lotes seja inválido
-      }
-      // Soma todas as quantidades e arredonda o total de acordo com a unidade de medida
-      const total = lotes.reduce(
-        (total, lote) => total + (lote.quantidade || 0),
-        0
+    // Verificar se a resposta é um objeto
+    if (typeof response.data === 'object' && response.data !== null) {
+      produtos.value = groupByCategoria(response.data); // Agrupar os produtos por categoria
+    } else {
+      console.error(
+        'Esperava um objeto de categorias de produtos, mas recebi:',
+        response.data
       );
-      return this.arredondarQuantidade(
-        total,
-        lotes[0]?.unidadeDeMedida || 'unitario'
-      ); // Arredonda com base na unidade de medida
-    },
-  },
-  computed: {
-    filteredProdutos() {
-      const query = this.searchQuery.toLowerCase();
-      return this.produtos.filter((produto) =>
-        produto.nome.toLowerCase().includes(query)
-      );
-    },
-  },
+    }
+  } catch (error) {
+    console.error('Erro ao carregar os produtos:', error);
+  }
 };
+
+// Método para agrupar os produtos por categoria
+function groupByCategoria(produtosData) {
+  const categorias = Object.keys(produtosData); // Obtém as categorias (Mercearia, Legumes, etc.)
+  const produtosAgrupados = {};
+
+  categorias.forEach((categoria) => {
+    produtosAgrupados[categoria] = {
+      categoria_nome: produtosData[categoria].categoria_nome,
+      produtos: produtosData[categoria].produtos || [], // Garante que os produtos sejam um array
+    };
+  });
+
+  return produtosAgrupados;
+}
+
+// Método para gerar a URL correta da imagem
+function getProfilePhotoUrl(profilePhoto) {
+  if (!profilePhoto) {
+    return '/storage/images/no_imagem.svg'; // Caminho para imagem padrão
+  }
+  return new URL(profilePhoto, window.location.origin).href;
+}
+
+// Método para selecionar o produto
+const selecionarProduto = (produto) => {
+  // Emite o evento para o componente pai
+  emit('produto-selecionado', produto);
+};
+
+// Método para arredondar as quantidades de acordo com a unidade de medida
+const arredondarQuantidade = (valor, unidadeDeMedida) => {
+  const casasDecimais = unidadeDeMedida === 'a_granel' ? 3 : 0; //
+  return parseFloat(valor).toFixed(casasDecimais); // Arredonda de acordo com a unidade de medida
+};
+
+// Função para calcular a quantidade total de todos os lotes de um produto
+const getQuantidadeTotal = (lotes) => {
+  if (!Array.isArray(lotes)) {
+    console.warn('getQuantidadeTotal recebeu um valor inválido:', lotes);
+    return 0; // Retorna 0 caso lotes seja inválido
+  }
+  // Soma todas as quantidades e arredonda o total de acordo com a unidade de medida
+  const total = lotes.reduce(
+    (total, lote) => total + (lote.quantidade || 0),
+    0
+  );
+  return arredondarQuantidade(total, lotes[0]?.unidadeDeMedida || 'unitario'); // Arredonda com base na unidade de medida
+};
+
+// Computed property para filtrar os produtos conforme a pesquisa
+const filteredProdutos = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  const resultado = {};
+
+  // Filtra as categorias e seus produtos
+  Object.keys(produtos.value).forEach((categoriaNome) => {
+    const produtosFiltrados = produtos.value[categoriaNome].produtos.filter(
+      (produto) => produto.nome.toLowerCase().includes(query)
+    );
+    if (produtosFiltrados.length > 0) {
+      resultado[categoriaNome] = {
+        categoria_nome: produtos.value[categoriaNome].categoria_nome,
+        produtos: produtosFiltrados,
+      };
+    }
+  });
+
+  return resultado;
+});
+
+// Chama a função de busca ao montar o componente
+onMounted(() => {
+  fetchProdutos();
+});
 </script>
 
 <style scoped>

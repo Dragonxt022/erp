@@ -15,12 +15,13 @@ class CreateListaProdutosTable extends Migration
     {
         // Criar a tabela lista_produtos
         Schema::create('lista_produtos', function (Blueprint $table) {
-            $table->id(); // ID auto incrementável
-            $table->string('nome'); // Nome do produto
-            $table->string('profile_photo')->nullable(); // Foto do produto (pode ser nula)
-            $table->string('categoria')->nullable(); // Categoria do produto (pode ser nula)
+            $table->id();
+            $table->string('nome');
+            $table->string('profile_photo')->nullable();
+            $table->foreignId('categoria_id')->nullable()->constrained('categorias_produtos')->onDelete('set null');
+            $table->boolean('prioridade')->default(false);
             $table->string('unidadeDeMedida')->nullable();
-            $table->timestamps(); // Colunas created_at e updated_at
+            $table->timestamps();
         });
     }
 

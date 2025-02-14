@@ -63,38 +63,40 @@ const menuCategories = [
       },
     ],
   },
-  {
-    name: 'Painel',
-    items: [
-      {
-        label: 'E-mail',
-        icon: '/storage/images/email.svg',
-        link: 'franqueadora.email',
-        isLogout: false,
-      },
-      {
-        label: 'Comunidade',
-        icon: '/storage/images/diversity_4.svg',
-        link: 'franqueadora.comunidade',
-        isLogout: false,
-      },
-      {
-        label: 'Mídias',
-        icon: '/storage/images/perm_media.svg',
-        link: 'franqueadora.midias',
-        isLogout: false,
-      },
-    ],
-  },
+
+  // Painel
+  //   {
+  //     name: 'Painel',
+  //     items: [
+  //       {
+  //         label: 'E-mail',
+  //         icon: '/storage/images/email.svg',
+  //         link: 'franqueadora.email',
+  //         isLogout: false,
+  //       },
+  //       {
+  //         label: 'Comunidade',
+  //         icon: '/storage/images/diversity_4.svg',
+  //         link: 'franqueadora.comunidade',
+  //         isLogout: false,
+  //       },
+  //       {
+  //         label: 'Mídias',
+  //         icon: '/storage/images/perm_media.svg',
+  //         link: 'franqueadora.midias',
+  //         isLogout: false,
+  //       },
+  //     ],
+  //   },
   {
     name: 'Gestão da rede',
     items: [
-      {
-        label: 'Megafone',
-        icon: '/storage/images/campaign.svg',
-        link: 'franqueadora.megafone',
-        isLogout: false,
-      },
+      //   {
+      //     label: 'Megafone',
+      //     icon: '/storage/images/campaign.svg',
+      //     link: 'franqueadora.megafone',
+      //     isLogout: false,
+      //   },
       {
         label: 'Franqueados',
         icon: '/storage/images/person.svg',
@@ -149,13 +151,13 @@ const menuCategories = [
         ],
         isActive: false,
       },
-      {
-        label: 'Taiksu IA',
-        icon: '/storage/images/TAIKSU_IA_ICONE.svg',
-        link: 'franqueado.midias',
-        isLogout: false,
-        isActive: false,
-      },
+      //   {
+      //     label: 'Taiksu IA',
+      //     icon: '/storage/images/TAIKSU_IA_ICONE.svg',
+      //     link: 'franqueado.midias',
+      //     isLogout: false,
+      //     isActive: false,
+      //   },
       {
         label: 'Sair',
         icon: '/storage/images/log-out.png',

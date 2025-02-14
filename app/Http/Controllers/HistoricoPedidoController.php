@@ -22,6 +22,9 @@ class HistoricoPedidoController extends Controller
             $query->where('unidade_id', $unidadeId);
         }
 
+        // Ordena os pedidos em ordem decrescente (por exemplo, pelo created_at)
+        $query->orderBy('created_at', 'desc');
+
         // Obtem os resultados
         $pedidos = $query->get();
 

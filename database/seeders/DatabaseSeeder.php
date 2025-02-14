@@ -21,6 +21,6 @@ class DatabaseSeeder extends Seeder
         // $this->call(DefaultPaymentMethodsSeeder::class);
         // $this->call(DefaultCanaisVendasSeeder::class);
         // $this->call(ContasSeeder::class);
-        $this->call(CargosTableSeeder::class);
+        // $this->call(CargosTableSeeder::class);
     }
 }

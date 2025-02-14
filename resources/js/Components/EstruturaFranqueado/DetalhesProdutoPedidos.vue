@@ -59,14 +59,16 @@
               Fornecedor
             </th>
             <th
+              class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider"
+            >
+              Valor /
+              {{ produto.unidadeDeMedida === 'unitario' ? 'Unidade' : 'Kg' }}
+            </th>
+
+            <th
               class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider rounded-tr-2xl"
             >
-              Preço
-              {{
-                produto.unidadeDeMedida === 'unitario'
-                  ? 'Por Unidade'
-                  : 'Por Kg'
-              }}
+              QTD.Mínima
             </th>
           </tr>
         </thead>
@@ -116,6 +118,11 @@
             <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
               {{ formatarParaReais(preco.preco_unitario) }}
             </td>
+            <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
+              {{
+                formatarUnidade(produtoData.unidadeDeMedida, preco.qtd_minima)
+              }}
+            </td>
           </tr>
 
           <!-- Exibe mensagem caso não haja preços -->
@@ -130,14 +137,17 @@
         </tbody>
       </table>
     </div>
+
     <div class="mt-12">
-      <label
-        class="up w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-3 mb-3"
-      >
-        {{ produto.unidadeDeMedida === 'unitario' ? 'Unitario' : 'A Granel' }}
+      <label class="up w-full text-[#6d6d6d] text-[15px] font-semibold">
+        {{ produto.unidadeDeMedida === 'unitario' ? 'Unitário' : 'A Granel' }}
       </label>
-      <InputModel v-model="quantidade" />
+      <InputModel
+        v-model="quantidade"
+        :placeholder="produto.unidadeDeMedida === 'unitario' ? '0' : '0,000'"
+      />
     </div>
+
     <div class="mt-5 flex gap-2">
       <ButtonPrimaryCarrinho
         :disabled="isLoading"
@@ -193,19 +203,20 @@ const finalizarResumo = () => {
   emit('finalizar');
 };
 
-// Função para adicionar um item ao carrinho
 const adicionarAoCarrinho = () => {
+  // Verifique se o fornecedor foi selecionado
   if (!fornecedorSelecionado.value) {
     toast.warning('Por favor, selecione o fornecedor!');
     return;
   }
 
-  if (!quantidade.value) {
-    toast.warning('É necessário informar uma quantidade!');
+  // Verifique se a quantidade é válida
+  if (!quantidade.value || parseFloat(quantidade.value) <= 0) {
+    toast.warning('É necessário informar uma quantidade válida (maior que 0)!');
     return;
   }
 
-  // Verifique se produtoData existe
+  // Verifique se o produtoData existe
   if (!produtoData.value || !produtoData.value.precos) {
     toast.error(
       'Houve um erro com o produto, tente novamente ou chame o suporte.'
@@ -224,13 +235,32 @@ const adicionarAoCarrinho = () => {
     return;
   }
 
+  // Verifique a quantidade mínima para o fornecedor
+  const qtdMinima = fornecedorPreco.qtd_minima;
+  const quantidadeInformada = parseFloat(quantidade.value);
+
+  // Tratar a quantidade mínima (convertendo para número, se necessário)
+  const qtdMinimaNum =
+    typeof qtdMinima === 'string'
+      ? parseFloat(qtdMinima.replace(',', '.'))
+      : qtdMinima;
+
+  if (quantidadeInformada < qtdMinimaNum) {
+    toast.warning(
+      `A quantidade mínima para este fornecedor precisa ser acima de ${qtdMinimaNum}.`
+    );
+    return;
+  }
+
   // Busca o nome do fornecedor no array de fornecedores
   const fornecedor = fornecedores.value.find(
     (f) => f.id === fornecedorSelecionado.value
   );
 
+  // Preço do fornecedor
   const precoUnitario = fornecedorPreco ? fornecedorPreco.preco_unitario : 0;
 
+  // Cria o item que será adicionado ao carrinho
   const itemCarrinho = {
     id: produtoData.value.id,
     nome: produtoData.value.nome,
@@ -239,9 +269,14 @@ const adicionarAoCarrinho = () => {
     nomeFornecedor: fornecedor
       ? fornecedor.razao_social
       : 'Fornecedor desconhecido',
-    quantidade: parseFloat(quantidade.value),
-    preco: precoUnitario, // Preço definido do fornecedor
+    quantidade:
+      produtoData.value.unidadeDeMedida === 'unitario'
+        ? parseInt(quantidade.value) // Inteiro para unitário
+        : parseFloat(quantidade.value).toFixed(3), // 3 casas para a granel
+    preco: precoUnitario, // Preço do fornecedor
   };
+
+  console.info('item adicionado', itemCarrinho);
 
   // Emite o item para ser adicionado ao carrinho
   emit('adicionarAoCarrinho', itemCarrinho);
@@ -250,59 +285,9 @@ const adicionarAoCarrinho = () => {
   // Limpa o campo de quantidade após adicionar ao carrinho
   quantidade.value = '';
 
-  // Travar o seletor de fornecedor
+  // Bloqueia a seleção de fornecedor após o primeiro item ser adicionado
   fornecedorBloqueado.value = true;
 };
-
-// const adicionarAoCarrinho = () => {
-//   if (!fornecedorSelecionado.value) {
-//     toast.warning('Por favor, selecione o fornecedor!');
-//     return;
-//   }
-
-//   if (!quantidade.value) {
-//     toast.warning('É necessário informar uma quantidade!');
-//     return;
-//   }
-
-//   // Verifique se produtoData existe
-//   if (!produtoData.value || !produtoData.value.precos) {
-//     toast.error(
-//       'Houve um erro com o produto, tente novamente ou chame o suporte.'
-//     );
-//     return;
-//   }
-
-//   // Verifique se o fornecedor selecionado tem um preço associado
-//   const fornecedorPreco = produtoData.value.precos.find(
-//     (preco) => preco.fornecedor_id === fornecedorSelecionado.value
-//   );
-
-//   // Caso não encontre um preço do fornecedor, exibe uma mensagem de erro
-//   if (!fornecedorPreco) {
-//     toast.warning('Este fornecedor não está disponível no momento!');
-//     return;
-//   }
-
-//   const precoUnitario = fornecedorPreco ? fornecedorPreco.preco_unitario : 0;
-
-//   const itemCarrinho = {
-//     id: produtoData.value.id,
-//     nome: produtoData.value.nome,
-//     unidadeDeMedida: produtoData.value.unidadeDeMedida,
-//     fornecedorId: fornecedorSelecionado.value,
-//     nomeFornecedor: fornecedorPreco.fornecedor, // Nome do fornecedor do preço encontrado
-//     quantidade: parseFloat(quantidade.value),
-//     preco: precoUnitario, // Preço definido do fornecedor
-//   };
-
-//   // Emite o item para ser adicionado ao carrinho
-//   emit('adicionarAoCarrinho', itemCarrinho);
-//   toast.success('Item adicionado a sua lista de pedido.');
-
-//   // Limpa o campo de quantidade após adicionar ao carrinho
-//   quantidade.value = '';
-// };
 
 const fetchFornecedores = async () => {
   try {
@@ -318,11 +303,44 @@ const fetchFornecedores = async () => {
 
 fetchFornecedores();
 
-const formatarParaReais = (valorEmCentavos) => {
-  return (valorEmCentavos / 100).toLocaleString('pt-BR', {
+const formatarParaReais = (valor) => {
+  return Number(valor).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
+};
+
+const formatarUnidade = (unidadeDeMedida, valor) => {
+  if (unidadeDeMedida === 'unitario') return parseInt(valor);
+  if (unidadeDeMedida === 'a_granel')
+    return parseFloat(valor).toLocaleString('pt-BR', {
+      minimumFractionDigits: 3,
+      maximumFractionDigits: 3,
+    });
+
+  return valor; // Retorna o valor original caso não seja reconhecido
+};
+
+// Função para formatar a unidade de medida
+const formatarUnidades = (unidadeDeMedida, valor) => {
+  if (!valor.trim()) return ''; // Permite apagar o campo sem forçar um valor padrão
+
+  if (unidadeDeMedida === 'unitario') {
+    return valor.replace(/\D/g, ''); // Apenas números inteiros
+  }
+
+  if (unidadeDeMedida === 'a_granel') {
+    let quantidadeNumerica = valor.replace(/\D/g, ''); // Remove tudo que não for número
+
+    if (!quantidadeNumerica) return ''; // Mantém vazio se não houver números
+
+    let inteiro = quantidadeNumerica.slice(0, -3) || '0'; // Parte inteira
+    let decimal = quantidadeNumerica.slice(-3).padStart(3, '0'); // Parte decimal
+
+    return `${Number(inteiro).toLocaleString('pt-BR')},${decimal}`;
+  }
+
+  return valor; // Caso não se encaixe nas condições
 };
 
 const fetchProduto = async () => {
@@ -330,7 +348,12 @@ const fetchProduto = async () => {
   try {
     if (props.produto && props.produto.id) {
       const response = await axios.get(`/api/produtos/lista`);
-      const produtos = response.data;
+      const produtosPorCategoria = response.data;
+
+      // Transformar o objeto de categorias em um array de produtos
+      const produtos = Object.values(produtosPorCategoria).flatMap(
+        (categoria) => categoria.produtos
+      ); // Pega os produtos de cada categoria
 
       // Encontra o produto pelo ID
       produtoData.value = produtos.find((p) => p.id === props.produto.id) || {};
@@ -357,6 +380,10 @@ watch(
   },
   { immediate: true } // Executa a busca ao montar o componente
 );
+
+watch(quantidade, (novoValor) => {
+  quantidade.value = formatarUnidades(props.produto.unidadeDeMedida, novoValor);
+});
 </script>
 
 <style scoped>
