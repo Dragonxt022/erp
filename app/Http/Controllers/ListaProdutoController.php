@@ -125,29 +125,44 @@ class ListaProdutoController extends Controller
 
         // Processar os preços
         foreach ($request->precos as $fornecedorId => $preco) {
-            // Remover o símbolo R$ e substituir as vírgulas por pontos
-            $preco = preg_replace('/[^\d.,]/', '', $preco); // Remove caracteres não numéricos
-            $preco = str_replace(',', '.', $preco); // Substitui a vírgula por ponto
-            $precoDecimal = number_format((float) $preco, 2, '.', ''); // Converte para float com 2 casas decimais
-
+            // Remover o símbolo R$ e substituir vírgulas por pontos
+            $preco = preg_replace('/[^\d.,]/', '', $preco);
+            $preco = str_replace(',', '.', $preco);
+            $precoDecimal = (float) $preco;
 
             // Tratando a quantidade mínima do fornecedor
             $qtdMinima = isset($request->quantidades[$fornecedorId]) ? $request->quantidades[$fornecedorId] : null;
 
             if ($qtdMinima !== null) {
-                $qtdMinima = str_replace(',', '.', $qtdMinima); // Substitui vírgula por ponto
-                $qtdMinima = number_format((float) $qtdMinima, 3, '.', ''); // Garante 3 casas decimais
+                $qtdMinima = str_replace(',', '.', $qtdMinima);
+                $qtdMinima = number_format((float) $qtdMinima, 3, '.', '');
             }
 
+            // Buscar registro existente no banco de dados
+            $precoExistente = PrecoFornecedore::where('lista_produto_id', $produto->id)
+                ->where('fornecedor_id', $fornecedorId)
+                ->first();
 
-            // Ignorar valores inválidos (0 ou NaN)
             if ($precoDecimal > 0 && !is_nan($precoDecimal)) {
-                PrecoFornecedore::create([
-                    'lista_produto_id' => $produto->id,
-                    'fornecedor_id' => $fornecedorId,
-                    'preco_unitario' => $precoDecimal,
-                    'qtd_minima' => $qtdMinima,
-                ]);
+                // Se existir, atualizar, senão criar um novo
+                if ($precoExistente) {
+                    $precoExistente->update([
+                        'preco_unitario' => $precoDecimal,
+                        'qtd_minima' => $qtdMinima,
+                    ]);
+                } else {
+                    PrecoFornecedore::create([
+                        'lista_produto_id' => $produto->id,
+                        'fornecedor_id' => $fornecedorId,
+                        'preco_unitario' => $precoDecimal,
+                        'qtd_minima' => $qtdMinima,
+                    ]);
+                }
+            } else {
+                // Se o preço for inválido e já existir no banco, excluir o registro
+                if ($precoExistente) {
+                    $precoExistente->delete();
+                }
             }
         }
 
