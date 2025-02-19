@@ -16,7 +16,8 @@ class CanalVenda extends Model
         'canal_de_vendas_id',
         'caixa_id',
         'valor_total_vendas',
-        'quantidade_vendas_feitas'
+        'quantidade_vendas_feitas',
+        'valor_taxa_canal',
     ];
 
     public function unidade()

@@ -6,145 +6,65 @@
       <p>Acompanhe a saúde da sua operação</p>
     </div>
 
-    <!-- Conteúdo da página -->
-    <div class="mt-5 col-span-3">12-02-2025</div>
     <div class="mt-5">
       <div class="grid grid-cols-2 grid-rows-1 gap-4">
-        <!-- Segunda coluna -->
-        <div class="bg-white rounded-lg p-2">
+        <div class="rounded-lg">
           <table
             class="w-full text-left text-[14px] border-collapse font-['Figtree']"
           >
-            <!-- Faturamento -->
             <thead>
               <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">Faturamento do Período</th>
+                <th colspan="2" class="p-1 px-5">Faturamento do Período</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td class="p-1">Faturamento do Período</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
+            <tbody v-if="loading">
+              <!-- Skeleton Loader com efeito de brilho (shimmer) -->
+              <tr v-for="n in 25" :key="n">
+                <td class="p-1 px-5 shimmer h-6 w-1/2 rounded"></td>
+                <td class="p-1 px-5 shimmer h-6 w-1/4 rounded text-right"></td>
               </tr>
             </tbody>
 
-            <!-- Custos Fixos -->
-            <thead>
-              <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">Custos Fixos</th>
-              </tr>
-            </thead>
-            <tbody>
+            <tbody v-else>
               <tr>
-                <td class="p-1">Faturamento do Período</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td class="p-1">Folha de Pagamento</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td class="p-1">Internet</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td class="p-1">Energia</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td class="p-1">Aluguel</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
+                <td class="p-1 px-5 categorias">Faturamento do Período</td>
+                <td class="px-5 py-2 text-right valores">
+                  R$ {{ totalCaixas }}
+                </td>
               </tr>
             </tbody>
 
-            <!-- CMV -->
-            <thead>
-              <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">CMV</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="p-1">Mercadoria Vendida</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-              <tr>
-                <td class="p-1">Frete Fornecedores</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-            </tbody>
+            <template v-for="grupo in grupos" :key="grupo.nome_grupo">
+              <thead>
+                <tr class="bg-[#174111] text-white">
+                  <th colspan="2" class="p-1 px-5">{{ grupo.nome_grupo }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="categoria in grupo.categorias"
+                  :key="categoria.categoria"
+                  class="odd:bg-gray-100 even:bg-white p-1 px-5"
+                >
+                  <td class="p-1 px-5 categorias align-middle">
+                    {{ categoria.categoria }}
+                  </td>
+                  <td class="px-5 py-1 text-right valores">
+                    R$ {{ categoria.total }}
+                  </td>
+                </tr>
+              </tbody>
+            </template>
 
-            <!-- Impostos -->
-            <thead>
-              <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">Impostos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="p-1">FGTS</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-            </tbody>
-
-            <!-- Variáveis -->
-            <thead>
-              <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">Variáveis</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="p-1">Fundo de Propaganda</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-            </tbody>
-
-            <!-- Outros Custos -->
-            <thead>
-              <tr class="bg-[#174111] text-white">
-                <th colspan="2" class="p-1">Outros Custos</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="p-1">Não Especificado</td>
-                <td class="px-2 py-1 text-right">R$ 0,00</td>
-              </tr>
-            </tbody>
-
-            <!-- Resultado do Período -->
             <thead>
               <tr class="bg-[#174111] text-white">
                 <th colspan="1" class="p-2">Resultado do Período</th>
-                <th colspan="1" class="p-2 text-right font-bold">R$ 0,00</th>
+                <th colspan="1" class="p-2 text-right font-bold">
+                  R$ {{ resultadoPeriodo }}
+                </th>
               </tr>
             </thead>
           </table>
-        </div>
-
-        <div class="bg-white rounded-lg p-7">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
-        </div>
-
-        <!-- Terceira coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
-        </div>
-        <div class="bg-white rounded-lg p-4">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
         </div>
       </div>
     </div>
@@ -155,22 +75,75 @@
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
-//
+import axios from 'axios';
+
+const totalCaixas = ref('0,00');
+const resultadoPeriodo = ref('0,00');
+const grupos = ref([]);
+const loading = ref(true);
+
+const fetchData = async () => {
+  try {
+    const response = await axios.get('/api/painel-dre/analitycs-dre');
+    totalCaixas.value = response.data.total_caixas;
+    resultadoPeriodo.value = response.data.resultado_do_periodo;
+    grupos.value = response.data.grupos;
+  } catch (error) {
+    console.error('Erro ao buscar os dados do DRE:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(fetchData);
 </script>
 
 <style lang="css" scoped>
 .painel-title {
   font-size: 34px;
-  line-height: 15px;
   font-weight: 700;
-  color: #262a27; /* Cor escura para título */
-  margin-bottom: 10px; /* Espaçamento inferior */
+  color: #262a27;
+  margin-bottom: -10px;
 }
-
 .painel-subtitle {
   font-size: 17px;
-  line-height: 25px;
-  color: #6d6d6e; /* Cor secundária */
-  max-width: 600px; /* Limita a largura do subtítulo */
+  color: #6d6d6e;
+  max-width: 600px;
+}
+
+.categorias {
+  color: #6d6d6e;
+  font-size: 14px;
+  font-family: Figtree;
+  font-weight: 600;
+  text-transform: capitalize;
+  line-height: 14px;
+  word-wrap: break-word;
+}
+
+.valores {
+  color: #6d6d6e;
+  font-size: 14px;
+  font-family: Figtree;
+  font-weight: 700;
+  text-transform: capitalize;
+  line-height: 14px;
+  word-wrap: break-word;
+}
+
+/* Animação de shimmer */
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 </style>

@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use App\Models\CanalVenda;
+use App\Models\Categoria;
+use App\Models\ContaAPagar;
 use App\Models\ControleSaldoEstoque;
 use App\Models\FechamentoCaixa;
 use App\Models\FluxoCaixa;
+use App\Models\GrupoDeCategorias;
 use App\Models\MovimentacoesEstoque;
 use App\Models\UnidadeEstoque;
+use App\Models\UnidadePaymentMethod;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -435,7 +440,6 @@ class PainelAnaliticos extends Controller
         ]);
     }
 
-
     /**
      * Calcula o Ticket Médio e a quantidade de pedidos de uma unidade em um período
      *
@@ -476,5 +480,559 @@ class PainelAnaliticos extends Controller
             'quantidade_pedidos' => $quantidadePedidos,
             'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
         ]);
+    }
+
+
+    /**
+     * Analitycs da Pagina DRE
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function analitycsDRE(Request $request)
+    {
+        $usuario = Auth::user();
+        $unidade_id = $usuario->unidade_id;
+
+        try {
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay()->format('Y-m-d H:i:s');
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay()->format('Y-m-d H:i:s');
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+        }
+
+        // Função para calcular o valor baseado na unidade (kg ou unidade)
+        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
+            if ($unidade == 'kg') {
+                // Evita divisão por zero
+                if ($quantidade == 0) {
+                    return 0;
+                }
+                $precoPorQuilo = $preco / $quantidade;
+                return $quantidade * $precoPorQuilo;
+            } else {
+                return $quantidade * $preco;
+            }
+        };
+
+
+        // 1. Calcular o CMV
+        // Saldo inicial de estoque
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            ->whereDate('data_ajuste', '=', $startDateConverted)
+            ->orderBy('data_ajuste', 'desc')
+            ->first();
+
+        if (!$saldoInicial) {
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                ->whereDate('data_ajuste', '<', $startDateConverted)
+                ->orderBy('data_ajuste', 'desc')
+                ->first();
+
+            if (!$saldoInicial) {
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                    ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
+                    ->first();
+
+                if (!$saldoInicial) {
+                    return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
+                }
+            }
+        }
+
+        $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
+
+        // Compras no período
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+            ->where('operacao', 'Entrada')
+            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->get();
+
+        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
+            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+        });
+
+        // Estoque final
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
+            ->whereDate('created_at', '<=', $endDateConverted)
+            ->get();
+
+        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
+            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+        });
+
+        // Calcular o CMV
+        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
+
+
+        Log::info('Calculando CMV', [
+            'estoqueInicialValor' => $estoqueInicialValor,
+            'comprasValor' => $comprasValor,
+            'estoqueFinalValor' => $estoqueFinalValor
+        ]);
+
+        // Soma total dos caixas fechados no período
+        $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+            ->where('status', 0)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->sum('valor_final');
+
+
+        // Soma dos salários dos usuários da unidade dentro do período e com salário registrado
+        $totalSalarios = User::where('unidade_id', $unidade_id)
+            ->whereNotNull('salario') // Garante que o salário não é nulo
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtra pela data de criação do usuário
+            ->sum('salario');
+
+        // Soma total pago para Motoboy no período
+        $totalMotoboy = ContaAPagar::where('unidade_id', $unidade_id)
+            ->where('categoria_id', function ($query) {
+                $query->select('id')
+                    ->from('categorias')
+                    ->where('nome', 'Motoboy');
+            })
+            ->whereIn('status', ['pago', 'pendente'])
+            ->whereBetween('emitida_em', [$startDateConverted, $endDateConverted])
+            ->sum('valor');
+
+        // Calcula Royalties: 5% de (total de caixas - valor pago ao motoboy)
+        $totalLiquido = $totalCaixas - $totalMotoboy;
+        $totalRoyalties = $totalLiquido * 0.05;
+
+        //Calucla o Fundo de Propaganda: 1.5% ( total de caixas - valor pago ao motoboy)
+        $totalLiquido = $totalCaixas - $totalMotoboy;
+        $totalFundoPropaganda = $totalLiquido * 0.015;
+
+
+        // Calcula FGTS: 8% da soma total dos salários
+        $totalFGTS = $totalSalarios * 0.08;
+
+        // Soma total das taxas de métodos de pagamento por tipo no período
+        $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidade_id)
+            ->where('metodo_pagamento_id', function ($query) {
+                $query->select('id')
+                    ->from('default_payment_methods')
+                    ->where('tipo', 'credito');
+            })
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->sum('valor_taxa_metodo');
+
+        $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidade_id)
+            ->where('metodo_pagamento_id', function ($query) {
+                $query->select('id')
+                    ->from('default_payment_methods')
+                    ->where('tipo', 'debito');
+            })
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->sum('valor_taxa_metodo');
+
+        $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidade_id)
+            ->where('metodo_pagamento_id', function ($query) {
+                $query->select('id')
+                    ->from('default_payment_methods')
+                    ->where('tipo', 'vr_alimentacao');
+            })
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->sum('valor_taxa_metodo');
+
+        // Soma total das taxas de canais de vendas no período
+        $totalTaxasCanais = CanalVenda::where('unidade_id', $unidade_id)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
+            ->sum('valor_taxa_canal');
+
+        $categoriasRemovidas = ["Fornecedores", "FGTS"];
+
+        // Defina as categorias que devem ser ignoradas na soma
+        $categoriasIgnoradasNaSoma = ["Folha de pagamento", "FGTS", "Fornecedores"];
+
+        // Buscar todos os grupos de categorias com suas categorias associadas
+        $grupos = GrupoDeCategorias::with('categorias')->get();
+
+        // Variáveis para calcular os totais
+        $totalDespesasCategorias = 0;
+        $totalDespesasCategoriasSemFolha = 0;
+
+        $dadosGrupos = $grupos->map(function ($grupo) use (
+            $unidade_id,
+            $startDateConverted,
+            $endDateConverted,
+            $totalSalarios,
+            $totalRoyalties,
+            $totalFundoPropaganda,
+            $totalFGTS,
+            $totalTaxasCredito,
+            $totalTaxasDebito,
+            $totalTaxasVrAlimentacao,
+            $totalTaxasCanais,
+            $cmv,
+            &$totalDespesasCategorias,
+            &$totalDespesasCategoriasSemFolha,
+            $categoriasRemovidas,
+            $categoriasIgnoradasNaSoma
+        ) {
+            $categoriasFormatadas = $grupo->categorias
+                ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas)) // Remove categorias indesejadas
+                ->map(function ($categoria) use (
+                    $unidade_id,
+                    $startDateConverted,
+                    $endDateConverted,
+                    $totalSalarios,
+                    $totalRoyalties,
+                    $totalFundoPropaganda,
+                    $totalFGTS,
+                    $totalTaxasCredito,
+                    $totalTaxasDebito,
+                    $totalTaxasVrAlimentacao,
+                    $totalTaxasCanais,
+                    $cmv,
+                    &$totalDespesasCategorias,
+                    &$totalDespesasCategoriasSemFolha,
+                    $categoriasIgnoradasNaSoma
+                ) {
+                    // Valor padrão obtido de ContaAPagar
+                    $valor = ContaAPagar::where('categoria_id', $categoria->id)
+                        ->where('unidade_id', $unidade_id)
+                        ->whereIn('status', ['pago', 'pendente'])
+                        ->whereBetween('emitida_em', [$startDateConverted, $endDateConverted])
+                        ->sum('valor');
+
+                    // Se a categoria tiver valor especial, sobrescreve
+                    $valoresFixos = [
+                        "Mercadoria Vendida" => $cmv,
+                        "FGTS" => $totalFGTS,
+                        "Folha de pagamento" => $totalSalarios,
+                        "Royalties" => $totalRoyalties,
+                        "Fundo de propaganda" =>  $totalFundoPropaganda,
+                        "Taxa de Crédito" => $totalTaxasCredito,
+                        "Taxa de Débito" => $totalTaxasDebito,
+                        "Plataformas de Delivery" => $totalTaxasCanais,
+                        "Voucher Alimentação" => $totalTaxasVrAlimentacao
+                    ];
+
+                    if (isset($valoresFixos[$categoria->nome])) {
+                        $valor = $valoresFixos[$categoria->nome];
+                    }
+
+                    // Soma apenas se a categoria NÃO estiver na lista de ignoradas
+                    if (!in_array($categoria->nome, $categoriasIgnoradasNaSoma)) {
+                        $totalDespesasCategoriasSemFolha += $valor;
+                    }
+
+                    // Soma sempre no total geral
+                    $totalDespesasCategorias += $valor;
+
+                    return [
+                        'categoria' => $categoria->nome,
+                        'total' => number_format($valor, 2, ',', '.')
+                    ];
+                });
+
+            return [
+                'nome_grupo' => $grupo->nome,
+                'categorias' => $categoriasFormatadas
+            ];
+        });
+
+        // Resultado considerando todas as categorias
+        $resultado_do_periodo = $totalDespesasCategorias - $totalCaixas;
+
+        // Resultado ignorando "Folha de pagamento"
+        $resultado_do_periodo_sem_folha = $totalCaixas - $totalDespesasCategoriasSemFolha;
+
+
+        $year = Carbon::parse($startDateConverted)->year; // ou um ano específico, se enviado no request
+        $calendario = $this->getCalendarData($year, $unidade_id);
+
+
+
+        return response()->json([
+            'start_date' => $startDateConverted,
+            'end_date' => $endDateConverted,
+            'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
+            'total_despesas_categorias' => number_format($totalDespesasCategorias, 2, ',', '.'),
+            'resultado_do_periodo' => number_format($resultado_do_periodo_sem_folha, 2, ',', '.'),
+            'total_salarios'  => number_format($totalSalarios, 2, ',', '.'),
+            'grupos' => $dadosGrupos,
+            'calendario' => $calendario,
+
+        ]);
+    }
+
+    private function getCalendarData($year, $unidade_id)
+    {
+        $meses = [
+            1  => 'Janeiro',
+            2  => 'Fevereiro',
+            3  => 'Março',
+            4  => 'Abril',
+            5  => 'Maio',
+            6  => 'Junho',
+            7  => 'Julho',
+            8  => 'Agosto',
+            9  => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro'
+        ];
+
+        return collect(range(1, 12))->map(function ($month) use ($year, $unidade_id, $meses) {
+            // Definindo o início e o fim do mês com a formatação completa de data e hora
+            $startMonth = Carbon::create($year, $month, 1)->startOfDay(); // 00:00:00
+            $endMonth = Carbon::create($year, $month, Carbon::create($year, $month, 1)->daysInMonth)->endOfDay(); // 23:59:59
+
+            // Função para calcular o valor baseado na unidade (kg ou unidade)
+            $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
+                if ($unidade == 'kg') {
+                    // Evita divisão por zero
+                    if ($quantidade == 0) {
+                        return 0;
+                    }
+                    $precoPorQuilo = $preco / $quantidade;
+                    return $quantidade * $precoPorQuilo;
+                } else {
+                    return $quantidade * $preco;
+                }
+            };
+
+            // 1. Calcular o CMV
+            // Saldo inicial de estoque
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                ->whereDate('data_ajuste', '=', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->orderBy('data_ajuste', 'desc')
+                ->first();
+
+            if (!$saldoInicial) {
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                    ->whereDate('data_ajuste', '<', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                    ->orderBy('data_ajuste', 'desc')
+                    ->first();
+
+                if (!$saldoInicial) {
+                    $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                        ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
+                        ->first();
+
+                    if (!$saldoInicial) {
+                        return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
+                    }
+                }
+            }
+
+
+
+            $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
+
+
+            // Compras no período
+            $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+                ->where('operacao', 'Entrada')
+                ->whereBetween('created_at', [
+                    Carbon::parse($startMonth)->addDay()->format('Y-m-d H:i:s'),
+                    $endMonth->format('Y-m-d H:i:s')
+                ])
+                ->get();
+
+            $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
+                return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+            });
+
+
+            // Estoque final
+            $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
+                ->whereDate('created_at', '<=', $endMonth->format('Y-m-d H:i:s'))
+                ->get();
+
+            $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
+                return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
+            });
+
+            // Calcular o CMV
+            $valor_cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
+
+
+            // Calcular outras despesas do mês (usando os mesmos filtros do DRE)
+            $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+                ->where('status', 0)
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor_final');
+
+            $totalSalarios = User::where('unidade_id', $unidade_id)
+                ->whereNotNull('salario')
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('salario');
+
+            $totalMotoboy = ContaAPagar::where('unidade_id', $unidade_id)
+                ->where('categoria_id', function ($query) {
+                    $query->select('id')
+                        ->from('categorias')
+                        ->where('nome', 'Motoboy');
+                })
+                ->whereIn('status', ['pago', 'pendente'])
+                ->whereBetween('emitida_em', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor');
+
+            // Calcula Royalties: 5% de (total de caixas - valor pago ao motoboy)
+            $totalLiquido = $totalCaixas - $totalMotoboy;
+            $totalRoyalties = $totalLiquido * 0.05;
+
+            //Calucla o Fundo de Propaganda: 1.5% ( total de caixas - valor pago ao motoboy)
+            $totalLiquido = $totalCaixas - $totalMotoboy;
+            $totalFundoPropaganda = $totalLiquido * 0.015;
+
+
+            // Calcula FGTS: 8% da soma total dos salários
+            $totalFGTS = $totalSalarios * 0.08;
+
+            // Soma total das taxas de métodos de pagamento por tipo no período
+            $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidade_id)
+                ->where('metodo_pagamento_id', function ($query) {
+                    $query->select('id')
+                        ->from('default_payment_methods')
+                        ->where('tipo', 'credito');
+                })
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor_taxa_metodo');
+
+            $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidade_id)
+                ->where('metodo_pagamento_id', function ($query) {
+                    $query->select('id')
+                        ->from('default_payment_methods')
+                        ->where('tipo', 'debito');
+                })
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor_taxa_metodo');
+
+            $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidade_id)
+                ->where('metodo_pagamento_id', function ($query) {
+                    $query->select('id')
+                        ->from('default_payment_methods')
+                        ->where('tipo', 'vr_alimentacao');
+                })
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor_taxa_metodo');
+
+            $totalTaxasCanais = CanalVenda::where('unidade_id', $unidade_id)
+                ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                ->sum('valor_taxa_canal');
+
+
+            // Defina as categorias que devem ser removidas completamente
+            $categoriasRemovidas = ["Fornecedores", "FGTS"];
+
+            // Defina as categorias que devem ser ignoradas na soma
+            $categoriasIgnoradasNaSoma = ["Folha de pagamento", "FGTS", "Fornecedores"];
+
+            // Buscar todos os grupos de categorias com suas categorias associadas
+            $grupos = GrupoDeCategorias::with('categorias')->get();
+
+            // Variáveis para calcular os totais
+            $totalDespesasCategorias = 0;
+            $totalDespesasCategoriasSemFolha = 0;
+
+            $dadosGrupos = $grupos->map(function ($grupo) use (
+                $unidade_id,
+                $startMonth,
+                $endMonth,
+                $totalSalarios,
+                $totalRoyalties,
+                $totalFundoPropaganda,
+                $totalFGTS,
+                $totalTaxasCredito,
+                $totalTaxasDebito,
+                $totalTaxasVrAlimentacao,
+                $totalTaxasCanais,
+                $valor_cmv,
+                &$totalDespesasCategorias,
+                &$totalDespesasCategoriasSemFolha,
+                $categoriasRemovidas,
+                $categoriasIgnoradasNaSoma
+            ) {
+                $categoriasFormatadas = $grupo->categorias
+                    ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas)) // Remove categorias indesejadas
+                    ->map(function ($categoria) use (
+                        $unidade_id,
+                        $startMonth,
+                        $endMonth,
+                        $totalSalarios,
+                        $totalRoyalties,
+                        $totalFundoPropaganda,
+                        $totalFGTS,
+                        $totalTaxasCredito,
+                        $totalTaxasDebito,
+                        $totalTaxasVrAlimentacao,
+                        $totalTaxasCanais,
+                        $valor_cmv,
+                        &$totalDespesasCategorias,
+                        &$totalDespesasCategoriasSemFolha,
+                        $categoriasIgnoradasNaSoma
+                    ) {
+                        // Valor padrão obtido de ContaAPagar
+                        $valor = ContaAPagar::where('categoria_id', $categoria->id)
+                            ->where('unidade_id', $unidade_id)
+                            ->whereIn('status', ['pago', 'pendente'])
+                            ->whereBetween('emitida_em', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
+                            ->sum('valor');
+
+                        // Se a categoria tiver valor especial, sobrescreve
+                        $valoresFixos = [
+                            "Mercadoria Vendida" => $valor_cmv,
+                            "FGTS" => $totalFGTS,
+                            "Folha de pagamento" => $totalSalarios,
+                            "Royalties" => $totalRoyalties,
+                            "Fundo de propaganda" =>  $totalFundoPropaganda,
+                            "Taxa de Crédito" => $totalTaxasCredito,
+                            "Taxa de Débito" => $totalTaxasDebito,
+                            "Plataformas de Delivery" => $totalTaxasCanais,
+                            "Voucher Alimentação" => $totalTaxasVrAlimentacao
+                        ];
+
+                        if (isset($valoresFixos[$categoria->nome])) {
+                            $valor = $valoresFixos[$categoria->nome];
+                        }
+
+                        // Soma apenas se a categoria NÃO estiver na lista de ignoradas
+                        if (!in_array($categoria->nome, $categoriasIgnoradasNaSoma)) {
+                            $totalDespesasCategoriasSemFolha += $valor;
+                        }
+
+                        // Soma sempre no total geral
+                        $totalDespesasCategorias += $valor;
+
+                        return [
+                            'categoria' => $categoria->nome,
+                            'total' => number_format($valor, 2, ',', '.')
+                        ];
+                    });
+
+                return [
+                    'nome_grupo' => $grupo->nome,
+                    'categorias' => $categoriasFormatadas
+                ];
+            });
+
+            // Resultado considerando todas as categorias
+            $resultado_do_periodo = $totalDespesasCategorias - $totalCaixas;
+
+            // Resultado ignorando "Folha de pagamento"
+            $resultado_do_periodo_sem_folha = $totalCaixas - $totalDespesasCategoriasSemFolha;
+
+            return [
+                'nome_mes' => $meses[$month],
+                'categorias' => [
+                    [
+                        'data_inicio_mes' => $startMonth->format('Y-m-d H:i:s'),
+                        'data_final_mes' => $endMonth->format('Y-m-d H:i:s'),
+                        'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
+                        'total_dispesas' => number_format($totalDespesasCategorias, 2, ',', '.'),
+                        'resultado_do_periodo' => number_format($resultado_do_periodo_sem_folha, 2, ',', '.'),
+                        'valor_cmv' => number_format($valor_cmv, 2, ',', '.'),
+
+                    ]
+                ]
+            ];
+        });
     }
 }

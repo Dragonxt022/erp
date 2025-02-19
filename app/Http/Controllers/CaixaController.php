@@ -67,6 +67,104 @@ class CaixaController extends Controller
     }
 
     // Método para fechar o caixa
+    // public function fecharCaixa(Request $request)
+    // {
+    //     // Identifica o usuário autenticado
+    //     $usuario = Auth::user();
+    //     $unidade_id = $usuario->unidade_id;
+
+    //     // Busca o caixa aberto da unidade (com status 1)
+    //     $caixa = Caixa::where('unidade_id', $unidade_id)
+    //         ->where('status', 1)
+    //         ->first();
+
+    //     if (!$caixa || !$caixa->id) {
+    //         return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
+    //     }
+
+    //     $metodosLimpos = array_map(function ($metodo) {
+
+    //         return [
+    //             'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
+    //             'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0),
+    //         ];
+    //     }, $request->metodos);
+
+    //     // Limpando e estruturando os dados de canais de venda
+    //     $canaisLimpos = array_map(function ($canal) {
+    //         return [
+    //             'canal_de_vendas_id' => $canal['default_canal_de_vendas']['id'] ?? null, // Corrigido para acessar 'default_canal_de_vendas'
+    //             'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $canal['total_vendas_canais_vendas'] ?? 0),
+    //             'quantidade_vendas_feitas' => (int) ($canal['quantidade_vendas_canais_vendas'] ?? 0),
+    //         ];
+    //     }, $request->canais);
+
+
+    //     // Calcula o valor final somando os totais de métodos e canais de venda
+    //     $totalMetodosPagamento = array_sum(array_column($metodosLimpos, 'valor_total_vendas'));
+    //     $totalCanaisVendas = array_sum(array_column($canaisLimpos, 'valor_total_vendas'));
+    //     $valorFinal = $totalMetodosPagamento;
+
+    //     // dd($totalMetodosPagamento, $totalCanaisVendas, $valorFinal, $metodosLimpos, $canaisLimpos, $request);
+
+    //     DB::beginTransaction();
+
+    //     try {
+    //         // Criar o fechamento de caixa para métodos de pagamento
+    //         foreach ($metodosLimpos as $metodo) {
+    //             if ($metodo['metodo_pagamento_id']) {
+    //                 FechamentoCaixa::create([
+    //                     'unidade_id' => $unidade_id,
+    //                     'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
+    //                     'caixa_id' => $caixa->id,
+    //                     'valor_total_vendas' => $metodo['valor_total_vendas'],
+    //                 ]);
+    //             }
+    //         }
+
+    //         // Criar os registros de canais de venda
+    //         foreach ($canaisLimpos as $canal) {
+    //             if ($canal['canal_de_vendas_id']) {
+    //                 CanalVenda::create([
+    //                     'unidade_id' => $unidade_id,
+    //                     'canal_de_vendas_id' => $canal['canal_de_vendas_id'],
+    //                     'caixa_id' => $caixa->id,
+    //                     'valor_total_vendas' => $canal['valor_total_vendas'],
+    //                     'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
+    //                 ]);
+    //             }
+    //         }
+
+    //         // Registro no histórico (fechamento)
+    //         FluxoCaixa::create([
+    //             'unidade_id' => $unidade_id,
+    //             'responsavel_id' => $usuario->id,
+    //             'caixa_id' => $caixa->id,
+    //             'operacao' => 'fechamento',
+    //             'valor' => $valorFinal,
+    //             'hora' => now(),
+    //             'motivo' => $request->motivo ?? 'Fechamento de caixa',
+    //         ]);
+
+    //         // Atualiza o valor final e o status do caixa
+    //         $caixa->valor_final = $valorFinal;
+    //         $caixa->status = 0;
+    //         $caixa->motivo = $request->motivo ?? 'Fechamento de caixa';
+    //         $caixa->save();
+
+    //         DB::commit();
+
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'message' => 'Caixa fechado com sucesso!',
+    //             'caixa' => $caixa,
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+    //     }
+    // }
+
     public function fecharCaixa(Request $request)
     {
         // Identifica o usuário autenticado
@@ -82,35 +180,54 @@ class CaixaController extends Controller
             return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
         }
 
-        $metodosLimpos = array_map(function ($metodo) {
+        // Processa métodos de pagamento
+        $metodosLimpos = array_map(function ($metodo) use ($unidade_id) {
+            $metodoPagamentoId = $metodo['default_payment_method']['id'] ?? null;
+            $valorTotalVendas = (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0);
+
+            // Busca a taxa do método de pagamento
+            $taxaMetodo = UnidadePaymentMethod::where('unidade_id', $unidade_id)
+                ->where('default_payment_method_id', $metodoPagamentoId)
+                ->value('porcentagem') ?? 0;
+
+            $valorTaxaMetodo = ($taxaMetodo / 100) * $valorTotalVendas;
 
             return [
-                'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
-                'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0),
+                'metodo_pagamento_id' => $metodoPagamentoId,
+                'valor_total_vendas' => $valorTotalVendas,
+                'valor_taxa_metodo' => $valorTaxaMetodo,
             ];
         }, $request->metodos);
 
-        // Limpando e estruturando os dados de canais de venda
-        $canaisLimpos = array_map(function ($canal) {
+        // Processa canais de venda
+        $canaisLimpos = array_map(function ($canal) use ($unidade_id) {
+            $canalVendaId = $canal['default_canal_de_vendas']['id'] ?? null;
+            $valorTotalVendas = (float) str_replace(['R$', '.', ','], ['', '', '.'], $canal['total_vendas_canais_vendas'] ?? 0);
+            $quantidadeVendasFeitas = (int) ($canal['quantidade_vendas_canais_vendas'] ?? 0);
+
+            // Busca a taxa do canal de venda
+            $taxaCanal = UnidadeCanaisVenda::where('unidade_id', $unidade_id)
+                ->where('canal_de_vendas_id', $canalVendaId)
+                ->value('porcentagem') ?? 0;
+
+            $valorTaxaCanal = ($taxaCanal / 100) * $valorTotalVendas;
+
             return [
-                'canal_de_vendas_id' => $canal['default_canal_de_vendas']['id'] ?? null, // Corrigido para acessar 'default_canal_de_vendas'
-                'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $canal['total_vendas_canais_vendas'] ?? 0),
-                'quantidade_vendas_feitas' => (int) ($canal['quantidade_vendas_canais_vendas'] ?? 0),
+                'canal_de_vendas_id' => $canalVendaId,
+                'valor_total_vendas' => $valorTotalVendas,
+                'quantidade_vendas_feitas' => $quantidadeVendasFeitas,
+                'valor_taxa_canal' => $valorTaxaCanal,
             ];
         }, $request->canais);
 
-
-        // Calcula o valor final somando os totais de métodos e canais de venda
+        // Calcula o valor final
         $totalMetodosPagamento = array_sum(array_column($metodosLimpos, 'valor_total_vendas'));
-        $totalCanaisVendas = array_sum(array_column($canaisLimpos, 'valor_total_vendas'));
         $valorFinal = $totalMetodosPagamento;
-
-        // dd($totalMetodosPagamento, $totalCanaisVendas, $valorFinal, $metodosLimpos, $canaisLimpos, $request);
 
         DB::beginTransaction();
 
         try {
-            // Criar o fechamento de caixa para métodos de pagamento
+            // Salva os fechamentos de caixa por método de pagamento
             foreach ($metodosLimpos as $metodo) {
                 if ($metodo['metodo_pagamento_id']) {
                     FechamentoCaixa::create([
@@ -118,11 +235,12 @@ class CaixaController extends Controller
                         'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
                         'caixa_id' => $caixa->id,
                         'valor_total_vendas' => $metodo['valor_total_vendas'],
+                        'valor_taxa_metodo' => $metodo['valor_taxa_metodo'],
                     ]);
                 }
             }
 
-            // Criar os registros de canais de venda
+            // Salva os registros de canais de venda
             foreach ($canaisLimpos as $canal) {
                 if ($canal['canal_de_vendas_id']) {
                     CanalVenda::create([
@@ -131,6 +249,7 @@ class CaixaController extends Controller
                         'caixa_id' => $caixa->id,
                         'valor_total_vendas' => $canal['valor_total_vendas'],
                         'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
+                        'valor_taxa_canal' => $canal['valor_taxa_canal'],
                     ]);
                 }
             }
@@ -164,6 +283,7 @@ class CaixaController extends Controller
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
+
 
 
     // Método para exibir os detalhes do caixa

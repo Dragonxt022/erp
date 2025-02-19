@@ -13,7 +13,8 @@ class FechamentoCaixa extends Model
         'unidade_id',
         'metodo_pagamento_id',
         'caixa_id',
-        'valor_total_vendas'
+        'valor_total_vendas',
+        'valor_taxa_metodo',
     ];
 
     public function unidade()

@@ -12,9 +12,11 @@ class ContasSeeder extends Seeder
         // Grupos de categorias
         $grupos = [
             'Custos Fixos',
+            'CMV',
             'Impostos',
             'Variáveis',
             'Outros',
+
         ];
 
         foreach ($grupos as $grupo) {
@@ -32,6 +34,10 @@ class ContasSeeder extends Seeder
                     'Gás',
                     'Diárias',
                     'Contabilidade',
+                ],
+                'CMV' => [
+                    'Mercadoria Vendida',
+                    'Frete Fornecedores',
                 ],
                 'Impostos' => [
                     'DARE',
@@ -51,6 +57,8 @@ class ContasSeeder extends Seeder
                 'Outros' => [
                     'Outros',
                 ],
+
+
                 default => [],
             };
 

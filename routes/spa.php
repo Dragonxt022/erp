@@ -203,8 +203,11 @@ Route::prefix('api')->middleware([
         Route::get('/calcular-fluxo-caixa', [PainelAnaliticos::class, 'somarTodosOsCaixas'])->name('somarTodosOsCaixas');
         Route::get('/faturamento-por-dia-mes', [PainelAnaliticos::class, 'diasDoMes'])->name('diasDoMes');
         Route::get('/calculo-ticket-medio-quantidade', [PainelAnaliticos::class, 'calcularTicketMedioEQuantidadePedidos'])->name('calcularTicketMedioEQuantidadePedidos');
-
         Route::get('/calcular-cmv-caixas-tickets', [PainelAnaliticos::class, 'calcularIndicadores'])->name('calcularIndicadores');
         Route::get('/calcula-cmv-soma-caixas-mes', [PainelAnaliticos::class, 'calcularCMVESomarCaixas'])->name('calcularCMVESomarCaixas');
+    });
+
+    Route::prefix('painel-dre')->group(function () {
+        Route::get('/analitycs-dre', [PainelAnaliticos::class, 'analitycsDRE'])->name('analitycsDRE');
     });
 });
