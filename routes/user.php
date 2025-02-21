@@ -56,6 +56,10 @@ Route::middleware([
         return Inertia::render('Users/SupervisaoResiduos/Index');
     })->name('franqueado.supervisaoResidos');
 
+    Route::get('/franqueado/limpesa-salmao', function () {
+        return Inertia::render('Users/SupervisaoResiduos/LimpesaSalmao');
+    })->name('franqueado.limpesaSalmoes');
+
     Route::get('/franqueado/gestao-equipe', function () {
         return Inertia::render('Users/GestaoEquipes/Index');
     })->name('franqueado.gestaoEquipe');

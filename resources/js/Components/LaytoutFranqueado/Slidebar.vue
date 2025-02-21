@@ -120,13 +120,19 @@ const menuCategories = [
         isActive: false,
       },
 
-      // {
-      //   label: 'Supervisão de resíduos',
-      //   icon: '/storage/images/delete_branco.svg',
-      //   link: 'franqueado.supervisaoResidos',
-      //   isLogout: false,
-      //   isActive: false,
-      // },
+      {
+        label: 'Supervisão de resíduos',
+        icon: '/storage/images/delete_branco.svg',
+        link: 'franqueado.supervisaoResidos',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Limpeza de salmão',
+            link: 'franqueado.limpesaSalmoes',
+          },
+        ],
+        isActive: false,
+      },
 
       {
         label: 'Gestão de equipe',
@@ -246,7 +252,7 @@ const isActive = (link) => {
 .sidebar {
   height: calc(100% - 60px); /* Ajuste para ocupar toda a altura restante */
   top: 70px;
-  width: 250px; /* Largura padrão para telas grandes */
+  width: 262px; /* Largura padrão para telas grandes */
   padding-top: 27px;
   padding-bottom: 27px;
   background-color: #164110;
