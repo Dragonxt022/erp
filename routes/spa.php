@@ -17,6 +17,8 @@ use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\PainelAnaliticos;
+use App\Http\Controllers\SalmaoCalibreController;
+use App\Http\Controllers\SalmaoHistoricoController;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
@@ -209,5 +211,11 @@ Route::prefix('api')->middleware([
 
     Route::prefix('painel-dre')->group(function () {
         Route::get('/analitycs-dre', [PainelAnaliticos::class, 'analitycsDRE'])->name('analitycsDRE');
+    });
+
+    //** Gestão de residuos */
+    Route::prefix('gestao-residuos')->group(function () {
+        Route::get('/limpeza', [SalmaoHistoricoController::class, 'index'])->name('salmao.limpeza');
+        Route::post('/adicionar', [SalmaoHistoricoController::class, 'store'])->name('salmao.adicionar');
     });
 });

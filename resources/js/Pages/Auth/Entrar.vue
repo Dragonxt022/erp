@@ -28,14 +28,13 @@
         <form @submit.prevent="submit">
           <!-- Campo CPF -->
           <div class="input-container">
-            <label for="cpf">CPF</label>
+            <label for="cpf">Entre com CPF ou E-mail</label>
             <input
               id="cpf"
               v-model="form.cpf"
-              @input="applyCpfMask"
               class="input"
               type="text"
-              placeholder="123.456.789-90"
+              placeholder="Entre com CPF ou E-mail"
               autocomplete="off"
               aria-label="CPF"
             />
@@ -111,45 +110,23 @@ const submit = async () => {
   });
 };
 
-// Função para buscar o token após o login
-const fetchToken = async () => {
-  try {
-    const response = await axios.get('/get-token', { withCredentials: true });
-    if (response.data.status === 'success') {
-      const token = response.data.token;
-
-      // Armazene o token no localStorage
-      localStorage.setItem('auth_token', token);
-
-      // Configure o Axios para usar o token em futuras requisições
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      console.log('Token obtido com sucesso!');
-    } else {
-      console.error('Erro ao obter o token:', response.data);
-    }
-  } catch (error) {
-    console.error('Erro na requisição para obter o token:', error);
-  }
-};
-
 // Função para aplicar a máscara de CPF
-const applyCpfMask = (event) => {
-  let value = event.target.value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
-  if (value.length > 11) value = value.slice(0, 11); // Limita o valor a 11 dígitos
+// const applyCpfMask = (event) => {
+//   let value = event.target.value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
+//   if (value.length > 11) value = value.slice(0, 11); // Limita o valor a 11 dígitos
 
-  // Aplica a formatação do CPF
-  if (value.length > 9) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  } else if (value.length > 6) {
-    value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-  } else if (value.length > 3) {
-    value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-  }
+//   // Aplica a formatação do CPF
+//   if (value.length > 9) {
+//     value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+//   } else if (value.length > 6) {
+//     value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
+//   } else if (value.length > 3) {
+//     value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
+//   }
 
-  event.target.value = value;
-  form.cpf = value;
-};
+//   event.target.value = value;
+//   form.cpf = value;
+// };
 </script>
 
 <style scoped>

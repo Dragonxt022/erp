@@ -19,28 +19,28 @@
         <div class="bg-white rounded-lg px-12 py-5">
           <div class="flex flex-col flex-1">
             <LabelModel text="Responsável" class="mb-2" />
-            <select v-model="selectedResponsavel" class="input-select">
+            <select v-model="form.responsavel_id" class="input-select" required>
               <option value="" disabled selected>
                 Selecione um Responsável
               </option>
               <option
-                v-for="responsavel in usuariosResponsaves"
-                :key="responsavel"
-                :value="responsavel"
+                v-for="responsavel in colaboradores"
+                :key="responsavel.id"
+                :value="responsavel.id"
               >
-                {{ responsavel }}
+                {{ responsavel.name }}
               </option>
             </select>
 
             <LabelModel text="Calibre do Salmão" class="mb-2" />
-            <select v-model="selectedCalibre" class="input-select">
+            <select v-model="form.calibre_id" class="input-select" required>
               <option value="" disabled selected>Selecione um calibre</option>
               <option
                 v-for="calibre in calibres"
-                :key="calibre"
-                :value="calibre"
+                :key="calibre.id"
+                :value="calibre.id"
               >
-                {{ calibre }}
+                {{ calibre.nome }}
               </option>
             </select>
           </div>
@@ -50,9 +50,13 @@
           <LabelModel text="Aproveitamento" />
           <div class="flex items-center -mt-9">
             <span
-              class="font-bold text-[120.01px] text-[#1d5915] tracking-wider"
+              :class="{
+                'font-bold text-[120.01px] tracking-wider': true,
+                'text-[#1d5915]': aproveitamento >= 72,
+                'text-red-600': aproveitamento < 72,
+              }"
             >
-              72%
+              {{ aproveitamento }}%
             </span>
             <svg
               class="w-[40px] h-[40px] ml-2"
@@ -60,7 +64,12 @@
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <polygon points="12,2 22,20 2,20" fill="#6DB631" />
+              <polygon
+                :points="
+                  aproveitamento >= 72 ? '12,2 22,20 2,20' : '12,22 22,2 2,2'
+                "
+                :fill="aproveitamento >= 72 ? '#6DB631' : '#DC2626'"
+              />
             </svg>
           </div>
         </div>
@@ -72,10 +81,11 @@
               <LabelModel text="Valor Pago" class="text-gray-800" />
               <div class="relative flex items-center w-full">
                 <input
-                  v-model="valor_pago"
+                  v-model="form.valor_pago"
                   @input="formatarValor"
                   class="input-text"
                   placeholder="R$ 0,00"
+                  required
                 />
               </div>
             </div>
@@ -84,10 +94,11 @@
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
               <LabelModel text="Peso Bruto" class="text-gray-800" />
               <input
-                v-model="peso_bruto"
-                @input="formatarPesoBruto"
+                v-model="form.peso_bruto"
+                @input="formatarPeso('peso_bruto', $event.target.value)"
                 class="input-text"
                 placeholder="0,000"
+                required
               />
             </div>
 
@@ -95,10 +106,11 @@
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
               <LabelModel text="Peso Limpo" class="text-gray-800" />
               <input
-                v-model="peso_limpo"
-                @input="formatarPesoLimpo"
+                v-model="form.peso_limpo"
+                @input="formatarPeso('peso_limpo', $event.target.value)"
                 class="input-text"
                 placeholder="0,000"
+                required
               />
             </div>
           </div>
@@ -110,13 +122,13 @@
             <span
               class="font-bold text-[63.36px] text-[#424242] tracking-wider"
             >
-              7.828 kg
+              {{ desperdicio }} kg
             </span>
           </div>
           <div
             class="flex items-center gap-2 text-[#6d6d6d] text-[15px] font-semibold -mt-4"
           >
-            <p>Equivalente a R$ 350,22</p>
+            <p>Equivalente a {{ desperdicioValor }}</p>
           </div>
         </div>
       </div>
@@ -124,7 +136,7 @@
         <ButtonPrimaryMedio
           text="Concluir"
           iconPath="/storage/images/arrow_left_alt.svg"
-          @click="toggleCadastro"
+          @click="submitForm"
         />
       </div>
     </div>
@@ -132,61 +144,150 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
-import CalendarSimples from '@/Components/Filtros/CalendarSimples.vue';
 import LabelModel from '@/Components/Label/LabelModel.vue';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
-const selectedResponsavel = ref('');
-const usuariosResponsaves = ['Rogerio Silva', 'Rosangela Silva'];
+const toast = useToast();
+const colaboradores = ref([]);
+const calibres = ref([]);
+const aproveitamento = ref(0);
+const desperdicio = ref(0);
+const desperdicioValor = ref('R$ 0,00');
 
-const selectedCalibre = ref('');
-const calibres = ['Salmão 10/12', 'Salmão 12/14'];
+const form = ref({
+  responsavel_id: '',
+  calibre_id: '',
+  valor_pago: 'R$ 0,00', // Valor inicial formatado
+  peso_bruto: '0,000', // Valor inicial formatado
+  peso_limpo: '0,000', // Valor inicial formatado
+});
 
-const valor_pago = ref('');
-const peso_bruto = ref('');
-const peso_limpo = ref('');
+// Carregar os dados da API ao montar o componente
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/gestao-residuos/limpeza');
+    colaboradores.value = response.data.colaboradores;
+    calibres.value = response.data.calibres;
+  } catch (error) {
+    console.error('Erro ao carregar dados:', error);
+  }
+});
 
 // Função para formatar valores monetários
 const formatarValor = () => {
-  let numeros = valor_pago.value.replace(/\D/g, ''); // Remove tudo que não for número
-  let inteiro = numeros.slice(0, -2) || '0'; // Parte inteira
-  let centavos = numeros.slice(-2).padStart(2, '0'); // Parte decimal
-  valor_pago.value = `R$ ${Number(inteiro).toLocaleString(
-    'pt-BR'
-  )},${centavos}`;
+  let valor = form.value.valor_pago.replace(/\D/g, ''); // Remove não numéricos
+  if (!valor) {
+    form.value.valor_pago = 'R$ 0,00';
+  } else {
+    let inteiro = valor.slice(0, -2) || '0';
+    let centavos = valor.slice(-2).padStart(2, '0');
+    form.value.valor_pago = `R$ ${Number(inteiro).toLocaleString(
+      'pt-BR'
+    )},${centavos}`;
+  }
+  calcularDesperdicioValor();
 };
 
-// Função para formatar pesos (três casas decimais)
-const formatarPeso = (campo) => {
-  let numeros = campo.value.replace(/[^\d]/g, ''); // Remove caracteres inválidos
-  if (numeros.length < 4) {
-    campo.value = `0,${numeros.padStart(3, '0')}`; // Adiciona zero antes do decimal
+// Função para formatar pesos (com vírgula e três casas decimais)
+const formatarPeso = (campo, valorInput) => {
+  let valor = valorInput.replace(/\D/g, ''); // Remove não numéricos
+  if (!valor) {
+    form.value[campo] = '0,000';
   } else {
-    let inteiro = numeros.slice(0, -3);
-    let decimal = numeros.slice(-3);
-    campo.value = `${Number(inteiro).toLocaleString('pt-BR')},${decimal}`;
+    let inteiro = valor.slice(0, -3) || '0'; // Parte inteira
+    let decimal = valor.slice(-3).padStart(3, '0'); // Parte decimal
+    form.value[campo] = `${Number(inteiro).toLocaleString('pt-BR')},${decimal}`;
+  }
+  calcularAproveitamento();
+};
+
+// Função para limpar e converter peso para número
+const parsePeso = (peso) => {
+  return parseFloat(peso.replace(',', '.') || '0');
+};
+
+// Calcular aproveitamento e desperdício
+const calcularAproveitamento = () => {
+  const pesoBruto = parsePeso(form.value.peso_bruto);
+  const pesoLimpo = parsePeso(form.value.peso_limpo);
+
+  if (pesoBruto > 0) {
+    aproveitamento.value = ((pesoLimpo / pesoBruto) * 100).toFixed(2);
+    desperdicio.value = (pesoBruto - pesoLimpo).toFixed(3);
+  } else {
+    aproveitamento.value = 0;
+    desperdicio.value = 0;
+  }
+  calcularDesperdicioValor();
+};
+
+// Calcular o valor do desperdício
+const calcularDesperdicioValor = () => {
+  const valorPago = parseFloat(
+    form.value.valor_pago.replace(/[^\d,]/g, '').replace(',', '.') || '0'
+  );
+  const pesoBruto = parsePeso(form.value.peso_bruto);
+  if (pesoBruto > 0) {
+    const custoPorKg = valorPago / pesoBruto;
+    const desperdicioKg = parseFloat(desperdicio.value);
+    const valor = (custoPorKg * desperdicioKg).toFixed(2);
+    desperdicioValor.value = `R$ ${valor.replace('.', ',')}`;
+  } else {
+    desperdicioValor.value = 'R$ 0,00';
   }
 };
 
-const formatarPesoBruto = () => formatarPeso(peso_bruto);
-const formatarPesoLimpo = () => formatarPeso(peso_limpo);
+// Enviar o formulário
+const submitForm = async () => {
+  try {
+    const response = await axios.post('/api/gestao-residuos/adicionar', {
+      responsavel_id: form.value.responsavel_id,
+      calibre_id: form.value.calibre_id,
+      valor_pago: parseFloat(
+        form.value.valor_pago.replace(/[^\d,]/g, '').replace(',', '.')
+      ),
+      peso_bruto: parsePeso(form.value.peso_bruto),
+      peso_limpo: parsePeso(form.value.peso_limpo),
+      aproveitamento: parseFloat(aproveitamento.value),
+      desperdicio: parseFloat(desperdicio.value),
+    });
+    toast.success('Operação realizada com sucesso!');
+    console.log('Registro salvo:', response.data);
+    // Resetar o formulário após sucesso
+    form.value = {
+      responsavel_id: '',
+      calibre_id: '',
+      valor_pago: 'R$ 0,00',
+      peso_bruto: '0,000',
+      peso_limpo: '0,000',
+    };
+    aproveitamento.value = 0;
+    desperdicio.value = 0;
+    desperdicioValor.value = 'R$ 0,00';
+  } catch (error) {
+    toast.error('Ouve um erro:', error);
+    console.error('Erro ao salvar:', error);
+  }
+};
 </script>
 
 <style scoped>
 .painel-title {
   font-size: 34px;
   font-weight: 700;
-  color: #262a27; /* Cor escura para título */
+  color: #262a27;
   line-height: 80%;
 }
 
 .painel-subtitle {
   font-size: 17px;
-  color: #6d6d6e; /* Cor secundária */
-  max-width: 600px; /* Limita a largura do subtítulo */
+  color: #6d6d6e;
+  max-width: 600px;
 }
 
 .input-text {

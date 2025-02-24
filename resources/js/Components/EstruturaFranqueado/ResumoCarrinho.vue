@@ -145,7 +145,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useToast } from 'vue-toastification';
+import { useToast } from 'vue-toastification'; 
 import { Inertia } from '@inertiajs/inertia';
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';

@@ -89,7 +89,7 @@ const menuCategories = [
     name: 'Gestão da loja',
     items: [
       {
-        label: 'Controle de estoque',
+        label: 'Gestão de estoque',
         icon: '/storage/images/estoque.svg',
         link: 'franqueado.estoque',
         isLogout: false,
@@ -121,7 +121,7 @@ const menuCategories = [
       },
 
       {
-        label: 'Supervisão de resíduos',
+        label: 'Gestão de resíduos',
         icon: '/storage/images/delete_branco.svg',
         link: 'franqueado.supervisaoResidos',
         isLogout: false,
@@ -252,7 +252,7 @@ const isActive = (link) => {
 .sidebar {
   height: calc(100% - 60px); /* Ajuste para ocupar toda a altura restante */
   top: 70px;
-  width: 262px; /* Largura padrão para telas grandes */
+  width: 249px; /* Largura padrão para telas grandes */
   padding-top: 27px;
   padding-bottom: 27px;
   background-color: #164110;
@@ -275,39 +275,5 @@ const isActive = (link) => {
 
 .sidebar::-webkit-scrollbar-track {
   background: transparent;
-}
-
-/* Ajuste para tornar a sidebar responsiva */
-@media (max-width: 640px) {
-  .sidebar {
-    height: calc(100% - 11%); /* Ajuste para ocupar toda a altura restante */
-    width: 15%;
-    padding-top: none;
-    padding-bottom: none;
-    background-color: #164110;
-  }
-
-  /* Ocultar as categorias e títulos em telas pequenas */
-  .menu-categorias {
-    display: none;
-  }
-
-  /* Ocultar os itens de menu em telas pequenas e exibir somente os ícones */
-  .menu-category {
-    display: block;
-  }
-
-  .menu-item {
-    justify-content: center; /* Centralizar os ícones */
-  }
-
-  .menu-item .label {
-    display: none; /* Esconder o texto da label */
-  }
-
-  .menu-item .icon {
-    width: 30px;
-    height: 30px;
-  }
 }
 </style>

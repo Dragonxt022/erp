@@ -148,8 +148,8 @@ watch(showSubmenu, () => {
   display: flex;
   align-items: center;
   height: 44px;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 14px;
+  padding-right: 14px;
   cursor: pointer;
   border-radius: 10px;
   margin-bottom: 10px;
@@ -162,8 +162,8 @@ watch(showSubmenu, () => {
 }
 
 .menu-item .icon {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   margin-right: 5px;
 }
 

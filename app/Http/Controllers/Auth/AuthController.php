@@ -53,9 +53,6 @@ class AuthController extends Controller
         return Inertia::location(route('franqueado.controleEstoque'));
     }
 
-
-
-
     // Redirecionador da pagina de Login
     public function paginLogin()
     {
@@ -77,19 +74,67 @@ class AuthController extends Controller
     }
 
     //  Função de login principal
+    // public function login(Request $request)
+    // {
+
+    //     // Valida o CPF e a senha
+    //     $request->validate([
+    //         'cpf' => ['required', 'string'],
+    //         'password' => ['required', 'string'],
+    //     ]);
+
+    //     // Buscar o usuário pelo CPF
+    //     $user = User::where('cpf', $request->cpf)->first();
+
+    //     // Verificar se o usuário existe e se a senha está correta
+    //     if (!$user || !Hash::check($request->password, $user->password)) {
+    //         return back()->withErrors([
+    //             'cpf' => 'As credenciais fornecidas estão incorretas.',
+    //             'password' => 'A senha informada está incorreta.',
+    //         ])->withInput($request->only('cpf'));
+    //     }
+
+    //     // Autenticar o usuário
+    //     Auth::login($user);
+
+    //     // Regenerar a sessão para segurança
+    //     $request->session()->regenerate();
+
+    //     // Redirecionar com base no tipo de usuário
+    //     if ($user->franqueadora) {
+    //         return redirect()->route('franqueadora.painel');
+    //     } elseif ($user->franqueado) {
+    //         return redirect()->route('franqueado.painel');
+    //     }
+
+    //     // Caso não seja franqueadora nem franqueado, desconectar e exibir erro
+    //     Auth::logout();
+    //     return back()->withErrors([
+    //         'general' => 'Não foi possível determinar o acesso do usuário. Entre em contato com o suporte.',
+    //     ]);
+    // }
+
     public function login(Request $request)
     {
-
-        // Valida o CPF e a senha
         $request->validate([
             'cpf' => ['required', 'string'],
             'password' => ['required', 'string'],
         ]);
 
-        // Buscar o usuário pelo CPF
-        $user = User::where('cpf', $request->cpf)->first();
+        $loginInput = $request->cpf;
+        if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            $user = User::where('email', $loginInput)->first();
+        } else {
+            $cpfNumeros = preg_replace('/\D/', '', $loginInput);
+            if (strlen($cpfNumeros) === 11) {
+                $loginInput = substr($cpfNumeros, 0, 3) . '.' .
+                    substr($cpfNumeros, 3, 3) . '.' .
+                    substr($cpfNumeros, 6, 3) . '-' .
+                    substr($cpfNumeros, 9, 2);
+            }
+            $user = User::where('cpf', $loginInput)->first();
+        }
 
-        // Verificar se o usuário existe e se a senha está correta
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()->withErrors([
                 'cpf' => 'As credenciais fornecidas estão incorretas.',
@@ -97,25 +142,21 @@ class AuthController extends Controller
             ])->withInput($request->only('cpf'));
         }
 
-        // Autenticar o usuário
         Auth::login($user);
-
-        // Regenerar a sessão para segurança
         $request->session()->regenerate();
 
-        // Redirecionar com base no tipo de usuário
         if ($user->franqueadora) {
             return redirect()->route('franqueadora.painel');
         } elseif ($user->franqueado) {
             return redirect()->route('franqueado.painel');
         }
 
-        // Caso não seja franqueadora nem franqueado, desconectar e exibir erro
         Auth::logout();
         return back()->withErrors([
             'general' => 'Não foi possível determinar o acesso do usuário. Entre em contato com o suporte.',
         ]);
     }
+
 
 
     /**
