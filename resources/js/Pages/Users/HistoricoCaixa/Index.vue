@@ -87,9 +87,27 @@
           </div>
         </div>
 
-        <!-- Coluna 2: Gráfico Doughnut -->
+        <!-- Coluna 2: Gráfico com Seletor -->
         <div>
           <div class="bg-white rounded-lg px-12 py-8">
+            <div class="mb-4 text-center">
+              <label for="chartType" class="text-gray-700 font-semibold mr-2">
+                Tipo de Gráfico:
+              </label>
+              <select
+                v-model="chartType"
+                @change="renderGrafico"
+                id="chartType"
+                class="border rounded px-2 py-1"
+              >
+                <option value="pie">Pizza (Pie)</option>
+                <option value="doughnut">Rosquinha (Doughnut)</option>
+                <option value="bar">Barras (Bar)</option>
+                <option value="line">Linha (Line)</option>
+                <option value="radar">Radar</option>
+                <option value="polarArea">Área Polar (Polar Area)</option>
+              </select>
+            </div>
             <canvas id="myChart"></canvas>
           </div>
         </div>
@@ -174,12 +192,42 @@ import {
   Legend,
   DoughnutController,
   PieController,
+  BarController,
+  LineController,
+  RadarController,
+  PolarAreaController,
+  LineElement,
+  BarElement,
+  PointElement,
+  RadialLinearScale,
+  LinearScale,
+  CategoryScale,
+  Filler,
 } from 'chart.js';
+
 import ChartDataLabels from 'chartjs-plugin-datalabels'; // Certifique-se de importar o plugin
 import CalendarFilterDia from '@/Components/Filtros/CalendarFilterDia.vue';
 
 // Registrar os controladores necessários
-Chart.register(ArcElement, Tooltip, Legend, DoughnutController, PieController);
+Chart.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  DoughnutController,
+  PieController,
+  BarController,
+  LineController,
+  RadarController,
+  PolarAreaController,
+  LineElement,
+  BarElement,
+  PointElement,
+  RadialLinearScale,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  ChartDataLabels
+);
 
 const metodosPagamento = ref([]);
 const total = ref('');
@@ -187,6 +235,9 @@ const historico = ref([]);
 const graficoData = ref([]);
 const graficoLabels = ref([]);
 const graficoPorcentagem = ref([]);
+
+// Nova variável reativa para o tipo de gráfico
+const chartType = ref('pie');
 let myChart = null;
 
 // Função que retorna o ícone correto com base no status
@@ -261,19 +312,18 @@ const fetchData = async (startDate, endDate, periodo) => {
 const renderGrafico = () => {
   const ctx = document.getElementById('myChart').getContext('2d');
 
-  // Destruir o gráfico anterior, se houver
   if (myChart) {
     myChart.destroy();
   }
 
-  // Criar o gráfico de pizza novamente
-  myChart = new Chart(ctx, {
-    type: 'pie', // Tipo de gráfico "pie"
+  // Configuração básica comum a todos os gráficos
+  const baseConfig = {
+    type: chartType.value,
     data: {
-      labels: graficoLabels.value, // Usando as labels fornecidas
+      labels: graficoLabels.value,
       datasets: [
         {
-          data: graficoData.value, // Usando os dados fornecidos
+          data: graficoData.value,
           backgroundColor: [
             '#FF6384',
             '#36A2EB',
@@ -282,7 +332,10 @@ const renderGrafico = () => {
             '#F7464A',
             '#FF7F50',
           ],
-          hoverOffset: 4,
+          borderColor: chartType.value === 'line' ? '#36A2EB' : undefined,
+          borderWidth:
+            chartType.value === 'line' || chartType.value === 'bar' ? 1 : 0,
+          fill: chartType.value === 'line' ? true : false,
         },
       ],
     },
@@ -294,37 +347,63 @@ const renderGrafico = () => {
               const valorFormatado = new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL',
-              }).format(tooltipItem.raw); // Formata o valor no formato R$
-              return tooltipItem.label + ': ' + valorFormatado; // Exibe o valor formatado
+              }).format(tooltipItem.raw);
+              return tooltipItem.label + ': ' + valorFormatado;
             },
           },
         },
         legend: {
-          position: 'bottom', // Coloca os nomes na parte de baixo
+          position: 'bottom',
           labels: {
-            usePointStyle: true, // Altera a legenda para bolinhas
-            padding: 15, // Ajusta o espaçamento entre as bolinhas
-            boxWidth: 10, // Define o tamanho das bolinhas
+            usePointStyle: true,
+            padding: 15,
+            boxWidth: 10,
           },
         },
         datalabels: {
-          // Plugin para mostrar as porcentagens no gráfico
           anchor: 'center',
           align: 'center',
-          color: '#fff', // Cor do texto
+          color:
+            chartType.value === 'bar' || chartType.value === 'line'
+              ? '#000'
+              : '#fff',
           font: {
             weight: 'bold',
             size: 14,
           },
           formatter: (value, ctx) => {
-            const index = ctx.dataIndex; // Obtém o índice atual da fatia
-            return graficoPorcentagem.value[index]; // Retorna a porcentagem já calculada
+            const index = ctx.dataIndex;
+            return graficoPorcentagem.value[index];
           },
+          display:
+            chartType.value === 'pie' ||
+            chartType.value === 'doughnut' ||
+            chartType.value === 'polarArea',
         },
       },
+      scales:
+        chartType.value === 'bar' || chartType.value === 'line'
+          ? {
+              x: {
+                type: 'category', // Explicitamente definindo como "category"
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) {
+                    return new Intl.NumberFormat('pt-BR', {
+                      style: 'currency',
+                      currency: 'BRL',
+                    }).format(value);
+                  },
+                },
+              },
+            }
+          : undefined,
     },
-    plugins: [ChartDataLabels], // Certifique-se de registrar o plugin
-  });
+  };
+
+  myChart = new Chart(ctx, baseConfig);
 };
 
 onMounted(() => {

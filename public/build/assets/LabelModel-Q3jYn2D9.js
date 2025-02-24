@@ -1,0 +1,1 @@
+import{e,o,t as a}from"./app-6ALQyFZF.js";const s={class:"w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-3 mb-2"},i={__name:"LabelModel",props:{text:{type:String,default:"Label"}},setup(t){return(l,n)=>(o(),e("div",s,a(t.text),1))}};export{i as _};
