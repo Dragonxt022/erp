@@ -136,8 +136,65 @@
         <ButtonPrimaryMedio
           text="Concluir"
           iconPath="/storage/images/arrow_left_alt.svg"
-          @click="submitForm"
+          @click="prosseguirAlteracao"
         />
+      </div>
+
+      <!-- Segunda Modal (Autenticação) -->
+      <div
+        v-if="showAuthModal"
+        @click="fecharAuthModal"
+        class="fixed top-0 left-0 right-0 bottom-0 bg-opacity-50 bg-gray-900 flex justify-center items-center"
+      >
+        <div
+          @click.stop
+          class="w-[405px] h-[523px] px-[23px] py-[33px] bg-white rounded-[20px] flex-col justify-center items-center gap-[68px] inline-flex"
+        >
+          <div class="w-[267px] h-[229.61px] relative">
+            <div
+              class="left-[-0px] top-[93.84px] absolute text-center text-[#262a27] text-[42.18px] font-bold font-['Figtree'] leading-[50.61px] tracking-wide"
+            >
+              Autenticação
+              <br />
+              Obrigatória
+            </div>
+            <div
+              class="left-[20.03px] top-[205.61px] absolute text-center text-[#6d6d6d] text-lg font-normal font-['Figtree'] leading-[23.20px]"
+            >
+              Identifique-se para prosseguir
+            </div>
+            <div class="w-[83.46px] h-[83.46px] left-[91.74px] top-0 absolute">
+              <div class="w-[83.46px] h-[83.46px] left-0 top-0 absolute">
+                <img src="/storage/images/security.svg" alt="" />
+              </div>
+            </div>
+          </div>
+          <div class="w-[267px] h-[124.72px] relative">
+            <div class="w-[267px] h-[43.91px] left-0 top-[80.80px] absolute">
+              <ButtonPrimaryMedio
+                @click="submitForm"
+                text="Autenticar"
+                class="w-full"
+              />
+            </div>
+            <div
+              class="w-full h-[42.16px] left-0 top-[30px] absolute opacity-80 bg-white rounded-lg border-2 border-[#d7d7db] justify-start items-center inline-flex overflow-hidden"
+            >
+              <input
+                v-model="pin"
+                type="password"
+                class="w-full h-full text-xs font-normal tracking-widest border-none outline-none"
+                placeholder="●●●●"
+                autocomplete="off"
+              />
+            </div>
+            <div
+              class="w-[68.51px] left-0 top-0 absolute text-[#262a27] text-[14.93px] font-semibold font-['Figtree'] leading-tight"
+            >
+              Seu PIN
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </LayoutFranqueado>
@@ -158,6 +215,19 @@ const calibres = ref([]);
 const aproveitamento = ref(0);
 const desperdicio = ref(0);
 const desperdicioValor = ref('R$ 0,00');
+
+// Modal
+const pin = ref('');
+const showAuthModal = ref(false);
+
+const prosseguirAlteracao = () => {
+  showAuthModal.value = true;
+};
+
+// Fechar a segunda modal
+const fecharAuthModal = () => {
+  showAuthModal.value = false;
+};
 
 const form = ref({
   responsavel_id: '',
@@ -244,8 +314,15 @@ const calcularDesperdicioValor = () => {
 
 // Enviar o formulário
 const submitForm = async () => {
+  if (!pin.value) {
+    toast.info('Por favor, insira seu PIN.');
+    return;
+  }
   try {
+    console.log('PIN:', pin.value);
+
     const response = await axios.post('/api/gestao-residuos/adicionar', {
+      pin: pin.value,
       responsavel_id: form.value.responsavel_id,
       calibre_id: form.value.calibre_id,
       valor_pago: parseFloat(
@@ -269,9 +346,24 @@ const submitForm = async () => {
     aproveitamento.value = 0;
     desperdicio.value = 0;
     desperdicioValor.value = 'R$ 0,00';
+    showAuthModal.value = false;
   } catch (error) {
-    toast.error('Ouve um erro:', error);
-    console.error('Erro ao salvar:', error);
+    if (error.response) {
+      // Erro retornado pelo backend
+      const { status, data } = error.response;
+      if (status === 403) {
+        toast.error('PIN incorreto. Verifique e tente novamente.');
+      } else if (status === 400) {
+        toast.error(
+          data.error || 'ERRO: Ops! Chame o suporte se o erro continuar.'
+        );
+      } else {
+        console.error('Erro:', error);
+      }
+    } else {
+      // Outro tipo de erro (conexão, etc.)
+      toast.error('Ops! Ouve um erro.');
+    }
   }
 };
 </script>

@@ -217,5 +217,6 @@ Route::prefix('api')->middleware([
     Route::prefix('gestao-residuos')->group(function () {
         Route::get('/limpeza', [SalmaoHistoricoController::class, 'index'])->name('salmao.limpeza');
         Route::post('/adicionar', [SalmaoHistoricoController::class, 'store'])->name('salmao.adicionar');
+        Route::get('/listar', [SalmaoHistoricoController::class, 'getHistoricoSalmao'])->name('salmao.lista');
     });
 });

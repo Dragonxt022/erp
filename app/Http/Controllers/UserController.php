@@ -176,7 +176,6 @@ class UserController extends Controller
 
         // Buscar todos os usuários da mesma unidade_id, excluir o próprio usuário e incluir o cargo e permissões
         $colaboradores = User::where('unidade_id', $user->unidade_id)
-            ->where('id', '!=', $user->id) // Exclui o próprio usuário
             ->with(['userPermission', 'cargo']) // Carrega as permissões e cargos dos usuários
             ->get();
 

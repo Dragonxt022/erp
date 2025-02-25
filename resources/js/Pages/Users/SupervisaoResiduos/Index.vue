@@ -26,7 +26,7 @@
           />
           <!-- Ajuste o tamanho do ícone conforme necessário -->
           <span class="text-gray-900 text-[17px] font-semibold">
-            <CalendarSimples @update-filters="handleFilterUpdate" />
+            <CalendarSimples2 @update-filters="handleFilterUpdate" />
           </span>
         </div>
       </div>
@@ -41,9 +41,14 @@
           </p>
           <div class="flex items-center -mt-9">
             <span
-              class="font-bold text-[120.01px] text-[#1d5915] tracking-wider"
+              :class="{
+                'font-bold text-[120.01px] tracking-wider': true,
+                'text-[#1d5915]':
+                  parseFormattedValue(aproveitamentoMedio) >= 72,
+                'text-red-600': parseFormattedValue(aproveitamentoMedio) < 72,
+              }"
             >
-              72%
+              {{ aproveitamentoMedio }}%
             </span>
             <svg
               class="w-[40px] h-[40px] ml-2"
@@ -51,17 +56,28 @@
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <polygon points="12,2 22,20 2,20" fill="#6DB631" />
+              <polygon
+                :points="
+                  parseFormattedValue(aproveitamentoMedio) >= 72
+                    ? '12,2 22,20 2,20'
+                    : '12,22 22,2 2,2'
+                "
+                :fill="
+                  parseFormattedValue(aproveitamentoMedio) >= 72
+                    ? '#6DB631'
+                    : '#DC2626'
+                "
+              />
             </svg>
           </div>
           <div
             class="flex items-center gap-2 text-[#6d6d6d] text-[15px] font-semibold -mt-9"
           >
-            <img
+            <!-- <img
               src="/storage/images/trending_up.svg"
               alt="Filtro"
               class="w-5 h-5"
-            />
+            /> -->
             <p>0% coletando informações</p>
           </div>
         </div>
@@ -71,28 +87,30 @@
           <h3 class="font-semibold text-[#6d6d6d] text-[15px] mb-2">
             Eficiência por colaborador
           </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
+          <div class="flex flex-col gap-2 compromissos-container">
             <div
-              class="compromissos-container flex flex-col gap-2 overflow-hidden"
+              v-for="(colaborador, index) in colaboradoresEficientes"
+              :key="colaborador.responsavel_id"
+              class="flex justify-between items-center bg-[#F5FAF4] px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300"
             >
-              <!-- Container de compromissos -->
-              <div
-                class="flex justify-between items-center bg-[#F5FAF4] px-5 rounded-lg cursor-pointer hover:bg-gray-100 transition-all ease-in-out duration-300"
-              >
-                <!-- Informações da conta -->
-                <div class="flex items-center gap-2">
-                  <p class="text-[14px] font-medium text-gray-900">#1</p>
-                  <p class="text-sm text-[#262a27]">Nome do usuário</p>
-                </div>
-
-                <!-- Ícone de status -->
-                <div
-                  class="text-[17px] object-contain transition-transform transform hover:scale-105"
-                >
-                  72%
-                </div>
+              <div class="flex items-center gap-3">
+                <p class="text-[14px] font-medium text-gray-900">
+                  #{{ index + 1 }}
+                </p>
+                <img
+                  :src="
+                    colaborador.responsavel.profile_photo_path ||
+                    '/storage/images/default-profile.png'
+                  "
+                  alt="Foto de perfil"
+                  class="w-8 h-8 rounded-full object-cover border border-gray-300"
+                />
+                <p class="text-sm text-[#262a27]">
+                  {{ colaborador.responsavel.name }}
+                </p>
+              </div>
+              <div class="text-[17px] font-semibold text-gray-900">
+                {{ colaborador.media_aproveitamento }}%
               </div>
             </div>
           </div>
@@ -124,7 +142,7 @@
       </div>
 
       <div class="bg-white rounded-lg shadow">
-        <!-- Cabeçalho da lista -->
+        <!-- Cabeçalho da tabela -->
         <div
           class="bg-[#164110] grid grid-cols-7 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
         >
@@ -132,49 +150,46 @@
             @click="sortBy('aproveitamento')"
             class="px-5 cursor-pointer flex items-center gap-2"
           >
-            APROVEITAMENTO
+            Aproveitamento
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
-            @click="sortBy('calibre')"
+            @click="sortBy('calibre.nome')"
             class="cursor-pointer flex items-center gap-2"
           >
             Calibre
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
-            @click="sortBy('peso_lipo')"
+            @click="sortBy('peso_limpo')"
             class="flex items-center gap-2 cursor-pointer"
           >
-            peso limpo
+            Peso Limpo
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
             @click="sortBy('peso_bruto')"
             class="cursor-pointer flex items-center gap-2"
           >
-            peso bruto
-            <img
-              src="/storage/images/sync_alt.svg"
-              class="w-[19px] h-[19px] cursor-pointer"
-            />
+            Peso Bruto
+            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
             @click="sortBy('desperdicio')"
             class="cursor-pointer flex items-center gap-2"
           >
-            desperdício
+            Desperdício
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
-            @click="sortBy('quanto')"
+            @click="sortBy('created_at')"
             class="cursor-pointer flex items-center gap-2"
           >
             Quando
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
-            @click="sortBy('responsavel')"
+            @click="sortBy('responsavel.name')"
             class="cursor-pointer flex items-center gap-2"
           >
             Responsável
@@ -182,7 +197,7 @@
           </span>
         </div>
 
-        <!-- Filtros (apenas exibidos se ativados) -->
+        <!-- Inputs de filtro (exibidos quando showFilters é true) -->
         <div
           v-if="showFilters"
           class="grid grid-cols-7 gap-4 py-2 px-6 bg-gray-50"
@@ -190,86 +205,100 @@
           <input
             v-model="filters.aproveitamento"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar aproveitamento"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
-            v-model="filters.calibre"
+            v-model="filters['calibre.nome']"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar calibre"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
-            v-model="filters.peso_lipo"
+            v-model="filters.peso_limpo"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar peso limpo"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
             v-model="filters.peso_bruto"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar peso bruto"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
             v-model="filters.desperdicio"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar desperdício"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
-            v-model="filters.quando"
+            v-model="filters.created_at"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar data"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
-            v-model="filters.responsavel"
+            v-model="filters['responsavel.name']"
             type="text"
-            placeholder="Filtrar"
-            class="p-2 border border-gray-300 rounded"
+            placeholder="Filtrar responsável"
+            class="p-2 border border-gray-300 rounded text-sm"
           />
         </div>
 
-        <!-- Dados da lista rolável -->
-        <div
-          ref="scrollContainer"
-          class="overflow-y-auto max-h-96 scroll-hidden"
-        >
+        <!-- Dados da tabela -->
+        <div class="overflow-y-auto max-h-96 scroll-hidden">
           <ul class="space-y-1">
             <li
-              v-for="(movimentacao, index) in filteredHistoricoMovimentacoes"
+              v-for="(item, index) in filteredHistoricoMovimentacoes"
               :key="index"
-              class="hover:bg-gray-200 grid grid-cols-5 gap-1 px-6 py-2 text-[16px]"
+              class="grid grid-cols-7 gap-4 px-6 py-2 text-[16px]"
             >
-              <span class="flex items-center text-gray-900 font-semibold">
-                <img
-                  :src="statusMap[movimentacao.operacao].icon"
-                  alt="icon indicativo"
-                  class="mr-3 w-5 h-5"
-                />
-                {{ statusMap[movimentacao.operacao].label }}
+              <span
+                class="flex items-center justify-center text-gray-900 font-semibold"
+              >
+                <svg
+                  class="w-[25px] h-[25px] mr-2"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polygon
+                    :points="
+                      parseFormattedValue(item.aproveitamento) >= 72
+                        ? '12,2 22,20 2,20'
+                        : '12,22 22,2 2,2'
+                    "
+                    :fill="
+                      parseFormattedValue(item.aproveitamento) >= 72
+                        ? '#6DB631'
+                        : '#DC2626'
+                    "
+                  />
+                </svg>
+                {{ item.aproveitamento }}
               </span>
-
               <span class="text-gray-900 font-semibold">
-                {{ movimentacao.quantidade }}
-                {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
+                {{ item.calibre.nome }}
               </span>
-              <span class="text-gray-900 font-medium">
-                {{ movimentacao.item }}
+              <span class="text-gray-900 font-semibold">
+                {{ item.peso_limpo }}
+              </span>
+              <span class="text-gray-900 font-semibold">
+                {{ item.peso_bruto }}
+              </span>
+              <span class="text-gray-900 font-semibold">
+                {{ item.desperdicio }}
               </span>
               <span class="text-gray-600 font-semibold">
-                {{ movimentacao.data }}
+                {{ item.created_at }}
               </span>
               <span class="text-gray-500 font-semibold">
-                {{ movimentacao.responsavel }}
+                {{ item.responsavel.name }}
               </span>
             </li>
           </ul>
         </div>
-
-        <!-- Carregando... -->
-        <div v-if="loading" class="text-center mt-4">Carregando...</div>
       </div>
     </div>
   </LayoutFranqueado>
@@ -280,17 +309,12 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
-import CalendarSimples from '@/Components/Filtros/CalendarSimples.vue';
+import CalendarSimples2 from '@/Components/Filtros/CalendarSimples2.vue';
 
-// Dados CMV
-// Dados do CMV
-const start_date = ref('0,00');
-const end_date = ref('0,00');
-const saldoEstoqueInicial = ref('0,00');
-const entradasDurantePeriodo = ref('0,00');
-const saldoEstoqueFinal = ref('0,00');
-const cmv = ref('0,00');
-
+const start_date = ref('');
+const end_date = ref('');
+const aproveitamentoMedio = ref(0);
+const colaboradoresEficientes = ref([]);
 const historicoMovimentacoes = ref([]);
 
 const loading = ref(false);
@@ -303,55 +327,67 @@ const showFilters = ref(false);
 
 // Filtros para pesquisa
 const filters = ref({
-  operacao: '',
-  quantidade: '',
-  quando: '',
-  item: '',
-  responsavel: '',
+  aproveitamento: '',
+  'calibre.nome': '',
+  peso_limpo: '',
+  peso_bruto: '',
+  desperdicio: '',
+  created_at: '',
+  'responsavel.name': '',
 });
 
-const statusMap = {
-  Entrada: {
-    icon: '/storage/images/arrow_back_verde.svg',
-    label: 'Entrada',
-  },
-  Retirada: {
-    icon: '/storage/images/arrow_back_red.svg',
-    label: 'Retirada',
-  },
-  Ajuste: {
-    icon: '/storage/images/icon_ajustes.svg',
-    label: 'Ajuste',
-  },
+// Função para converter strings formatadas em números
+const parseFormattedValue = (value) => {
+  if (!value || typeof value !== 'string') return 0;
+  // Remove tudo exceto números, vírgula e ponto, substitui vírgula por ponto e converte para float
+  return parseFloat(value.replace(/[^\d,.]/g, '').replace(',', '.')) || 0;
 };
 
-// Computed para retornar as movimentações filtradas
+// Computed para retornar as movimentações filtradas e ordenadas
 const filteredHistoricoMovimentacoes = computed(() => {
   return historicoMovimentacoes.value
-    .filter((mov) => {
+    .filter((item) => {
       return (
-        (filters.value.operacao === '' ||
-          mov.operacao
+        (filters.value.aproveitamento === '' ||
+          String(item.aproveitamento).includes(filters.value.aproveitamento)) &&
+        (filters.value['calibre.nome'] === '' ||
+          item.calibre.nome
             .toLowerCase()
-            .includes(filters.value.operacao.toLowerCase())) &&
-        (filters.value.quantidade === '' ||
-          String(mov.quantidade).includes(filters.value.quantidade)) &&
-        (filters.value.item === '' ||
-          mov.item.toLowerCase().includes(filters.value.item.toLowerCase())) &&
-        (filters.value.responsavel === '' ||
-          mov.responsavel
+            .includes(filters.value['calibre.nome'].toLowerCase())) &&
+        (filters.value.peso_limpo === '' ||
+          String(item.peso_limpo).includes(filters.value.peso_limpo)) &&
+        (filters.value.peso_bruto === '' ||
+          String(item.peso_bruto).includes(filters.value.peso_bruto)) &&
+        (filters.value.desperdicio === '' ||
+          String(item.desperdicio).includes(filters.value.desperdicio)) &&
+        (filters.value.created_at === '' ||
+          item.created_at
             .toLowerCase()
-            .includes(filters.value.responsavel.toLowerCase())) &&
-        (filters.value.quando === '' ||
-          mov.data.toLowerCase().includes(filters.value.quando.toLowerCase()))
+            .includes(filters.value.created_at.toLowerCase())) &&
+        (filters.value['responsavel.name'] === '' ||
+          item.responsavel.name
+            .toLowerCase()
+            .includes(filters.value['responsavel.name'].toLowerCase()))
       );
     })
     .sort((a, b) => {
       if (sortKey.value) {
+        const keyParts = sortKey.value.split('.');
+        let aValue = a;
+        let bValue = b;
+        keyParts.forEach((part) => {
+          aValue = aValue[part];
+          bValue = bValue[part];
+        });
+        // Converte valores formatados em números para ordenação
+        const aNum =
+          typeof aValue === 'string' ? parseFormattedValue(aValue) : aValue;
+        const bNum =
+          typeof bValue === 'string' ? parseFormattedValue(bValue) : bValue;
         if (sortAsc.value) {
-          return a[sortKey.value] > b[sortKey.value] ? 1 : -1;
+          return aNum > bNum ? 1 : -1;
         } else {
-          return a[sortKey.value] < b[sortKey.value] ? 1 : -1;
+          return aNum < bNum ? 1 : -1;
         }
       }
       return 0;
@@ -371,18 +407,9 @@ const toggleFilters = () => {
   showFilters.value = !showFilters.value;
 };
 
-// Função que lida com a atualização dos filtros
-const handleFilterUpdate = (filters) => {
-  console.log('Filtros atualizados:', filters);
-
-  // Aqui você pode fazer a requisição com os novos filtros
-  fetchDataCMV(filters.startDate, filters.endDate);
-};
-
-const fetchDataCMV = async (startDate = null, endDate = null) => {
+const fetchHistoricoSalmao = async (startDate = null, endDate = null) => {
   try {
-    // Monta a URL condicionalmente
-    let url = `/api/estoque/incial`;
+    let url = '/api/gestao-residuos/listar';
     const params = [];
 
     if (startDate) params.push(`start_date=${startDate}`);
@@ -392,33 +419,24 @@ const fetchDataCMV = async (startDate = null, endDate = null) => {
       url += `?${params.join('&')}`;
     }
 
-    // Faz a requisição para a API
     const response = await axios.get(url);
     const data = response.data;
 
-    // Se a resposta contiver os dados analíticos, atualiza os refs
-    if (data.saldo_estoque_inicial) {
-      historicoMovimentacoes.value = Array.isArray(data.historicoMovimentacoes)
-        ? data.historicoMovimentacoes
-        : Object.values(data.historicoMovimentacoes);
-      start_date.value = data.start_date || 'não informado';
-      end_date.value = data.end_date || 'não informado';
-      saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
-      entradasDurantePeriodo.value = data.entradas_durante_periodo || '0,00';
-      saldoEstoqueFinal.value = data.saldo_estoque_final || '0,00';
-      cmv.value = data.cmv || '0,00';
-    } else {
-      console.warn('Dados analíticos não encontrados.');
-    }
+    aproveitamentoMedio.value = data.aproveitamento_medio;
+    colaboradoresEficientes.value = data.colaboradores_eficientes;
+    historicoMovimentacoes.value = data.historico;
   } catch (error) {
-    console.error('Erro ao buscar dados analíticos:', error);
+    console.error('Erro ao buscar histórico de salmão:', error);
   }
 };
 
-// Carrega os dados iniciais
 onMounted(() => {
-  fetchDataCMV();
+  fetchHistoricoSalmao();
 });
+
+const handleFilterUpdate = (filters) => {
+  fetchHistoricoSalmao(filters.startDate, filters.endDate);
+};
 </script>
 
 <style lang="css" scoped>
@@ -445,7 +463,7 @@ onMounted(() => {
 }
 
 .compromissos-container {
-  max-height: 400px; /* Defina a altura máxima desejada para a coluna */
+  max-height: 170px; /* Defina a altura máxima desejada para a coluna */
   overflow-y: auto; /* Habilita rolagem vertical */
 }
 
