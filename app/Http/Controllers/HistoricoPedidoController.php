@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\HistoricoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class HistoricoPedidoController extends Controller
 {
     // Função para exibir todos os pedidos históricos
     public function index(Request $request)
     {
-        // Verificar se foi fornecido um filtro de unidade
-        $unidadeId = $request->query('unidade_id');
+        $usuario = Auth::user();
+        $unidadeId = $usuario->unidade_id;
+
 
         // Inicia a consulta ao modelo, incluindo os relacionamentos necessários
         $query = HistoricoPedido::with(['usuario', 'unidade', 'fornecedor']);
