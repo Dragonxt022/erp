@@ -533,30 +533,22 @@ class PainelAnaliticos extends Controller
         $totalFGTS = $totalSalarios * 0.08;
 
         // Soma total das taxas de métodos de pagamento por tipo no período
+        $creditoIds = DB::table('default_payment_methods')->where('tipo', 'credito')->pluck('id');
         $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidadeId)
-            ->where('metodo_pagamento_id', function ($query) {
-                $query->select('id')
-                    ->from('default_payment_methods')
-                    ->where('tipo', 'credito');
-            })
+            ->whereIn('metodo_pagamento_id', $creditoIds)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_metodo');
-
+        
+        $debitoIds = DB::table('default_payment_methods')->where('tipo', 'debito')->pluck('id');
         $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidadeId)
-            ->where('metodo_pagamento_id', function ($query) {
-                $query->select('id')
-                    ->from('default_payment_methods')
-                    ->where('tipo', 'debito');
-            })
+            ->whereIn('metodo_pagamento_id', $debitoIds)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_metodo');
 
+
+        $vrAlimentacaoIds = DB::table('default_payment_methods')->where('tipo', 'vr_alimentacao')->pluck('id');
         $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidadeId)
-            ->where('metodo_pagamento_id', function ($query) {
-                $query->select('id')
-                    ->from('default_payment_methods')
-                    ->where('tipo', 'vr_alimentacao');
-            })
+            ->whereIn('metodo_pagamento_id', $vrAlimentacaoIds)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_metodo');
 
@@ -565,10 +557,10 @@ class PainelAnaliticos extends Controller
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_canal');
 
-        $categoriasRemovidas = ["Fornecedores", "FGTS"];
+        $categoriasRemovidas = ["Fornecedores"];
 
         // Defina as categorias que devem ser ignoradas na soma
-        $categoriasIgnoradasNaSoma = ["Folha de pagamento", "FGTS", "Fornecedores"];
+        $categoriasIgnoradasNaSoma = ["Folha de pagamento", "Fornecedores"];
 
         // Buscar todos os grupos de categorias com suas categorias associadas
         $grupos = GrupoDeCategorias::with('categorias')->get();
