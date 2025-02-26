@@ -26,11 +26,8 @@
               <div
                 class="text-[#6db631] text-[25px] font-bold font-['Figtree'] mt-3 tracking-tight"
               >
-                {{
-                  produto.unidadeDeMedida === 'a_granel' &&
-                  produto.valor_pago_por_quilo_lote
-                    ? produto.valor_pago_por_quilo_lote
-                    : produto.valor_total_lote
+                R$ {{
+                  produto.valor_total_lote
                 }}
               </div>
             </div>
@@ -96,20 +93,12 @@
 
               <!-- Preço por Quilo ou Preço Unitário -->
               <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-                {{
-                  produto.unidadeDeMedida === 'unitario'
-                    ? lote.preco_unitario
-                    : lote.valor_pago_por_quilo
-                }}
+                {{ lote.preco_insumo }}
               </td>
 
               <!-- Valor Total ou Preço Unitário -->
               <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-                {{
-                  produto.unidadeDeMedida === 'unitario'
-                    ? lote.valor_total
-                    : lote.preco_unitario
-                }}
+                {{ lote.valor_total }}
               </td>
             </tr>
           </tbody>

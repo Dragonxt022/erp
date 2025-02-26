@@ -23,5 +23,16 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=root
+      - PMA_PASSWORD=secret
+    depends_on:
+      - db
+
 volumes:
   dbdata:

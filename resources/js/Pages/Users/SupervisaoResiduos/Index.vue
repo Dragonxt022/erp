@@ -44,8 +44,8 @@
               :class="{
                 'font-bold text-[120.01px] tracking-wider': true,
                 'text-[#1d5915]':
-                  parseFormattedValue(aproveitamentoMedio) >= 72,
-                'text-red-600': parseFormattedValue(aproveitamentoMedio) < 72,
+                  parseFormattedValue(aproveitamentoMedio) >= 70,
+                'text-red-600': parseFormattedValue(aproveitamentoMedio) < 70,
               }"
             >
               {{ aproveitamentoMedio }}%
@@ -58,12 +58,12 @@
             >
               <polygon
                 :points="
-                  parseFormattedValue(aproveitamentoMedio) >= 72
+                  parseFormattedValue(aproveitamentoMedio) >= 70
                     ? '12,2 22,20 2,20'
                     : '12,22 22,2 2,2'
                 "
                 :fill="
-                  parseFormattedValue(aproveitamentoMedio) >= 72
+                  parseFormattedValue(aproveitamentoMedio) >= 70
                     ? '#6DB631'
                     : '#DC2626'
                 "
@@ -265,12 +265,12 @@
                 >
                   <polygon
                     :points="
-                      parseFormattedValue(item.aproveitamento) >= 72
+                      parseFormattedValue(item.aproveitamento) >= 70
                         ? '12,2 22,20 2,20'
                         : '12,22 22,2 2,2'
                     "
                     :fill="
-                      parseFormattedValue(item.aproveitamento) >= 72
+                      parseFormattedValue(item.aproveitamento) >= 70
                         ? '#6DB631'
                         : '#DC2626'
                     "

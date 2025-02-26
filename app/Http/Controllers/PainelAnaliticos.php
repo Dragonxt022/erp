@@ -31,7 +31,7 @@ class PainelAnaliticos extends Controller
     public function calcularCMV(Request $request)
     {
         $usuario = Auth::user();
-        $unidade_id = $usuario->unidade_id;
+        $unidadeId = $usuario->unidade_id;
 
         // Obter as datas de início e fim
         try {
@@ -48,35 +48,20 @@ class PainelAnaliticos extends Controller
 
 
         // Função para calcular o valor baseado na unidade (kg ou unidade)
-        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-            if ($unidade == 'kg') {
-                // Evita divisão por zero
-                if ($quantidade == 0) {
-                    return 0;
-                }
-                $precoPorQuilo = $preco / $quantidade;
-                return $quantidade * $precoPorQuilo;
-            } else {
-                return $quantidade * $preco;
-            }
-        };
-
-
         // 1. Calcular o CMV
-        // Saldo inicial de estoque
-        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
             ->whereDate('data_ajuste', '=', $startDateConverted)
             ->orderBy('data_ajuste', 'desc')
             ->first();
 
         if (!$saldoInicial) {
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('data_ajuste', '<', $startDateConverted)
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
             if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                     ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                     ->first();
 
@@ -87,30 +72,25 @@ class PainelAnaliticos extends Controller
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-
+    
         // Compras no período
-        $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
             ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
-
-        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Estoque final
-        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
-            ->whereDate('created_at', '<=', $endDateConverted)
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)
+            ->where('created_at', '<=', $endDateConverted)
             ->get();
-
-        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
-        // $cmv = max(0, $estoqueInicialValor + $comprasValor - $estoqueFinalValor);
-
 
         Log::info('Calculando CMV', [
             'estoqueInicialValor' => $estoqueInicialValor,
@@ -233,7 +213,7 @@ class PainelAnaliticos extends Controller
     public function calcularCMVESomarCaixas(Request $request)
     {
         $usuario = Auth::user();
-        $unidade_id = $usuario->unidade_id;
+        $unidadeId = $usuario->unidade_id;
 
         // Obter as datas de início e fim
         try {
@@ -246,33 +226,20 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        // Função para calcular o valor baseado na unidade (kg ou unidade)
-        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-            if ($unidade == 'kg') {
-                // Calcular o preço por quilo
-                $precoPorQuilo = $preco / $quantidade;
-                return $quantidade * $precoPorQuilo;
-            } else {
-                // Para as unidades, multiplicamos a quantidade pela preço unitário
-                return $quantidade * $preco;
-            }
-        };
-
         // 1. Calcular o CMV
-        // Saldo inicial de estoque
-        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
             ->whereDate('data_ajuste', '=', $startDateConverted)
             ->orderBy('data_ajuste', 'desc')
             ->first();
 
         if (!$saldoInicial) {
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('data_ajuste', '<', $startDateConverted)
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
             if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                     ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                     ->first();
 
@@ -283,31 +250,28 @@ class PainelAnaliticos extends Controller
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-
+    
         // Compras no período
-        $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
             ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
-
-        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Estoque final
-        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
-            ->whereDate('created_at', '<=', $endDateConverted)
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)
+            ->where('created_at', '<=', $endDateConverted)
             ->get();
-
-        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
         // 2. Somar todos os caixas fechados no período
-        $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
             ->where('status', 0) // Apenas caixas fechados
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_final');
@@ -328,7 +292,7 @@ class PainelAnaliticos extends Controller
     public function calcularIndicadores(Request $request)
     {
         $usuario = Auth::user();
-        $unidade_id = $usuario->unidade_id;
+        $unidadeId = $usuario->unidade_id;
 
         // Obter as datas de início e fim
         try {
@@ -343,33 +307,20 @@ class PainelAnaliticos extends Controller
         }
 
 
-        // Função para calcular o valor baseado na unidade (kg ou unidade)
-        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-            if ($unidade == 'kg') {
-                // Calcular o preço por quilo
-                $precoPorQuilo = $preco / $quantidade;
-                return $quantidade * $precoPorQuilo;
-            } else {
-                // Para as unidades, multiplicamos a quantidade pela preço unitário
-                return $quantidade * $preco;
-            }
-        };
-
-        // 1. Calcular o CMV
-        // Saldo inicial de estoque
-        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+       // 1. Calcular o CMV
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
             ->whereDate('data_ajuste', '=', $startDateConverted)
             ->orderBy('data_ajuste', 'desc')
             ->first();
 
         if (!$saldoInicial) {
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('data_ajuste', '<', $startDateConverted)
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
             if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                     ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                     ->first();
 
@@ -380,26 +331,23 @@ class PainelAnaliticos extends Controller
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-
+    
         // Compras no período
-        $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
             ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
-
-        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Estoque final
-        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
-            ->whereDate('created_at', '<=', $endDateConverted)
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)
+            ->where('created_at', '<=', $endDateConverted)
             ->get();
-
-        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
@@ -408,7 +356,7 @@ class PainelAnaliticos extends Controller
         $endDateConverted = Carbon::parse($endDate)->endOfDay(); // Termina em 23:59:59
 
         // 2. Somar todos os caixas fechados no período
-        $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
             ->where('status', 0) // Apenas caixas fechados
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_final');
@@ -416,7 +364,7 @@ class PainelAnaliticos extends Controller
 
 
         // 3. Quantidade de pedidos e faturamento
-        $pedidos = CanalVenda::where('unidade_id', $unidade_id)
+        $pedidos = CanalVenda::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
 
@@ -492,7 +440,7 @@ class PainelAnaliticos extends Controller
     public function analitycsDRE(Request $request)
     {
         $usuario = Auth::user();
-        $unidade_id = $usuario->unidade_id;
+        $unidadeId = $usuario->unidade_id;
 
         try {
             $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
@@ -504,36 +452,20 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        // Função para calcular o valor baseado na unidade (kg ou unidade)
-        $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-            if ($unidade == 'kg') {
-                // Evita divisão por zero
-                if ($quantidade == 0) {
-                    return 0;
-                }
-                $precoPorQuilo = $preco / $quantidade;
-                return $quantidade * $precoPorQuilo;
-            } else {
-                return $quantidade * $preco;
-            }
-        };
-
-
         // 1. Calcular o CMV
-        // Saldo inicial de estoque
-        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
             ->whereDate('data_ajuste', '=', $startDateConverted)
             ->orderBy('data_ajuste', 'desc')
             ->first();
 
         if (!$saldoInicial) {
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('data_ajuste', '<', $startDateConverted)
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
             if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                     ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                     ->first();
 
@@ -544,51 +476,41 @@ class PainelAnaliticos extends Controller
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-
+    
         // Compras no período
-        $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
             ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
-
-        $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Estoque final
-        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
-            ->whereDate('created_at', '<=', $endDateConverted)
+        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
+            ->where('quantidade', '>', 0)
+            ->where('created_at', '<=', $endDateConverted)
             ->get();
-
-        $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-            return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-        });
-
+    
+        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+    
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
-
-        Log::info('Calculando CMV', [
-            'estoqueInicialValor' => $estoqueInicialValor,
-            'comprasValor' => $comprasValor,
-            'estoqueFinalValor' => $estoqueFinalValor
-        ]);
-
         // Soma total dos caixas fechados no período
-        $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
             ->where('status', 0)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_final');
 
 
         // Soma dos salários dos usuários da unidade dentro do período e com salário registrado
-        $totalSalarios = User::where('unidade_id', $unidade_id)
+        $totalSalarios = User::where('unidade_id', $unidadeId)
             ->whereNotNull('salario') // Garante que o salário não é nulo
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtra pela data de criação do usuário
             ->sum('salario');
 
         // Soma total pago para Motoboy no período
-        $totalMotoboy = ContaAPagar::where('unidade_id', $unidade_id)
+        $totalMotoboy = ContaAPagar::where('unidade_id', $unidadeId)
             ->where('categoria_id', function ($query) {
                 $query->select('id')
                     ->from('categorias')
@@ -611,7 +533,7 @@ class PainelAnaliticos extends Controller
         $totalFGTS = $totalSalarios * 0.08;
 
         // Soma total das taxas de métodos de pagamento por tipo no período
-        $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidade_id)
+        $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->where('metodo_pagamento_id', function ($query) {
                 $query->select('id')
                     ->from('default_payment_methods')
@@ -620,7 +542,7 @@ class PainelAnaliticos extends Controller
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_metodo');
 
-        $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidade_id)
+        $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->where('metodo_pagamento_id', function ($query) {
                 $query->select('id')
                     ->from('default_payment_methods')
@@ -629,7 +551,7 @@ class PainelAnaliticos extends Controller
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_metodo');
 
-        $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidade_id)
+        $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->where('metodo_pagamento_id', function ($query) {
                 $query->select('id')
                     ->from('default_payment_methods')
@@ -639,7 +561,7 @@ class PainelAnaliticos extends Controller
             ->sum('valor_taxa_metodo');
 
         // Soma total das taxas de canais de vendas no período
-        $totalTaxasCanais = CanalVenda::where('unidade_id', $unidade_id)
+        $totalTaxasCanais = CanalVenda::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->sum('valor_taxa_canal');
 
@@ -656,7 +578,7 @@ class PainelAnaliticos extends Controller
         $totalDespesasCategoriasSemFolha = 0;
 
         $dadosGrupos = $grupos->map(function ($grupo) use (
-            $unidade_id,
+            $unidadeId,
             $startDateConverted,
             $endDateConverted,
             $totalSalarios,
@@ -676,7 +598,7 @@ class PainelAnaliticos extends Controller
             $categoriasFormatadas = $grupo->categorias
                 ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas)) // Remove categorias indesejadas
                 ->map(function ($categoria) use (
-                    $unidade_id,
+                    $unidadeId,
                     $startDateConverted,
                     $endDateConverted,
                     $totalSalarios,
@@ -694,7 +616,7 @@ class PainelAnaliticos extends Controller
                 ) {
                     // Valor padrão obtido de ContaAPagar
                     $valor = ContaAPagar::where('categoria_id', $categoria->id)
-                        ->where('unidade_id', $unidade_id)
+                        ->where('unidade_id', $unidadeId)
                         ->whereIn('status', ['pago', 'pendente'])
                         ->whereBetween('emitida_em', [$startDateConverted, $endDateConverted])
                         ->sum('valor');
@@ -744,7 +666,7 @@ class PainelAnaliticos extends Controller
 
 
         $year = Carbon::parse($startDateConverted)->year; // ou um ano específico, se enviado no request
-        $calendario = $this->getCalendarData($year, $unidade_id);
+        $calendario = $this->getCalendarData($year, $unidadeId);
 
 
 
@@ -761,7 +683,7 @@ class PainelAnaliticos extends Controller
         ]);
     }
 
-    private function getCalendarData($year, $unidade_id)
+    private function getCalendarData($year, $unidadeId)
     {
         $meses = [
             1  => 'Janeiro',
@@ -778,40 +700,26 @@ class PainelAnaliticos extends Controller
             12 => 'Dezembro'
         ];
 
-        return collect(range(1, 12))->map(function ($month) use ($year, $unidade_id, $meses) {
+        return collect(range(1, 12))->map(function ($month) use ($year, $unidadeId, $meses) {
             // Definindo o início e o fim do mês com a formatação completa de data e hora
             $startMonth = Carbon::create($year, $month, 1)->startOfDay(); // 00:00:00
             $endMonth = Carbon::create($year, $month, Carbon::create($year, $month, 1)->daysInMonth)->endOfDay(); // 23:59:59
 
-            // Função para calcular o valor baseado na unidade (kg ou unidade)
-            $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-                if ($unidade == 'kg') {
-                    // Evita divisão por zero
-                    if ($quantidade == 0) {
-                        return 0;
-                    }
-                    $precoPorQuilo = $preco / $quantidade;
-                    return $quantidade * $precoPorQuilo;
-                } else {
-                    return $quantidade * $preco;
-                }
-            };
-
             // 1. Calcular o CMV
             // Saldo inicial de estoque
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('data_ajuste', '=', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->orderBy('data_ajuste', 'desc')
                 ->first();
 
             if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                     ->whereDate('data_ajuste', '<', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                     ->orderBy('data_ajuste', 'desc')
                     ->first();
 
                 if (!$saldoInicial) {
-                    $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidade_id)
+                    $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
                         ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
                         ->first();
 
@@ -827,44 +735,40 @@ class PainelAnaliticos extends Controller
 
 
             // Compras no período
-            $compras = MovimentacoesEstoque::where('unidade_id', $unidade_id)
+            $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
                 ->where('operacao', 'Entrada')
                 ->whereBetween('created_at', [
                     Carbon::parse($startMonth)->addDay()->format('Y-m-d H:i:s'),
                     $endMonth->format('Y-m-d H:i:s')
                 ])
                 ->get();
-
-            $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-                return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-            });
-
+            
+            $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
 
             // Estoque final
-            $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidade_id)
+            $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
                 ->whereDate('created_at', '<=', $endMonth->format('Y-m-d H:i:s'))
                 ->get();
 
-            $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-                return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-            });
+            $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
+
 
             // Calcular o CMV
             $valor_cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
 
             // Calcular outras despesas do mês (usando os mesmos filtros do DRE)
-            $totalCaixas = Caixa::where('unidade_id', $unidade_id)
+            $totalCaixas = Caixa::where('unidade_id', $unidadeId)
                 ->where('status', 0)
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('valor_final');
 
-            $totalSalarios = User::where('unidade_id', $unidade_id)
+            $totalSalarios = User::where('unidade_id', $unidadeId)
                 ->whereNotNull('salario')
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('salario');
 
-            $totalMotoboy = ContaAPagar::where('unidade_id', $unidade_id)
+            $totalMotoboy = ContaAPagar::where('unidade_id', $unidadeId)
                 ->where('categoria_id', function ($query) {
                     $query->select('id')
                         ->from('categorias')
@@ -887,7 +791,7 @@ class PainelAnaliticos extends Controller
             $totalFGTS = $totalSalarios * 0.08;
 
             // Soma total das taxas de métodos de pagamento por tipo no período
-            $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidade_id)
+            $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidadeId)
                 ->where('metodo_pagamento_id', function ($query) {
                     $query->select('id')
                         ->from('default_payment_methods')
@@ -896,7 +800,7 @@ class PainelAnaliticos extends Controller
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('valor_taxa_metodo');
 
-            $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidade_id)
+            $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidadeId)
                 ->where('metodo_pagamento_id', function ($query) {
                     $query->select('id')
                         ->from('default_payment_methods')
@@ -905,7 +809,7 @@ class PainelAnaliticos extends Controller
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('valor_taxa_metodo');
 
-            $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidade_id)
+            $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidadeId)
                 ->where('metodo_pagamento_id', function ($query) {
                     $query->select('id')
                         ->from('default_payment_methods')
@@ -914,7 +818,7 @@ class PainelAnaliticos extends Controller
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('valor_taxa_metodo');
 
-            $totalTaxasCanais = CanalVenda::where('unidade_id', $unidade_id)
+            $totalTaxasCanais = CanalVenda::where('unidade_id', $unidadeId)
                 ->whereBetween('created_at', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                 ->sum('valor_taxa_canal');
 
@@ -933,7 +837,7 @@ class PainelAnaliticos extends Controller
             $totalDespesasCategoriasSemFolha = 0;
 
             $dadosGrupos = $grupos->map(function ($grupo) use (
-                $unidade_id,
+                $unidadeId,
                 $startMonth,
                 $endMonth,
                 $totalSalarios,
@@ -953,7 +857,7 @@ class PainelAnaliticos extends Controller
                 $categoriasFormatadas = $grupo->categorias
                     ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas)) // Remove categorias indesejadas
                     ->map(function ($categoria) use (
-                        $unidade_id,
+                        $unidadeId,
                         $startMonth,
                         $endMonth,
                         $totalSalarios,
@@ -971,7 +875,7 @@ class PainelAnaliticos extends Controller
                     ) {
                         // Valor padrão obtido de ContaAPagar
                         $valor = ContaAPagar::where('categoria_id', $categoria->id)
-                            ->where('unidade_id', $unidade_id)
+                            ->where('unidade_id', $unidadeId)
                             ->whereIn('status', ['pago', 'pendente'])
                             ->whereBetween('emitida_em', [$startMonth->format('Y-m-d H:i:s'), $endMonth->format('Y-m-d H:i:s')])
                             ->sum('valor');

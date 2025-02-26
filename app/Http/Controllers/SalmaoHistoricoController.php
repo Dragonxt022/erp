@@ -199,14 +199,17 @@ class SalmaoHistoricoController extends Controller
                 throw new \Exception('O produto "Salmão Limpo" não foi encontrado na lista de produtos. Por favor, cadastre-o antes de continuar.');
             }
 
+            $precoPorQuilo = $validated['peso_limpo'] > 0 ? $validated['valor_pago'] / $validated['peso_limpo'] : 0;
+
+
             // 3. Adicionar ao estoque (UnidadeEstoque)
             $estoque = UnidadeEstoque::create([
                 'insumo_id' => $salmaoLimpo->id,
                 'fornecedor_id' => 6,
-                'usuario_id' => $validated['responsavel_id'],
+                'usuario_id' => Auth::id(),
                 'unidade_id' => $user->unidade_id,
                 'quantidade' => $validated['peso_limpo'],
-                'preco_insumo' => $validated['valor_pago'],
+                'preco_insumo' => $precoPorQuilo,
                 'categoria_id' => $salmaoLimpo->categoria_id,
                 'operacao' => 'Entrada',
                 'unidade' => 'kg',
@@ -218,9 +221,9 @@ class SalmaoHistoricoController extends Controller
             MovimentacoesEstoque::create([
                 'insumo_id' => $salmaoLimpo->id,
                 'fornecedor_id' => 6,
-                'usuario_id' => $validated['responsavel_id'],
+                'usuario_id' => Auth::id(),
                 'quantidade' => $validated['peso_limpo'],
-                'preco_insumo' => $validated['valor_pago'],
+                'preco_insumo' => $precoPorQuilo,
                 'operacao' => 'Entrada',
                 'unidade' => 'kg',
                 'unidade_id' => $user->unidade_id,

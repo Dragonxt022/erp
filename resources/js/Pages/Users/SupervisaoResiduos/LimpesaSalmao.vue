@@ -52,8 +52,8 @@
             <span
               :class="{
                 'font-bold text-[120.01px] tracking-wider': true,
-                'text-[#1d5915]': aproveitamento >= 72,
-                'text-red-600': aproveitamento < 72,
+                'text-[#1d5915]': aproveitamento >= 70,
+                'text-red-600': aproveitamento < 70, 
               }"
             >
               {{ aproveitamento }}%
@@ -66,9 +66,9 @@
             >
               <polygon
                 :points="
-                  aproveitamento >= 72 ? '12,2 22,20 2,20' : '12,22 22,2 2,2'
+                  aproveitamento >= 70 ? '12,2 22,20 2,20' : '12,22 22,2 2,2'
                 "
-                :fill="aproveitamento >= 72 ? '#6DB631' : '#DC2626'"
+                :fill="aproveitamento >= 70 ? '#6DB631' : '#DC2626'"
               />
             </svg>
           </div>
