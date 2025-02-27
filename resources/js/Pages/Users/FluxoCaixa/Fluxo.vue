@@ -589,11 +589,10 @@ const buscarValorCaixa = async () => {
     if (response.data.status === 'success') {
       valorTotalCaixa.value = `R$ ${response.data.data.valor_disponivel}`;
     } else {
-      toast.error('Erro ao carregar o valor do caixa.');
+      console.error('Erro ao buscar valor do caixa:', error);
     }
   } catch (error) {
     console.error('Erro ao buscar valor do caixa:', error);
-    toast.error('Erro ao carregar o valor do caixa.');
   }
 };
 
