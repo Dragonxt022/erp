@@ -267,12 +267,12 @@ const atualizarMetodo = async (chave, valor) => {
   const permissaoAtualizada = {
     user_id: props.dados.id, // Usar o ID do usuário diretamente
     controle_estoque: props.dados.user_permission.controle_estoque || false,
-    controle_saida_estoque:
-      props.dados.user_permission.controle_saida_estoque || false,
+    controle_saida_estoque: props.dados.user_permission.controle_saida_estoque || false,
     gestao_equipe: props.dados.user_permission.gestao_equipe || false,
     fluxo_caixa: props.dados.user_permission.fluxo_caixa || false,
     dre: props.dados.user_permission.dre || false,
     contas_pagar: props.dados.user_permission.contas_pagar || false,
+    gestao_salmao: props.dados.user_permission.gestao_salmao || false,
   };
 
   try {
