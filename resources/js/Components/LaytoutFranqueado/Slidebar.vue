@@ -7,18 +7,19 @@
       @scroll="saveScrollPosition"
     >
       <div
-        v-for="category in menuCategories"
+        v-for="category in filteredMenuCategories"
         :key="category.name"
         class="menu-category mb-6"
       >
         <!-- Categoria de menu (Título escondido em telas pequenas) -->
         <div
           class="category-title menu-categorias text-sm sm:text-base font-medium text-[#87ba73] mb-3 pl-4"
+          v-if="category.items.length > 0"
         >
           {{ category.name }}
         </div>
 
-        <!-- Itens do menu (Mostrar apenas os ícones em telas pequenas) -->
+        <!-- Itens do menu -->
         <MenuItem
           v-for="item in category.items"
           :key="item.link || 'no-link'"
@@ -28,18 +29,34 @@
           :submenuItems="item.submenuItems"
           :isActive="item.link ? isActive(route(item.link)) : false"
           :isLogout="item.isLogout"
+          :requiredPermission="item.requiredPermission"
         />
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, provide } from 'vue';
 import MenuItem from './MenuItem.vue';
+import axios from 'axios';
 
-// Referência da sidebar
 const sidebar = ref(null);
+
+const userPermissions = ref({});
+
+// Função para buscar os dados da API
+const fetchPermissions = async () => {
+  try {
+    const response = await axios.get('/api/navbar-profile');
+    userPermissions.value = response.data.data.permissions || {};
+  } catch (error) {
+    console.error('Erro ao carregar permissões:', error);
+    userPermissions.value = {}; // Valor padrão em caso de erro
+  }
+};
+
+// Fornece userPermissions para os componentes filhos
+provide('userPermissions', userPermissions);
 
 // Definindo as categorias de menu
 const menuCategories = [
@@ -53,6 +70,7 @@ const menuCategories = [
         link: 'franqueado.painel',
         isLogout: false,
         isActive: false,
+        requiredPermission: null,
       },
     ],
   },
@@ -93,28 +111,32 @@ const menuCategories = [
         icon: '/storage/images/estoque.svg',
         link: 'franqueado.estoque',
         isLogout: false,
+        requiredPermission: 'controle_estoque',
         submenuItems: [
           {
             label: 'Inventário',
-            icon: '/storage/images/add_product.svg',
             link: 'franqueado.inventario',
+            requiredPermission: 'controle_estoque',
           },
           {
             label: 'Saida de estoque',
-            link: 'login.pagina.estoque',
+            link: 'franqueado.controleEstoque',
+            requiredPermission: 'controle_saida_estoque',
           },
           {
             label: 'Fornecedores',
             link: 'franqueado.fornecedores',
+            requiredPermission: 'controle_estoque',
           },
-
           {
             label: 'Novo Pedidos',
             link: 'franqueado.pedidos',
+            requiredPermission: 'controle_estoque',
           },
           {
             label: 'Histórico de Pedidos',
             link: 'franqueado.historicoPedidos',
+            requiredPermission: 'controle_estoque',
           },
         ],
         isActive: false,
@@ -125,10 +147,14 @@ const menuCategories = [
         icon: '/storage/images/delete_branco.svg',
         link: 'franqueado.supervisaoResidos',
         isLogout: false,
+        requiredPermission: 'gestao_salmao',
+
         submenuItems: [
           {
             label: 'Limpeza de salmão',
             link: 'franqueado.limpesaSalmoes',
+            requiredPermission: 'gestao_salmao',
+
           },
         ],
         isActive: false,
@@ -139,15 +165,18 @@ const menuCategories = [
         icon: '/storage/images/gestao_servisos.svg',
         link: 'franqueado.gestaoEquipe',
         isLogout: false,
+        requiredPermission: 'gestao_equipe',
         submenuItems: [
           {
             label: 'Controle de ponto',
             icon: '/storage/images/add_product.svg',
             link: 'franqueado.controlePonto',
+            requiredPermission: 'gestao_equipe',
           },
           {
             label: 'Folha de pagamento',
             link: 'franqueado.folhaPagamento',
+            requiredPermission: 'gestao_equipe',
           },
         ],
         isActive: false,
@@ -172,18 +201,22 @@ const menuCategories = [
         icon: '/storage/images/fluxo_caixa.svg',
         link: 'franqueado.abrirCaixa',
         isLogout: false,
+        requiredPermission: 'fluxo_caixa',
         submenuItems: [
           {
             label: 'Métodos de pagamento',
             link: 'franqueado.metodosPagamentos',
+            requiredPermission: 'fluxo_caixa',
           },
           {
             label: 'Canais de Vendas',
             link: 'franqueado.canaisVendas',
+            requiredPermission: 'fluxo_caixa',
           },
           {
             label: 'Histórico de Caixa',
             link: 'franqueado.historicoCaixa',
+            requiredPermission: 'fluxo_caixa',
           },
         ],
         isActive: false,
@@ -193,10 +226,12 @@ const menuCategories = [
         icon: '/storage/images/attach_money.svg',
         link: 'franqueado.contasApagar',
         isLogout: false,
+        requiredPermission: 'contas_pagar',
         submenuItems: [
           {
             label: 'Histórico de Despesas',
             link: 'franqueado.historicoContas',
+            requiredPermission: 'contas_pagar',
           },
         ],
         isActive: false,
@@ -206,6 +241,7 @@ const menuCategories = [
         icon: '/storage/images/analitic.svg',
         link: 'franqueado.dreGerencial',
         isLogout: false,
+        requiredPermission: 'dre',
         isActive: false,
       },
     ],
@@ -225,8 +261,26 @@ const menuCategories = [
   },
 ];
 
+const filteredMenuCategories = computed(() => {
+  return menuCategories
+    .map(category => ({
+      ...category,
+      items: category.items.filter(item => 
+        (!item.requiredPermission || userPermissions.value[item.requiredPermission]) ||
+        (item.submenuItems && item.submenuItems.some(sub => 
+          !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
+        ))
+      ),
+    }))
+    .filter(category => category.items.length > 0);
+});
+
+
 // Recuperar a posição da rolagem do localStorage
-onMounted(() => {
+onMounted(async () => {
+  
+  await fetchPermissions();
+  
   const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
   if (savedScrollPosition && sidebar.value) {
     sidebar.value.scrollTop = savedScrollPosition;

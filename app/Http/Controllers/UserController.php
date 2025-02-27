@@ -18,14 +18,16 @@ use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
 {
-    // Método que retorna todos os usuários e as empresas relacionadas
     public function index()
     {
         // Carrega usuários junto com as informações das unidades (empresas)
         $users = User::with('unidade')->get();
 
-        // Formata a resposta para incluir as unidades relacionadas
+        // Formata a resposta para incluir as unidades relacionadas e as permissões
         $data = $users->map(function ($user) {
+            // Obtém as permissões do usuário atual e converte 0/1 para booleanos
+            $permissions = array_map('boolval', $user->getPermissions());
+
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -36,6 +38,7 @@ class UserController extends Controller
                 'pin' => $user->pin,
                 'profile_photo_url' => $user->profile_photo_url,
                 'colaborador' => $user->colaborador,
+                'permissions' => $permissions, // Adiciona as permissões convertidas
                 'unidade' => $user->unidade ? [
                     'id' => $user->unidade->id,
                     'cep' => $user->unidade->cep,
@@ -196,6 +199,7 @@ class UserController extends Controller
             'fluxo_caixa' => 'required|boolean',
             'dre' => 'required|boolean',
             'contas_pagar' => 'required|boolean',
+            'gestao_salmao' => 'required|boolean',
         ]);
 
         // Buscar o usuário a ser atualizado
@@ -338,6 +342,7 @@ class UserController extends Controller
                 'fluxo_caixa' => false,
                 'dre' => false,
                 'contas_pagar' => false,
+                'gestao_salmao' => false,
             ]);
 
             // Gerar o token de redefinição de senha

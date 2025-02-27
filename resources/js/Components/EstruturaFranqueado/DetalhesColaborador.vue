@@ -230,12 +230,13 @@ const alternarVisao = () => {
 // Mapeia os nomes das permissões para exibição mais amigável
 const formatarPermissao = (chave) => {
   const mapeamento = {
-    controle_estoque: 'Controle de Estoque',
+    controle_estoque: 'Gestão de Estoque',
     controle_saida_estoque: 'Saída de Estoque',
     gestao_equipe: 'Gestão de Equipe',
     fluxo_caixa: 'Fluxo de Caixa',
     dre: 'DRE',
     contas_pagar: 'Contas a Pagar',
+    gestao_salmao: 'Gestão de Salmão',
   };
 
   return mapeamento[chave] || chave;

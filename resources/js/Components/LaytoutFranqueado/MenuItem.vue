@@ -2,7 +2,7 @@
   <div>
     <!-- Link do item principal -->
     <Link
-      v-if="!isLogout && link"
+      v-if="!isLogout && link && isVisible"
       class="menu-item"
       :class="[menuItemClass, { active: isActive || isAnySubmenuActive }]"
       :href="link || '#'"
@@ -13,7 +13,7 @@
       </div>
       <div class="label">{{ label }}</div>
       <div
-        v-if="submenuItems && submenuItems.length > 0"
+        v-if="filteredSubmenuItems.length > 0"
         class="right-icon"
         :class="{ 'rotate-icon': isIconRotated }"
       >
@@ -22,7 +22,7 @@
     </Link>
 
     <!-- Caso seja logout, trata com POST -->
-    <form v-else @submit.prevent="handleLogout" class="menu-item">
+    <form v-else-if="isLogout && isVisible" @submit.prevent="handleLogout" class="menu-item">
       <button type="submit" class="w-full h-full flex items-center">
         <div class="icon">
           <img :src="icon" alt="icon" />
@@ -33,14 +33,10 @@
 
     <!-- Submenu -->
     <div
-      v-if="
-        submenuItems &&
-        submenuItems.length > 0 &&
-        (showSubmenu || isAnySubmenuActive)
-      "
+      v-if="filteredSubmenuItems.length > 0 && (showSubmenu || isAnySubmenuActive)"
       class="submenu"
     >
-      <div v-for="(submenu, submenuIndex) in submenuItems" :key="submenuIndex">
+      <div v-for="(submenu, submenuIndex) in filteredSubmenuItems" :key="submenuIndex">
         <Link
           class="submenu-item"
           :href="route(submenu.link)"
@@ -54,7 +50,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed, watch, nextTick } from 'vue';
+import { defineProps, ref, computed, watch, nextTick, inject } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -67,13 +63,28 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  requiredPermission: String,
 });
+
+const userPermissions = inject('userPermissions', ref({}));
 
 const showSubmenu = ref(false);
 const isIconRotated = computed(() => showSubmenu.value);
 
+// Verifica se o item principal é visível
+const isVisible = computed(() => {
+  return !props.requiredPermission || userPermissions.value[props.requiredPermission];
+});
+
+// Filtra submenus com base nas permissões
+const filteredSubmenuItems = computed(() => {
+  return props.submenuItems.filter(sub => 
+    !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
+  );
+});
+
 const handleClick = (e) => {
-  if (props.submenuItems && props.submenuItems.length > 0) {
+  if (filteredSubmenuItems.value.length > 0) {
     e.preventDefault();
     toggleSubmenu();
   }
@@ -92,10 +103,7 @@ const loadSubmenuState = () => {
 };
 
 const saveSubmenuState = () => {
-  localStorage.setItem(
-    `submenu-${props.link}`,
-    JSON.stringify(showSubmenu.value)
-  );
+  localStorage.setItem(`submenu-${props.link}`, JSON.stringify(showSubmenu.value));
 };
 
 const menuItemClass = computed(() => {
@@ -109,7 +117,7 @@ const isSubmenuActive = (subLink) => {
 };
 
 const isAnySubmenuActive = computed(() => {
-  return props.submenuItems.some((item) => isSubmenuActive(item.link));
+  return filteredSubmenuItems.value.some((item) => isSubmenuActive(item.link));
 });
 
 const handleLogout = () => {
@@ -130,15 +138,13 @@ const checkSubmenuStatus = () => {
 };
 
 watch(isAnySubmenuActive, checkSubmenuStatus);
-
 watch(showSubmenu, () => {
-  nextTick(() => {
-    saveSubmenuState();
-  });
+  nextTick(() => saveSubmenuState());
 });
 </script>
 
 <style scoped>
+/* Mantém o mesmo estilo fornecido */
 .rotate-icon {
   transform: rotate(90deg);
   transition: transform 0.3s ease-in-out;
@@ -202,12 +208,6 @@ watch(showSubmenu, () => {
   background-color: #568f4063;
 }
 
-.submenu-item .icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 0px;
-}
-
 .submenu-item .label {
   color: white;
   font-size: 15px;
@@ -217,50 +217,7 @@ watch(showSubmenu, () => {
   word-wrap: break-word;
 }
 
-.submenu-link.active {
-  background-color: #568f40;
-}
-
 .submenu-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
-}
-
-.submenu-item a {
-  text-decoration: none;
-  color: white;
-  font-size: 13px;
-}
-
-.submenu-item a:hover {
-  text-decoration: underline;
-}
-
-@media (max-width: 840px) {
-  .menu-item {
-    height: 50%;
-    padding-left: 5%;
-    padding-right: 5%;
-    border-radius: 10px;
-    margin-bottom: 10px;
-  }
-
-  .menu-item.active {
-    background-color: #568f40;
-  }
-
-  .menu-item .icon {
-    width: 25%;
-    height: 25%;
-    margin-right: 80%;
-    margin-bottom: 8%;
-  }
-
-  .menu-item .label {
-    display: none;
-  }
-
-  .menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
 }
 </style>

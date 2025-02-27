@@ -114,4 +114,21 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Cargo::class); // Assumindo que o usuário tem um cargo
     }
+
+    /**
+     * Sistema de permissões
+     */
+
+     public function hasPermission(string $permission): bool
+    {
+        $permissions = $this->getPermissions();
+        return isset($permissions[$permission]) && $permissions[$permission] === 1;
+    }
+
+    public function getPermissions(): array
+    {
+        return UserPermission::getPermissions($this->id);
+    }
+
+    
 }

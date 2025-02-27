@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +21,6 @@ class AuthController extends Controller
         return Inertia::render('Auth/LoginEstoque');
     }
 
-    // Sistema de login com PIN para gerenciar o estoque
     public function loginComPin(Request $request)
     {
         // Valida o PIN recebido
@@ -38,8 +38,11 @@ class AuthController extends Controller
             ]);
         }
 
+        // Busca as permissões do usuário na tabela UserPermission
+        $userPermission = UserPermission::where('user_id', $usuario->id)->first();
+
         // Verifica se o usuário tem permissão para acessar o controle de estoque
-        if (!$usuario->controle_retirada_produto) {
+        if (!$userPermission || !$userPermission->controle_saida_estoque) {
             // Retorna o erro como uma propriedade no Inertia
             return Inertia::render('Auth/LoginEstoque', [
                 'errorMessage' => 'Acesso negado ao controle de estoque.',
@@ -73,46 +76,7 @@ class AuthController extends Controller
         return Inertia::render('Auth/Entrar');
     }
 
-    //  Função de login principal
-    // public function login(Request $request)
-    // {
 
-    //     // Valida o CPF e a senha
-    //     $request->validate([
-    //         'cpf' => ['required', 'string'],
-    //         'password' => ['required', 'string'],
-    //     ]);
-
-    //     // Buscar o usuário pelo CPF
-    //     $user = User::where('cpf', $request->cpf)->first();
-
-    //     // Verificar se o usuário existe e se a senha está correta
-    //     if (!$user || !Hash::check($request->password, $user->password)) {
-    //         return back()->withErrors([
-    //             'cpf' => 'As credenciais fornecidas estão incorretas.',
-    //             'password' => 'A senha informada está incorreta.',
-    //         ])->withInput($request->only('cpf'));
-    //     }
-
-    //     // Autenticar o usuário
-    //     Auth::login($user);
-
-    //     // Regenerar a sessão para segurança
-    //     $request->session()->regenerate();
-
-    //     // Redirecionar com base no tipo de usuário
-    //     if ($user->franqueadora) {
-    //         return redirect()->route('franqueadora.painel');
-    //     } elseif ($user->franqueado) {
-    //         return redirect()->route('franqueado.painel');
-    //     }
-
-    //     // Caso não seja franqueadora nem franqueado, desconectar e exibir erro
-    //     Auth::logout();
-    //     return back()->withErrors([
-    //         'general' => 'Não foi possível determinar o acesso do usuário. Entre em contato com o suporte.',
-    //     ]);
-    // }
 
     public function login(Request $request)
     {
@@ -178,25 +142,26 @@ class AuthController extends Controller
     {
         $token = request()->bearerToken();
         Log::info('Token recebido: ' . $token);  // Verifica o token recebido
-
+    
         if (!Auth::check()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Usuário não autenticado.',
             ], 401);
         }
-
+    
         $user = Auth::user();
-
+    
         // Carrega os relacionamentos necessários
         $user = $user->load('userDetails', 'unidade');
-
-
-
-        // Retorna os dados do usuário com os relacionamentos
+    
+        // Obtém as permissões do usuário e converte 0/1 para booleanos
+        $permissions = array_map('boolval', $user->getPermissions());
+    
+        // Retorna os dados do usuário com os relacionamentos e permissões
         return response()->json([
             'status' => 'success',
-            'data' => $user,
+            'data' => array_merge($user->toArray(), ['permissions' => $permissions]),
         ]);
     }
 }

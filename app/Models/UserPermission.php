@@ -17,6 +17,7 @@ class UserPermission extends Model
         'fluxo_caixa',
         'dre',
         'contas_pagar',
+        'gestao_salmao',
     ];
 
     public function user()
@@ -34,15 +35,15 @@ class UserPermission extends Model
     {
         $permissions = self::where('user_id', $userId)->first();
 
-        // Se não encontrar permissões, retornar permissões padrão
         if (!$permissions) {
             return [
-                'controle_estoque' => false,
-                'controle_saida_estoque' => false,
-                'gestao_equipe' => false,
-                'fluxo_caixa' => false,
-                'dre' => false,
-                'contas_pagar' => false,
+                'controle_estoque' => 0,
+                'controle_saida_estoque' => 0,
+                'gestao_equipe' => 0,
+                'fluxo_caixa' => 0,
+                'dre' => 0,
+                'contas_pagar' => 0,
+                'gestao_salmao'=> 0,
             ];
         }
 
@@ -53,6 +54,7 @@ class UserPermission extends Model
             'fluxo_caixa',
             'dre',
             'contas_pagar',
+            'gestao_salmao',
         ]);
     }
 }
