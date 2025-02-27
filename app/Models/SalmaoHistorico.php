@@ -25,6 +25,11 @@ class SalmaoHistorico extends Model
         return $this->belongsTo(SalmaoCalibre::class, 'calibre_id');
     }
 
+    public function fornecedor()
+    {
+        return $this->belongsTo(Fornecedor::class, 'fornecedor_id');
+    }
+
     public function responsavel()
     {
         return $this->belongsTo(User::class, 'responsavel_id');

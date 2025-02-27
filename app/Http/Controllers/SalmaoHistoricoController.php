@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Fornecedor;
 use App\Models\ListaProduto;
 use App\Models\MovimentacoesEstoque;
 use App\Models\SalmaoCalibre;
@@ -130,10 +131,13 @@ class SalmaoHistoricoController extends Controller
         // Listar todos os calibres disponíveis
         $calibres = SalmaoCalibre::select('id', 'nome', 'tipo')->get();
 
+        $fornecedores = Fornecedor::select('id', 'razao_social')->get();
+
         // Retornar os dados como JSON
         return response()->json([
             'calibres' => $calibres,
             'colaboradores' => $colaboradores,
+            'fornecedores' => $fornecedores,
         ]);
     }
 
@@ -161,6 +165,7 @@ class SalmaoHistoricoController extends Controller
         $validated = $request->validate([
             'responsavel_id' => 'required|exists:users,id',
             'calibre_id' => 'required|exists:salmao_calibres,id',
+            'fornecedor_id' => 'required|exists:fornecedores,id',
             'valor_pago' => 'required|numeric|min:0',
             'peso_bruto' => 'required|numeric|min:0',
             'peso_limpo' => 'required|numeric|min:0',
@@ -205,7 +210,7 @@ class SalmaoHistoricoController extends Controller
             // 3. Adicionar ao estoque (UnidadeEstoque)
             $estoque = UnidadeEstoque::create([
                 'insumo_id' => $salmaoLimpo->id,
-                'fornecedor_id' => 6,
+                'fornecedor_id' => $validated['fornecedor_id'],
                 'usuario_id' => Auth::id(),
                 'unidade_id' => $user->unidade_id,
                 'quantidade' => $validated['peso_limpo'],
@@ -220,7 +225,7 @@ class SalmaoHistoricoController extends Controller
             // 4. Registrar movimentação no histórico de estoques
             MovimentacoesEstoque::create([
                 'insumo_id' => $salmaoLimpo->id,
-                'fornecedor_id' => 6,
+                'fornecedor_id' => $validated['fornecedor_id'],
                 'usuario_id' => Auth::id(),
                 'quantidade' => $validated['peso_limpo'],
                 'preco_insumo' => $precoPorQuilo,

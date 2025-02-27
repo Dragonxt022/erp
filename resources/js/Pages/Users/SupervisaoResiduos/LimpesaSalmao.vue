@@ -43,6 +43,18 @@
                 {{ calibre.nome }}
               </option>
             </select>
+
+            <LabelModel text="Fornecedor" class="mb-2" />
+            <select v-model="form.fornecedor_id" class="input-select" required>
+              <option value="" disabled selected>Selecione um fornecedor</option>
+              <option
+                v-for="fornecedor in fornecedores"
+                :key="fornecedor.id"
+                :value="fornecedor.id"
+              >
+                {{ fornecedor.razao_social }}
+              </option>
+            </select>
           </div>
         </div>
 
@@ -212,6 +224,7 @@ import { useToast } from 'vue-toastification';
 const toast = useToast();
 const colaboradores = ref([]);
 const calibres = ref([]);
+const fornecedores = ref([]);
 const aproveitamento = ref(0);
 const desperdicio = ref(0);
 const desperdicioValor = ref('R$ 0,00');
@@ -231,6 +244,7 @@ const fecharAuthModal = () => {
 
 const form = ref({
   responsavel_id: '',
+  fornecedor_id: '',
   calibre_id: '',
   valor_pago: 'R$ 0,00', // Valor inicial formatado
   peso_bruto: '0,000', // Valor inicial formatado
@@ -243,6 +257,7 @@ onMounted(async () => {
     const response = await axios.get('/api/gestao-residuos/limpeza');
     colaboradores.value = response.data.colaboradores;
     calibres.value = response.data.calibres;
+    fornecedores.value = response.data.fornecedores;
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
   }
@@ -324,6 +339,7 @@ const submitForm = async () => {
     const response = await axios.post('/api/gestao-residuos/adicionar', {
       pin: pin.value,
       responsavel_id: form.value.responsavel_id,
+      fornecedor_id: form.value.fornecedor_id,
       calibre_id: form.value.calibre_id,
       valor_pago: parseFloat(
         form.value.valor_pago.replace(/[^\d,]/g, '').replace(',', '.')
@@ -339,6 +355,7 @@ const submitForm = async () => {
     form.value = {
       responsavel_id: '',
       calibre_id: '',
+      fornecedor_id: '',
       valor_pago: 'R$ 0,00',
       peso_bruto: '0,000',
       peso_limpo: '0,000',
