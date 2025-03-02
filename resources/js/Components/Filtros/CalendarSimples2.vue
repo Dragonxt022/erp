@@ -5,6 +5,7 @@
       class="flex items-center justify-between p-3 rounded-md cursor-pointer"
       @click="toggleDropdown"
     >
+    
       <span>
         <span v-if="selectedStartDate && selectedEndDate">
           {{ selectedStartDate.format('DD/MM/YYYY') }} -
@@ -18,12 +19,17 @@
       v-if="isDropdownOpen"
       class="absolute z-10 bg-white border rounded-xl shadow-lg w-[300px] p-4 left-[68px] transform -translate-x-1/2"
     >
-      <!-- Navegação do mês -->
-      <div class="items-center mb-3">
-        <span class="font-semibold items-center">
-          <span>{{ currentDate.format('MMM') }}</span>
-          <span class="ml-[90px]">{{ currentDate.format('YYYY') }}</span>
+      <!-- Navegação do mês e ano -->
+      <div class="flex items-center justify-between mb-3">
+        <button @click="previousMonth" class="text-gray-600 hover:text-gray-800">
+          &lt;
+        </button>
+        <span class="font-semibold">
+          {{ currentDate.format('MMMM YYYY') }}
         </span>
+        <button @click="nextMonth" class="text-gray-600 hover:text-gray-800">
+          &gt;
+        </button>
       </div>
 
       <!-- Grid de dias do calendário -->
@@ -41,6 +47,7 @@
           @click="selectDate(day.date)"
           :class="[
             'p-2 rounded-full cursor-pointer',
+            day.day === '' ? 'invisible' : '',
             isSelected(day.date)
               ? 'bg-[#6db631] text-white'
               : isInRange(day.date)
@@ -85,8 +92,10 @@
 <script setup>
 import { ref, computed, defineEmits } from 'vue';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
+dayjs.locale('pt-br');
 
-const emit = defineEmits();
+const emit = defineEmits(['update-filters']);
 
 // Estado para o dropdown
 const isDropdownOpen = ref(false);
@@ -94,24 +103,28 @@ const isDropdownOpen = ref(false);
 // Variáveis reativas para controlar as datas de início e fim
 const selectedStartDate = ref(dayjs()); // Define o dia atual como padrão para a data de início
 const selectedEndDate = ref(dayjs()); // Define o dia atual como padrão para a data de fim
-
-const currentDate = ref(dayjs());
+const currentDate = ref(dayjs()); // Data atual para navegação no calendário
 
 // Controle de seleção de datas (início e fim)
 const selectingStart = ref(true); // Controla se estamos escolhendo a data de início ou fim
 
 // Dados para o calendário
 const daysOfWeek = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
 const daysInMonth = computed(() => {
   const days = [];
-  const startOfMonth = selectedStartDate.value.startOf('month');
-  const endOfMonth = selectedEndDate.value.endOf('month');
+  const startOfMonth = currentDate.value.startOf('month');
+  const endOfMonth = currentDate.value.endOf('month');
+  const daysInMonthCount = endOfMonth.date();
 
-  for (let i = 0; i < startOfMonth.day(); i++) {
-    days.push({ day: '', date: null }); // Espaços vazios antes do primeiro dia
+  // Adiciona espaços vazios antes do primeiro dia do mês
+  const firstDayOfMonth = startOfMonth.day();
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    days.push({ day: '', date: null });
   }
 
-  for (let day = 1; day <= endOfMonth.date(); day++) {
+  // Adiciona os dias do mês
+  for (let day = 1; day <= daysInMonthCount; day++) {
     const date = startOfMonth.date(day);
     days.push({ day, date });
   }
@@ -119,23 +132,34 @@ const daysInMonth = computed(() => {
   return days;
 });
 
+// Funções para navegar entre meses
+const previousMonth = () => {
+  currentDate.value = currentDate.value.subtract(1, 'month');
+};
+
+const nextMonth = () => {
+  currentDate.value = currentDate.value.add(1, 'month');
+};
+
+// Verifica se o dia está selecionado
 const isSelected = (date) => {
+  if (!date) return false;
   return (
-    date &&
-    (date.isSame(selectedStartDate.value) || date.isSame(selectedEndDate.value))
+    date.isSame(selectedStartDate.value, 'day') ||
+    date.isSame(selectedEndDate.value, 'day')
   );
 };
 
-// Função corrigida para verificar o intervalo
+// Verifica se o dia está dentro do intervalo selecionado
 const isInRange = (date) => {
   if (!date || !selectedStartDate.value || !selectedEndDate.value) return false;
-
   return (
     date.isAfter(selectedStartDate.value, 'day') &&
     date.isBefore(selectedEndDate.value, 'day')
   );
 };
 
+// Função para selecionar uma data
 const selectDate = (date) => {
   if (!date) return;
 
@@ -146,13 +170,14 @@ const selectDate = (date) => {
   } else {
     // Se já selecionamos o início, a data atual será o final
     selectedEndDate.value = date.endOf('day');
+    // Garantir que a data final não seja anterior à inicial
+    if (selectedEndDate.value.isBefore(selectedStartDate.value)) {
+      const temp = selectedStartDate.value;
+      selectedStartDate.value = selectedEndDate.value;
+      selectedEndDate.value = temp;
+    }
     selectingStart.value = true; // Reset para iniciar a seleção novamente
   }
-};
-
-const cancelar = () => {
-  clearFilters();
-  isDropdownOpen.value = false;
 };
 
 // Funções para o dropdown
@@ -181,5 +206,13 @@ const applyFilters = () => {
 const clearFilters = () => {
   selectedStartDate.value = dayjs();
   selectedEndDate.value = dayjs();
+  currentDate.value = dayjs();
+  selectingStart.value = true;
+};
+
+// Função para cancelar
+const cancelar = () => {
+  clearFilters();
+  isDropdownOpen.value = false;
 };
 </script>

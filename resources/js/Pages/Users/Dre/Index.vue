@@ -66,7 +66,7 @@
         <!-- Gráfico e Histórico na mesma coluna -->
         <div>
           <!-- Gráfico -->
-          <div class="bg-white rounded-lg p-5 flex justify-center w-full h-[380px]">
+          <div class="bg-white rounded-lg p-5 flex justify-center w-full h-[480px]">
             <canvas id="myChart"></canvas>
           </div>
           <!-- Histórico de Resultados -->
@@ -151,6 +151,10 @@ const graficoData = ref([]);
 const graficoLabels = ref([]);
 const graficoPorcentagem = ref([]);
 
+const listaLabels = ref([]);
+const listaData = ref([]);
+const listaPorcentagem = ref([]);
+
 // Função que lida com a atualização dos filtros
 const handleFilterUpdate = (filters) => {
   console.log('Filtros atualizados:', filters);
@@ -162,7 +166,6 @@ const handleFilterUpdate = (filters) => {
 
 const fetchData = async (startDate, endDate) => {
   try {
-
     const response = await axios.get('/api/painel-dre/analitycs-dre', {
       params: {
         start_date: startDate,
@@ -177,9 +180,39 @@ const fetchData = async (startDate, endDate) => {
     grupos.value = data.grupos || [];
     historico.value = data.calendario || [];
 
-    graficoLabels.value = data.grafico_data?.labels || [];
-    graficoData.value = data.grafico_data?.data || [];
-    graficoPorcentagem.value = data.grafico_data?.porcentagens || [];
+    // Inicializar arrays para o gráfico (filtrado) e para a lista (completo)
+    graficoLabels.value = [];
+    graficoData.value = [];
+    graficoPorcentagem.value = [];
+
+    // Arrays para a lista à direita (todos os dados)
+    listaLabels.value = [];
+    listaData.value = [];
+    listaPorcentagem.value = [];
+
+    // Iterar sobre os grupos para construir os dados
+    data.grupos.forEach(grupo => {
+      const categorias = Array.isArray(grupo.categorias)
+        ? grupo.categorias
+        : Object.values(grupo.categorias);
+
+      categorias.forEach(categoria => {
+        const valor = parseFloat(categoria.total.replace('.', '').replace(',', '.'));
+        const porcentagem = categoria.porcentagem;
+
+        // Adicionar a todos os dados para a lista à direita
+        listaLabels.value.push(categoria.categoria);
+        listaData.value.push(valor);
+        listaPorcentagem.value.push(porcentagem);
+
+        // Adicionar ao gráfico apenas se a porcentagem não for "0,00%"
+        if (porcentagem !== '0,00%') {
+          graficoLabels.value.push(categoria.categoria);
+          graficoData.value.push(valor);
+          graficoPorcentagem.value.push(porcentagem);
+        }
+      });
+    });
 
     renderGrafico();
   } catch (error) {

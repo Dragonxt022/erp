@@ -651,12 +651,13 @@ class PainelAnaliticos extends Controller
     
         // Evitar divisão por zero
         $resultado_do_periodo_sem_folha = max($resultado_do_periodo_sem_folha, 1);
+        
     
         // Agora recalcular as porcentagens com base no resultado_do_periodo_sem_folha
-        $dadosGrupos = $dadosGrupos->map(function ($grupo) use ($resultado_do_periodo_sem_folha) {
-            $grupo['categorias'] = $grupo['categorias']->map(function ($categoria) use ($resultado_do_periodo_sem_folha) {
+        $dadosGrupos = $dadosGrupos->map(function ($grupo) use ($totalCaixas) {
+            $grupo['categorias'] = $grupo['categorias']->map(function ($categoria) use ($totalCaixas) {
                 $valor = $categoria['valor'];
-                $porcentagem = ($resultado_do_periodo_sem_folha > 0) ? ($valor / $resultado_do_periodo_sem_folha) * 100 : 0;
+                $porcentagem = ($totalCaixas > 0) ? ($valor / $totalCaixas) * 100 : 0;
     
                 return [
                     'categoria' => $categoria['categoria'],
@@ -672,15 +673,15 @@ class PainelAnaliticos extends Controller
         $porcentagens = [];
     
         // Calcular porcentagem do CMV
-        $porcentagens['CMV'] = ($resultado_do_periodo_sem_folha > 0) ? ($cmv / $resultado_do_periodo_sem_folha) * 100 : 0;
+        $porcentagens['CMV'] = ($totalCaixas > 0) ? ($cmv / $totalCaixas) * 100 : 0;
     
         // Calcular porcentagem dos custos fixos (ex.: salários, motoboy, royalties, fundo de propaganda)
         $totalCustosFixos = $totalSalarios + $totalMotoboy + $totalRoyalties + $totalFundoPropaganda;
-        $porcentagens['Custos Fixos'] = ($resultado_do_periodo_sem_folha > 0) ? ($totalCustosFixos / $resultado_do_periodo_sem_folha) * 100 : 0;
+        $porcentagens['Custos Fixos'] = ($totalCaixas > 0) ? ($totalCustosFixos / $totalCaixas) * 100 : 0;
     
         // Calcular porcentagem dos impostos (ex.: FGTS, taxas de cartão, taxas de canais)
         $totalImpostos = $totalFGTS + $totalTaxasCredito + $totalTaxasDebito + $totalTaxasVrAlimentacao + $totalTaxasCanais;
-        $porcentagens['Impostos'] = ($resultado_do_periodo_sem_folha > 0) ? ($totalImpostos / $resultado_do_periodo_sem_folha) * 100 : 0;
+        $porcentagens['Impostos'] = ($totalCaixas > 0) ? ($totalImpostos / $totalCaixas) * 100 : 0;
     
         // Formatar porcentagens para o gráfico
         $graficoData = [
