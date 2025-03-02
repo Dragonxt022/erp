@@ -448,6 +448,7 @@ class PainelAnaliticos extends Controller
 
             $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay()->format('Y-m-d H:i:s');
             $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay()->format('Y-m-d H:i:s');
+            
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
@@ -476,6 +477,8 @@ class PainelAnaliticos extends Controller
         }
 
         $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
+
+
     
         // Compras no período
         $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
@@ -557,17 +560,13 @@ class PainelAnaliticos extends Controller
             ->sum('valor_taxa_canal');
 
         $categoriasRemovidas = ["Fornecedores"];
-
-        // Defina as categorias que devem ser ignoradas na soma
         $categoriasIgnoradasNaSoma = ["Folha de pagamento", "Fornecedores"];
-
-        // Buscar todos os grupos de categorias com suas categorias associadas
+    
         $grupos = GrupoDeCategorias::with('categorias')->get();
-
-        // Variáveis para calcular os totais
         $totalDespesasCategorias = 0;
         $totalDespesasCategoriasSemFolha = 0;
-
+    
+        // Primeiro, calcular todas as despesas para determinar o resultado
         $dadosGrupos = $grupos->map(function ($grupo) use (
             $unidadeId,
             $startDateConverted,
@@ -587,7 +586,7 @@ class PainelAnaliticos extends Controller
             $categoriasIgnoradasNaSoma
         ) {
             $categoriasFormatadas = $grupo->categorias
-                ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas)) // Remove categorias indesejadas
+                ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas))
                 ->map(function ($categoria) use (
                     $unidadeId,
                     $startDateConverted,
@@ -605,72 +604,108 @@ class PainelAnaliticos extends Controller
                     &$totalDespesasCategoriasSemFolha,
                     $categoriasIgnoradasNaSoma
                 ) {
-                    // Valor padrão obtido de ContaAPagar
                     $valor = ContaAPagar::where('categoria_id', $categoria->id)
                         ->where('unidade_id', $unidadeId)
                         ->whereIn('status', ['pago', 'pendente'])
                         ->whereBetween('emitida_em', [$startDateConverted, $endDateConverted])
                         ->sum('valor');
-
-                    // Se a categoria tiver valor especial, sobrescreve
+    
                     $valoresFixos = [
                         "Mercadoria Vendida" => $cmv,
                         "FGTS" => $totalFGTS,
                         "Folha de pagamento" => $totalSalarios,
                         "Royalties" => $totalRoyalties,
-                        "Fundo de propaganda" =>  $totalFundoPropaganda,
+                        "Fundo de propaganda" => $totalFundoPropaganda,
                         "Taxa de Crédito" => $totalTaxasCredito,
                         "Taxa de Débito" => $totalTaxasDebito,
                         "Plataformas de Delivery" => $totalTaxasCanais,
                         "Voucher Alimentação" => $totalTaxasVrAlimentacao
                     ];
-
+    
                     if (isset($valoresFixos[$categoria->nome])) {
                         $valor = $valoresFixos[$categoria->nome];
                     }
-
-                    // Soma apenas se a categoria NÃO estiver na lista de ignoradas
+    
                     if (!in_array($categoria->nome, $categoriasIgnoradasNaSoma)) {
                         $totalDespesasCategoriasSemFolha += $valor;
                     }
-
-                    // Soma sempre no total geral
+    
                     $totalDespesasCategorias += $valor;
-
+    
+                    // Temporariamente não calcular a porcentagem aqui, vamos calcular depois
                     return [
                         'categoria' => $categoria->nome,
-                        'total' => number_format($valor, 2, ',', '.')
+                        'total' => number_format($valor, 2, ',', '.'),
+                        'valor' => $valor // Guardar o valor bruto para calcular a porcentagem depois
                     ];
                 });
-
+    
             return [
                 'nome_grupo' => $grupo->nome,
                 'categorias' => $categoriasFormatadas
             ];
         });
-
-        // Resultado considerando todas as categorias
-        $resultado_do_periodo = $totalDespesasCategorias - $totalCaixas;
-
+        
         // Resultado ignorando "Folha de pagamento"
         $resultado_do_periodo_sem_folha = $totalCaixas - $totalDespesasCategoriasSemFolha;
-
-
-        $year = Carbon::parse($startDateConverted)->year; // ou um ano específico, se enviado no request
+    
+        // Evitar divisão por zero
+        $resultado_do_periodo_sem_folha = max($resultado_do_periodo_sem_folha, 1);
+    
+        // Agora recalcular as porcentagens com base no resultado_do_periodo_sem_folha
+        $dadosGrupos = $dadosGrupos->map(function ($grupo) use ($resultado_do_periodo_sem_folha) {
+            $grupo['categorias'] = $grupo['categorias']->map(function ($categoria) use ($resultado_do_periodo_sem_folha) {
+                $valor = $categoria['valor'];
+                $porcentagem = ($resultado_do_periodo_sem_folha > 0) ? ($valor / $resultado_do_periodo_sem_folha) * 100 : 0;
+    
+                return [
+                    'categoria' => $categoria['categoria'],
+                    'total' => $categoria['total'],
+                    'porcentagem' => number_format($porcentagem, 2, ',', '.') . '%'
+                ];
+            });
+    
+            return $grupo;
+        });
+    
+        // Calcular porcentagens para o grafico_data
+        $porcentagens = [];
+    
+        // Calcular porcentagem do CMV
+        $porcentagens['CMV'] = ($resultado_do_periodo_sem_folha > 0) ? ($cmv / $resultado_do_periodo_sem_folha) * 100 : 0;
+    
+        // Calcular porcentagem dos custos fixos (ex.: salários, motoboy, royalties, fundo de propaganda)
+        $totalCustosFixos = $totalSalarios + $totalMotoboy + $totalRoyalties + $totalFundoPropaganda;
+        $porcentagens['Custos Fixos'] = ($resultado_do_periodo_sem_folha > 0) ? ($totalCustosFixos / $resultado_do_periodo_sem_folha) * 100 : 0;
+    
+        // Calcular porcentagem dos impostos (ex.: FGTS, taxas de cartão, taxas de canais)
+        $totalImpostos = $totalFGTS + $totalTaxasCredito + $totalTaxasDebito + $totalTaxasVrAlimentacao + $totalTaxasCanais;
+        $porcentagens['Impostos'] = ($resultado_do_periodo_sem_folha > 0) ? ($totalImpostos / $resultado_do_periodo_sem_folha) * 100 : 0;
+    
+        // Formatar porcentagens para o gráfico
+        $graficoData = [
+            'labels' => array_keys($porcentagens),
+            'data' => array_map(function ($valor) {
+                return round($valor, 2);
+            }, array_values($porcentagens)),
+            'porcentagens' => array_map(function ($valor) {
+                return number_format($valor, 2, ',', '.') . '%';
+            }, array_values($porcentagens))
+        ];
+    
+        $year = Carbon::parse($startDateConverted)->year;
         $calendario = $this->getCalendarData($year, $unidadeId);
-
-
-
+    
         return response()->json([
             'start_date' => $startDateConverted,
             'end_date' => $endDateConverted,
             'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
             'total_despesas_categorias' => number_format($totalDespesasCategorias, 2, ',', '.'),
             'resultado_do_periodo' => number_format($resultado_do_periodo_sem_folha, 2, ',', '.'),
-            'total_salarios'  => number_format($totalSalarios, 2, ',', '.'),
+            'total_salarios' => number_format($totalSalarios, 2, ',', '.'),
             'grupos' => $dadosGrupos,
             'calendario' => $calendario,
-
+            'grafico_data' => $graficoData,
         ]);
     }
 

@@ -108,7 +108,7 @@
                 <option value="polarArea">Área Polar (Polar Area)</option>
               </select>
             </div>
-            <canvas id="myChart"></canvas>
+            <canvas id="myChart"></canvas> 
           </div>
         </div>
       </div>

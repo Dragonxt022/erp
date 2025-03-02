@@ -54,53 +54,37 @@ class UnidadeEstoqueController extends Controller
     
                     $quantidadeConsumir = min($estoque->quantidade, $quantidadeRestante);
     
-                    if ($estoque->unidade === 'kg') {
-                        // Para 'kg', preco_insumo é o valor total do lote
-                        $proporcaoConsumida = $quantidadeConsumir / $estoque->quantidade;
-                        $valorConsumido = $estoque->preco_insumo * $proporcaoConsumida;
+                    // Nova quantidade após retirada
+                    $novaQuantidade = $estoque->quantidade - $quantidadeConsumir;
     
-                        // Atualizar estoque: reduzir quantidade e preco_insumo proporcionalmente
+                    // Se a quantidade restante for zero ou negativa, excluir o registro
+                    if ($novaQuantidade <= 0) {
                         DB::table('unidade_estoque')
                             ->where('id', $estoque->id)
-                            ->update([
-                                'quantidade' => $estoque->quantidade - $quantidadeConsumir,
-                                'preco_insumo' => $estoque->preco_insumo - $valorConsumido,
-                            ]);
-    
-                        // Registrar movimentação com o valor total consumido
-                        MovimentacoesEstoque::create([
-                            'insumo_id' => $item['id'],
-                            'fornecedor_id' => $estoque->fornecedor_id,
-                            'usuario_id' => Auth::id(),
-                            'quantidade' => $quantidadeConsumir,
-                            'preco_insumo' => $valorConsumido,
-                            'operacao' => 'Retirada',
-                            'unidade' => $estoque->unidade,
-                            'unidade_id' => Auth::user()->unidade_id,
-                        ]);
+                            ->delete();
                     } else {
-                        // Para 'unidade', preco_insumo é o preço por unidade
-                        $valorConsumido = $estoque->preco_insumo * $quantidadeConsumir;
-    
-                        // Atualizar apenas a quantidade, preco_insumo não muda
+                        // Caso contrário, atualizar apenas a quantidade
                         DB::table('unidade_estoque')
                             ->where('id', $estoque->id)
                             ->update([
-                                'quantidade' => $estoque->quantidade - $quantidadeConsumir,
+                                'quantidade' => $novaQuantidade,
                             ]);
-    
-                        // Registrar movimentação com o preço por unidade
-                        MovimentacoesEstoque::create([
-                            'insumo_id' => $item['id'],
-                            'fornecedor_id' => $estoque->fornecedor_id,
-                            'usuario_id' => Auth::id(),
-                            'quantidade' => $quantidadeConsumir,
-                            'preco_insumo' => $estoque->preco_insumo, // Preço por unidade
-                            'operacao' => 'Retirada',
-                            'unidade' => $estoque->unidade,
-                            'unidade_id' => Auth::user()->unidade_id,
-                        ]);
                     }
+    
+                    // Calcular o valor consumido para registrar na movimentação
+                    $valorConsumido = $estoque->preco_insumo * $quantidadeConsumir;
+    
+                    // Registrar movimentação com o preço por unidade/quilo
+                    MovimentacoesEstoque::create([
+                        'insumo_id' => $item['id'],
+                        'fornecedor_id' => $estoque->fornecedor_id,
+                        'usuario_id' => Auth::id(),
+                        'quantidade' => $quantidadeConsumir,
+                        'preco_insumo' => $valorConsumido, // Valor total consumido
+                        'operacao' => 'Retirada',
+                        'unidade' => $estoque->unidade,
+                        'unidade_id' => Auth::user()->unidade_id,
+                    ]);
     
                     $quantidadeRestante -= $quantidadeConsumir;
                 }
@@ -111,24 +95,23 @@ class UnidadeEstoqueController extends Controller
             }
     
             $unidade_id = Auth::user()->unidade_id;
-
+    
             // Calcular o valor total do estoque
             $valorInsumos = UnidadeEstoque::where('unidade_id', $unidade_id)
                 ->where('quantidade', '>', 0)
                 ->sum(DB::raw('preco_insumo * quantidade'));
-
+    
             $saldoAtual = $valorInsumos;
-
+    
             DB::table('controle_saldo_estoques')->insert([
                 'ajuste_saldo' => $saldoAtual,
                 'data_ajuste' => now(),
-                'motivo_ajuste' => 'Atualização após entrada',
+                'motivo_ajuste' => 'Atualização após retirada',
                 'unidade_id' => $unidade_id,
                 'responsavel_id' => Auth::id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-
     
             DB::commit();
     
