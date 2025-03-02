@@ -375,6 +375,12 @@ class UnidadeEstoqueController extends Controller
                 });
             }
 
+            // Determinar o número de casas decimais para controle interno (opcional)
+            $casasDecimaisQuantidade = $insumo->unidadeDeMedida === 'a_granel' ? 3 : 0;
+
+            // Arredondar apenas se necessário, mantendo como número
+            $quantidadeTotalAjustada = round($quantidadeTotalProduto, $casasDecimaisQuantidade);
+
             return [
                 'id' => $insumo->id,
                 'nome' => $insumo->nome,
@@ -411,7 +417,7 @@ class UnidadeEstoqueController extends Controller
                 'valor_pago_por_quilo_lote' => $valorPagoPorQuiloLote !== null
                     ? 'R$ ' . number_format($valorPagoPorQuiloLote, 2, ',', '.') : null,
                 // Quantidade total do produto
-                'quantidade_total' => $quantidadeTotalProduto,
+                'quantidade_total' => $quantidadeTotalAjustada, // Retornado como número
             ];
         })->filter(); // Remove os produtos que foram marcados como null
 
@@ -423,152 +429,6 @@ class UnidadeEstoqueController extends Controller
     }
 
 
-    // Responsavel pelos dados da tela de estoque
-    // public function painelInicialEstoqueTeste(Request $request)
-    // {
-    //     $unidadeId = Auth::user()->unidade_id;
-
-    //     // Obter as datas de início e fim
-    //     try {
-    //         // Verifica se as datas foram passadas, caso contrário usa a data de hoje
-    //         $startDate = $request->input('start_date', Carbon::now()->startOfDay()->format('d-m-Y'));
-    //         $endDate = $request->input('end_date', Carbon::now()->endOfDay()->format('d-m-Y'));
-
-    //         // Converter para Carbon e garantir que as datas incluam todo o período do dia
-    //         $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
-    //         $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
-    //     }
-
-    //     // Obtém o histórico de movimentações filtrado por data
-    //     $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
-    //         ->where('unidade_id', $unidadeId)
-    //         ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-    //         ->orderBy('id', 'desc')
-    //         ->get(); // Remove a paginação e pega todos os resultados
-
-    //     // Transformação do histórico para o formato correto
-    //     $historicoMovimentacoes = $historicoMovimentacoes->map(function ($estoque) {
-    //         // Define o valor da quantidade com sinal correto
-    //         $quantidade = match ($estoque->operacao) {
-    //             'Entrada' => $estoque->quantidade,  // Mantém positivo
-    //             'Retirada' => -$estoque->quantidade, // Torna negativo
-    //             default => $estoque->quantidade, // Ajuste pode ser positivo ou negativo conforme registrado
-    //         };
-
-    //         // Filtra para remover itens com quantidade 0
-    //         if ($quantidade == 0) {
-    //             return null;
-    //         }
-
-    //         return [
-    //             'operacao' => $estoque->operacao,
-    //             'unidade' => $estoque->unidade,
-    //             'quantidade' => $quantidade,
-    //             'item' => $estoque->insumo->nome ?? 'N/A',
-    //             'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
-    //             'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
-    //         ];
-    //     })->filter(); // Remove os itens nulos (quantidade == 0)
-
-
-
-
-    //     // Dados principais do painel
-    //     $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->where('quantidade', '>', 0)->get();
-    //     $valorInsumos = $estoque->reduce(function ($total, $item) {
-    //         $preco = $item->preco_insumo;
-    //         $quantidade = $item->quantidade;
-    //         return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
-    //     }, 0);
-    //     $itensNoEstoque = $estoque->reduce(function ($total, $item) {
-    //         return $item->unidade === 'kg' ? $total + 1 : $total + $item->quantidade;
-    //     }, 0);
-
-
-
-    //     // Função para calcular o valor baseado na unidade (kg ou unidade)
-    //     $calcularValorMovimentacao = function ($quantidade, $preco, $unidade) {
-    //         if ($unidade == 'kg') {
-    //             // Evita divisão por zero
-    //             if ($quantidade == 0) {
-    //                 return 0;
-    //             }
-    //             $precoPorQuilo = $preco / $quantidade;
-    //             return $quantidade * $precoPorQuilo;
-    //         } else {
-    //             return $quantidade * $preco;
-    //         }
-    //     };
-
-
-    //     // 1. Calcular o CMV
-    //     // Saldo inicial de estoque
-    //     $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-    //         ->whereDate('data_ajuste', '=', $startDateConverted)
-    //         ->orderBy('data_ajuste', 'desc')
-    //         ->first();
-
-    //     if (!$saldoInicial) {
-    //         $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-    //             ->whereDate('data_ajuste', '<', $startDateConverted)
-    //             ->orderBy('data_ajuste', 'desc')
-    //             ->first();
-
-    //         if (!$saldoInicial) {
-    //             $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-    //                 ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
-    //                 ->first();
-
-    //             if (!$saldoInicial) {
-    //                 return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
-    //             }
-    //         }
-    //     }
-
-    //     $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-
-    //     // Compras no período
-    //     $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
-    //         ->where('operacao', 'Entrada')
-    //         ->whereBetween('created_at', [Carbon::parse($startDateConverted)->addDay(), $endDateConverted])
-    //         ->get();
-
-    //     $comprasValor = $compras->sum(function ($item) use ($calcularValorMovimentacao) {
-    //         return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-    //     });
-
-    //     // Estoque final
-    //     $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
-    //         ->whereDate('created_at', '<=', $endDateConverted)
-    //         ->get();
-
-    //     $estoqueFinalValor = $estoqueFinal->sum(function ($item) use ($calcularValorMovimentacao) {
-    //         return $calcularValorMovimentacao($item->quantidade, $item->preco_insumo, $item->unidade);
-    //     });
-
-    //     // Calcular o CMV
-    //     $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
-
-    //     Log::info('Calculando CMV', [
-    //         'estoqueInicialValor' => $estoqueInicialValor,
-    //         'comprasValor' => $comprasValor,
-    //         'estoqueFinalValor' => $estoqueFinalValor
-    //     ]);
-
-    //     return response()->json([
-    //         'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
-    //         'itensNoEstoque' => $itensNoEstoque,
-    //         'historicoMovimentacoes' => $historicoMovimentacoes,
-    //         'start_date' => $startDate,
-    //         'end_date' => $endDate,
-    //         'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
-    //         'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
-    //         'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
-    //         'cmv' => number_format($cmv, 2, ',', '.'),
-    //     ]);
-    // }
 
     public function painelInicialEstoque(Request $request)
     {
