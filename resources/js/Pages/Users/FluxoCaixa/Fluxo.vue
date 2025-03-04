@@ -303,7 +303,7 @@
 
         <div class="w-[267px] h-auto">
           <!-- Input para o valor -->
-          <div class="w-full mb-8">
+          <div class="w-full mb-2">
             <input
               id="valor"
               v-model="valor_retirada"
@@ -311,31 +311,32 @@
               class="w-full h-[42.16px] bg-white rounded-lg border-2 border-[#d7d7db] px-2 text-[17px] outline-none text-center"
               placeholder="R$ 0,00"
             />
-            <div
-              class="text-center text-gray-800 text-[12.93px] font-semibold font-['Figtree'] mt-1"
+          </div>
+
+          <div class="flex flex-col flex-1">
+            <LabelModel text="Motivo e descrição" class="mb-2" />
+            <select
+              v-model="selectedCategoria"
+              class="w-full h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
             >
-              <p>
-                Valor disponível no caixa:
-                <span class="font-bold">
-                  {{ valorTotalCaixa }}
-                </span>
-              </p>
-            </div>
+              <option value="" disabled selected>Selecione um item</option>
+              <option
+                v-for="categoria in categorias"
+                :key="categoria.id"
+                :value="categoria.id"
+              >
+                {{ categoria.nome }}
+              </option>
+            </select>
           </div>
 
           <!-- Input para o motivo -->
-          <div class="w-full mb-8">
-            <label
-              for="motivo"
-              class="block text-gray-800 text-[14.93px] font-semibold font-['Figtree']"
-            >
-              Informações adicionais
-            </label>
+          <div class="w-full mb-8 mt-4">
             <textarea
               id="motivo"
               v-model="motivo"
               class="w-full h-24 bg-white rounded-lg border-2 border-[#d7d7db] px-2 py-1 text-[14px] outline-none resize-none"
-              placeholder="Digite aqui..."
+              placeholder="Descreva aqui os detalhes sobre a operação de sangria..."
             ></textarea>
             <p
               class="text-right text-xs mt-1"
@@ -413,11 +414,16 @@ import { useToast } from 'vue-toastification';
 import axios from 'axios';
 import { Inertia } from '@inertiajs/inertia';
 import ButtonPrimaryMedioRed from '@/Components/Button/ButtonPrimaryMedioRed.vue';
+import LabelModel from '@/Components/Label/LabelModel.vue';
 
 const toast = useToast();
 const isLoading = ref(false);
 const metodosPagamento = ref([]);
 const canaisVendas = ref([]);
+
+// seletor de motivos
+const selectedCategoria = ref(null);
+const categorias = ref([]);
 
 // Constantes das modais
 const showSuprimento = ref(false);
@@ -430,6 +436,15 @@ const valor_retirada = ref(null);
 const valor_entrada = ref(null);
 
 const valorTotalCaixa = ref('R$ 0,00');
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('/api/categorias/seleto-caixa');
+    categorias.value = response.data;
+  } catch (error) {
+    console.error('Erro ao carregar categorias:', error);
+  }
+});
 
 const totalMetodosPagamento = computed(() => {
   const total = metodosPagamento.value.reduce(
@@ -530,10 +545,15 @@ const adicionarValor = () => {
   showSuprimento.value = false;
 };
 
-// Remove o valor do caixa
-const retirarValor = () => {
+// Remove o valor do caixa com verificação de duplicata
+const retirarValor = async () => {
+  if (!selectedCategoria.value) {
+    toast.warning('Por favor, selecione uma categoria!');
+    return;
+  }
+
   if (motivo.value.length < 5) {
-    toast.warning('Precisa conter no minimo 5 caracteres!');
+    toast.warning('Precisa conter no mínimo 5 caracteres!');
     return;
   }
 
@@ -542,7 +562,6 @@ const retirarValor = () => {
     return;
   }
 
-  // Limpar o valor "R$" e a vírgula, e transformar em número
   const valor = parseFloat(
     valor_retirada.value
       .replace('R$', '')
@@ -556,30 +575,56 @@ const retirarValor = () => {
     return;
   }
 
-  // Enviar os dados para a rota
-  axios
-    .post('/api/caixas/remover-suprimento', {
+  try {
+    const response = await axios.post('/api/caixas/remover-suprimento', {
       valor: valor,
+      categoria_id: selectedCategoria.value,
       motivo: motivo.value,
-    })
-    .then((response) => {
-      // Sucesso na requisição
-      console.log('Sucesso:', response.data);
-      toast.success('Sangria realizada com sucesso!');
-    })
-    .catch((error) => {
-      // Erro na requisição
-      console.error('Erro:', error);
-      toast.error('Erro ao realizar a Sangria.');
     });
 
-  // Lógica para enviar o valor e motivo
-  console.log('Valor retirado:', valor);
-  console.log('Motivo:', motivo.value);
+    // Verificar se há necessidade de confirmação
+    if (response.data.confirmation_required) {
+      const transacao = response.data.existing_transaction;
+      const mensagem = `
+        Já existe uma transação hoje com:
+        - Valor: R$${transacao.valor.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+        })}
+        - Categoria: ${transacao.categoria}
+        - Motivo: ${transacao.motivo}
+        Deseja prosseguir com uma nova retirada?
+      `;
 
-  // Limpar os campos após o envio
+      if (confirm(mensagem)) {
+        // Reenviar a requisição com force: true
+        const confirmResponse = await axios.post(
+          '/api/caixas/remover-suprimento',
+          {
+            valor: valor,
+            categoria_id: selectedCategoria.value,
+            motivo: motivo.value,
+            force: true,
+          }
+        );
+        toast.success('Sangria realizada com sucesso!');
+        limparCamposSangria();
+      } else {
+        toast.info('Operação cancelada pelo usuário.');
+      }
+    } else {
+      toast.success('Sangria realizada com sucesso!');
+      limparCamposSangria();
+    }
+  } catch (error) {
+    console.error('Erro:', error);
+    toast.error('Erro ao realizar a Sangria.');
+  }
+};
+
+const limparCamposSangria = () => {
   valor_retirada.value = '';
-  motivo.value = '' || 'Não informado';
+  selectedCategoria.value = null;
+  motivo.value = '';
   showSangria.value = false;
 };
 

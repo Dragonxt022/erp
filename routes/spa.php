@@ -187,6 +187,9 @@ Route::prefix('api')->middleware([
     // Categorias
     Route::prefix('categorias')->group(function () {
         Route::get('/lista', [CategoriaController::class, 'index']);
+        Route::get('/seleto-caixa', [CategoriaController::class, 'listaSeletorCaixa']);
+        Route::get('/seleto-contas', [CategoriaController::class, 'listaSeletorContasApagar']);
+
         Route::post('/contas-a-pagar', [CategoriaController::class, 'store']);
         Route::get('/listar-por-grupo', [CategoriaController::class, 'listarPorGrupo']);
     });

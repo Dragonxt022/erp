@@ -296,28 +296,33 @@ const atualizarQuantidade = (produtoId, quantidade) => {
     return;
   }
 
-  // Remove caracteres inválidos e converte vírgula para ponto
+  // Substitui vírgula por ponto para lidar com entrada brasileira
   quantidade = quantidade.replace(',', '.');
 
-  // Converte a quantidade para número decimal
+  // Converte para número
   let quantidadeNumerica = parseFloat(quantidade);
 
-  // Valida se a quantidade é um número válido
+  // Valida se é um número
   if (isNaN(quantidadeNumerica)) {
     toast.warning('Quantidade inválida.');
     return;
   }
 
-  // Se a unidade for 'a_granel', permite números fracionados (3 casas decimais)
+  // Para produtos a granel, mantém até 4 casas decimais sem arredondar prematuramente
   if (produto.unidadeDeMedida === 'a_granel') {
-    // Limita a 3 casas decimais para quantidades fracionadas
-    quantidadeNumerica = parseFloat(quantidadeNumerica.toFixed(3));
+    // Converte para string com 4 casas decimais, mantendo zeros
+    quantidadeNumerica = Number(quantidade);
+    const quantidadeString = quantidadeNumerica.toLocaleString('pt-BR', {
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 4,
+    });
+    quantidadeNumerica = parseFloat(quantidadeString.replace(',', '.'));
   } else {
-    // Para unidades, apenas números inteiros são permitidos
-    quantidadeNumerica = Math.floor(quantidadeNumerica); // Força a quantidade para inteiro
+    // Para unidades, força inteiro
+    quantidadeNumerica = Math.floor(quantidadeNumerica);
   }
 
-  // Verifica se a quantidade está dentro do limite permitido
+  // Validação de limites
   if (quantidadeNumerica < 0 || quantidadeNumerica > produto.quantidade_total) {
     toast.warning(
       `Quantidade inválida. Deve ser entre 0 e ${produto.quantidade_total} ${
@@ -327,7 +332,7 @@ const atualizarQuantidade = (produtoId, quantidade) => {
     return;
   }
 
-  // Atualiza a quantidade no carrinho
+  // Atualiza o carrinho
   carrinho.value[produtoId] = {
     ...carrinho.value[produtoId],
     id: produto.id,
@@ -337,8 +342,8 @@ const atualizarQuantidade = (produtoId, quantidade) => {
 
   showModal.value = true;
 
-  // Remove o item do carrinho se a quantidade for 0 ou NaN
-  if (quantidadeNumerica === 0 || isNaN(quantidadeNumerica)) {
+  // Remove item se quantidade for 0
+  if (quantidadeNumerica === 0) {
     delete carrinho.value[produtoId];
   }
 };
@@ -405,8 +410,8 @@ const fecharAuthModal = () => {
 
 // Enviar carrinho para o backend
 const enviarCarrinho = async () => {
-  if (!pin.value) {
-    toast.info('Por favor, insira seu PIN.');
+  if (!pin.value || !/^\d{4,}$/.test(pin.value)) {
+    toast.info('Por favor, insira um PIN válido (mínimo 4 dígitos numéricos).');
     return;
   }
 

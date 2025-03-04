@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use App\Models\CanalVenda;
+use App\Models\ContaAPagar;
 use App\Models\FechamentoCaixa;
 use App\Models\FluxoCaixa;
 use App\Models\UnidadeCanaisVenda;
 use App\Models\UnidadePaymentMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -407,66 +409,102 @@ class CaixaController extends Controller
         }
     }
 
-    // Retira suprimentos do caixa
     public function removeSuprimento(Request $request)
-    {
-        // Validação dos dados de entrada
-        $request->validate([
-            'valor' => 'required|numeric|min:0.01',  // Valor deve ser numérico e maior que 0
-            'motivo' => 'required|string|max:255',   // Motivo deve ser uma string com até 255 caracteres
-        ]);
+        {
+            // Validação dos dados de entrada
+            $request->validate([
+                'valor' => 'required|numeric|min:0.01',
+                'motivo' => 'required|string|max:255',
+                'categoria_id' => 'required|exists:categorias,id',
+            ]);
 
-        try {
-            // Obtém o ID da unidade do usuário autenticado
-            $unidadeId = Auth::user()->unidade_id;
+            try {
+                // Obtém o ID da unidade do usuário autenticado
+                $unidadeId = Auth::user()->unidade_id;
 
-            // Obtém o primeiro caixa aberto da unidade do usuário logado
-            $caixa = Caixa::where('unidade_id', $unidadeId)
-                ->where('status', 1) // Verifica se o status é 1 (aberto)
-                ->first(); // Obtém apenas um registro
+                // Obtém o primeiro caixa aberto da unidade do usuário logado
+                $caixa = Caixa::where('unidade_id', $unidadeId)
+                    ->where('status', 1)
+                    ->first();
 
-            // Verifica se o caixa está aberto
-            if (!$caixa) {
-                return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
+                if (!$caixa) {
+                    return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
+                }
+
+                if ($request->valor > $caixa->valor_inicial) {
+                    return response()->json(['error' => 'Valor de retirada superior ao disponível no caixa.'], 400);
+                }
+
+                $responsavelId = Auth::user() ? Auth::user()->id : null;
+
+                if (!$responsavelId) {
+                    return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
+                }
+
+                // Verificar se já existe uma conta a pagar com mesmo valor, categoria e data
+                $dataAtual = Carbon::today();
+                $contaExistente = ContaAPagar::where('categoria_id', $request->categoria_id)
+                    ->where('valor', $request->valor)
+                    ->whereDate('emitida_em', $dataAtual)
+                    ->where('status', 'pago')
+                    ->first();
+
+                if ($contaExistente) {
+                    // Retornar uma mensagem de confirmação com detalhes da transação existente
+                    return response()->json([
+                        'confirmation_required' => true,
+                        'message' => 'Já existe uma transação com o mesmo valor e categoria hoje. Deseja prosseguir?',
+                        'existing_transaction' => [
+                            'id' => $contaExistente->id,
+                            'valor' => $contaExistente->valor,
+                            'categoria' => $contaExistente->nome,
+                            'motivo' => $contaExistente->descricao,
+
+                        ]
+                    ], 200);
+                }
+
+                // Se não houver duplicata, prosseguir com a transação
+                DB::transaction(function () use ($caixa, $responsavelId, $request) {
+                    // Atualiza o valor inicial do caixa
+                    $caixa->valor_inicial -= $request->valor;
+                    $caixa->save();
+
+                    // Criação do fluxo de caixa
+                    FluxoCaixa::create([
+                        'unidade_id' => $caixa->unidade_id,
+                        'responsavel_id' => $responsavelId,
+                        'caixa_id' => $caixa->id,
+                        'operacao' => 'sangria',
+                        'valor' => $request->valor,
+                        'hora' => now(),
+                        'motivo' => $request->motivo,
+                    ]);
+
+                    // Obter o nome da categoria selecionada
+                    $categoria = DB::table('categorias')->where('id', $request->categoria_id)->first();
+                    $nomeCategoria = $categoria->nome;
+
+                    // Criação da conta a pagar com status "pago"
+                    ContaAPagar::create([
+                        'nome' => $nomeCategoria,
+                        'valor' => $request->valor,
+                        'emitida_em' => Carbon::today(),
+                        'vencimento' => Carbon::today(),
+                        'descricao' => $request->motivo,
+                        'arquivo' => null,
+                        'dias_lembrete' => 0,
+                        'status' => 'pago',
+                        'unidade_id' => $caixa->unidade_id,
+                        'categoria_id' => $request->categoria_id,
+                    ]);
+                });
+
+                return response()->json(['success' => 'Valor retirado e conta registrada como paga com sucesso.']);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
             }
-
-            // Verifica se o valor de retirada não é maior que o valor disponível no caixa
-            if ($request->valor > $caixa->valor_inicial) {
-                return response()->json(['error' => 'Valor de retirada superior ao disponível no caixa.'], 400);
-            }
-
-            $responsavelId = Auth::user() ? Auth::user()->id : null;
-
-            if (!$responsavelId) {
-                return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
-            }
-
-            // Inicia a transação
-            DB::transaction(function () use ($caixa, $responsavelId, $request) {
-                // Atualiza o valor inicial do caixa
-                $caixa->valor_inicial -= $request->valor;
-                $caixa->save(); // Salva a atualização do valor inicial
-
-                // Criação direta do fluxo de caixa sem utilizar o relacionamento
-                FluxoCaixa::create([
-                    'unidade_id' => $caixa->unidade_id,
-                    'responsavel_id' => $responsavelId,  // Passando o ID do responsável corretamente
-                    'caixa_id' => $caixa->id,
-                    'operacao' => 'sangria',  // Define o tipo de operação
-                    'valor' => $request->valor,
-                    'hora' => now(),
-                    'motivo' => $request->motivo, // Motivo passado no request
-                ]);
-            });
-
-            // Caso a transação seja bem-sucedida, retorna uma mensagem de sucesso
-            return response()->json(['success' => 'Valor retirado com sucesso.']);
-        } catch (\Exception $e) {
-            // Caso ocorra algum erro durante a transação, será revertida
-            return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
         }
-    }
-
     // Retorna o valor disponível no caixa aberto
     public function valorDisponivel()
     {

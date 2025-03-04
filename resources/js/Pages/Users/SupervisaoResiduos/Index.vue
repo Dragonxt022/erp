@@ -161,19 +161,20 @@
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
-            @click="sortBy('peso_limpo')"
-            class="flex items-center gap-2 cursor-pointer"
-          >
-            Peso Limpo
-            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
-          </span>
-          <span
             @click="sortBy('peso_bruto')"
             class="cursor-pointer flex items-center gap-2"
           >
             Peso Bruto
             <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
+          <span
+            @click="sortBy('peso_limpo')"
+            class="flex items-center gap-2 cursor-pointer"
+          >
+            Peso Limpo
+            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
+          </span>
+
           <span
             @click="sortBy('desperdicio')"
             class="cursor-pointer flex items-center gap-2"
@@ -215,15 +216,15 @@
             class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
-            v-model="filters.peso_limpo"
-            type="text"
-            placeholder="Filtrar peso limpo"
-            class="p-2 border border-gray-300 rounded text-sm"
-          />
-          <input
             v-model="filters.peso_bruto"
             type="text"
             placeholder="Filtrar peso bruto"
+            class="p-2 border border-gray-300 rounded text-sm"
+          />
+          <input
+            v-model="filters.peso_limpo"
+            type="text"
+            placeholder="Filtrar peso limpo"
             class="p-2 border border-gray-300 rounded text-sm"
           />
           <input
@@ -282,10 +283,10 @@
                 {{ item.calibre.nome }}
               </span>
               <span class="text-gray-900 font-semibold">
-                {{ item.peso_limpo }}
+                {{ item.peso_bruto }}
               </span>
               <span class="text-gray-900 font-semibold">
-                {{ item.peso_bruto }}
+                {{ item.peso_limpo }}
               </span>
               <span class="text-gray-900 font-semibold">
                 {{ item.desperdicio }}

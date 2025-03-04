@@ -6,7 +6,9 @@
       <p>Acompanhe a saúde da sua operação</p>
     </div>
     <div class="flex justify-end mb-4">
-      <div class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight">
+      <div
+        class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
+      >
         <div class="flex items-center space-x-2 justify-end">
           <span class="text-gray-900 text-[17px] font-semibold">
             <CalendarFilterDre @update-filters="handleFilterUpdate" />
@@ -19,7 +21,9 @@
       <div class="grid grid-cols-2 grid-rows-1 gap-4">
         <!-- Tabela de Faturamento -->
         <div class="rounded-lg">
-          <table class="w-full text-left text-[14px] border-collapse font-['Figtree']">
+          <table
+            class="w-full text-left text-[14px] border-collapse font-['Figtree']"
+          >
             <thead>
               <tr class="bg-[#174111] text-white">
                 <th colspan="2" class="p-1 px-5">Faturamento do Período</th>
@@ -34,7 +38,9 @@
             <tbody v-else>
               <tr>
                 <td class="p-1 px-5 categorias">Faturamento do Período</td>
-                <td class="px-5 py-2 text-right valores">R$ {{ totalCaixas }}</td>
+                <td class="px-5 py-2 text-right valores">
+                  R$ {{ totalCaixas }}
+                </td>
               </tr>
             </tbody>
             <template v-for="grupo in grupos" :key="grupo.nome_grupo">
@@ -49,15 +55,21 @@
                   :key="categoria.categoria"
                   class="odd:bg-gray-100 even:bg-white p-1 px-5"
                 >
-                  <td class="p-1 px-5 categorias align-middle">{{ categoria.categoria }}</td>
-                  <td class="px-5 py-1 text-right valores">R$ {{ categoria.total }}</td>
+                  <td class="p-1 px-5 categorias align-middle">
+                    {{ categoria.categoria }}
+                  </td>
+                  <td class="px-5 py-1 text-right valores">
+                    R$ {{ categoria.total }}
+                  </td>
                 </tr>
               </tbody>
             </template>
             <thead>
               <tr class="bg-[#174111] text-white">
                 <th colspan="1" class="p-2">Resultado do Período</th>
-                <th colspan="1" class="p-2 text-right font-bold">R$ {{ resultadoPeriodo }}</th>
+                <th colspan="1" class="p-2 text-right font-bold">
+                  R$ {{ resultadoPeriodo }}
+                </th>
               </tr>
             </thead>
           </table>
@@ -66,45 +78,54 @@
         <!-- Gráfico e Histórico na mesma coluna -->
         <div>
           <!-- Gráfico -->
-          <div class="bg-white rounded-lg p-5 flex justify-center w-full h-[480px]">
+          <div
+            class="bg-white rounded-lg p-5 flex justify-center w-full h-[480px]"
+          >
             <canvas id="myChart"></canvas>
           </div>
           <!-- Histórico de Resultados -->
           <div class="mt-5">
-              <div class="flex items-center justify-between">
-                <h3 class="text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug">
-                  Histórico de Resultados
-                </h3>
+            <div class="flex items-center justify-between">
+              <h3
+                class="text-[#262a27] text-[17px] font-semibold font-['Figtree'] leading-snug"
+              >
+                Histórico de Resultados
+              </h3>
+            </div>
+
+            <div class="bg-white rounded-lg shadow">
+              <div
+                class="bg-[#164110] grid grid-cols-3 gap-4 py-2 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
+              >
+                <span class="text-center px-5">MÊS</span>
+                <span class="text-center">CMV</span>
+                <span class="text-right">RESULTADO</span>
               </div>
 
-              <div class="bg-white rounded-lg shadow">
-                <div class="bg-[#164110] grid grid-cols-3 gap-4 py-2 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl">
-                  <span class="text-center px-5">MÊS</span>
-                  <span class="text-center">CMV</span>
-                  <span class="text-right">RESULTADO</span>
-                </div>
-
-                <div ref="scrollContainer" class="overflow-y-auto max-h-96 scroll-hidden">
-                  <ul class="space-y-2">
-                    <li
-                      v-for="mes in historico"
-                      :key="mes.nome_mes"
-                      class="hover:bg-gray-200 grid grid-cols-3 gap-4 px-6 text-[14px]"
-                    >
-                      <span class="text-center px-5 text-gray-600 font-semibold">
-                        {{ mes.nome_mes }}
-                      </span>
-                      <span class="text-center text-gray-600 font-medium">
-                        R$ {{ mes.categorias[0].valor_cmv }}
-                      </span>
-                      <span class="text-right text-gray-600 font-semibold">
-                        R$ {{ mes.categorias[0].resultado_do_periodo }}
-                      </span>
-                    </li>
-                  </ul>
-                </div>
+              <div
+                ref="scrollContainer"
+                class="overflow-y-auto max-h-96 scroll-hidden"
+              >
+                <ul class="space-y-2">
+                  <li
+                    v-for="mes in historico"
+                    :key="mes.nome_mes"
+                    class="hover:bg-gray-200 grid grid-cols-3 gap-4 px-6 text-[14px]"
+                  >
+                    <span class="text-center px-5 text-gray-600 font-semibold">
+                      {{ mes.nome_mes }}
+                    </span>
+                    <span class="text-center text-gray-600 font-medium">
+                      R$ {{ mes.categorias[0].valor_cmv }}
+                    </span>
+                    <span class="text-right text-gray-600 font-semibold">
+                      R$ {{ mes.categorias[0].resultado_do_periodo }}
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
+          </div>
         </div>
       </div>
     </div>
@@ -116,7 +137,7 @@ import { Head } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import axios from 'axios';
-import ChartDataLabels from 'chartjs-plugin-datalabels'; 
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import {
   Chart,
   ArcElement,
@@ -163,7 +184,6 @@ const handleFilterUpdate = (filters) => {
   fetchData(filters.startDate, filters.endDate);
 };
 
-
 const fetchData = async (startDate, endDate) => {
   try {
     const response = await axios.get('/api/painel-dre/analitycs-dre', {
@@ -191,13 +211,15 @@ const fetchData = async (startDate, endDate) => {
     listaPorcentagem.value = [];
 
     // Iterar sobre os grupos para construir os dados
-    data.grupos.forEach(grupo => {
+    data.grupos.forEach((grupo) => {
       const categorias = Array.isArray(grupo.categorias)
         ? grupo.categorias
         : Object.values(grupo.categorias);
 
-      categorias.forEach(categoria => {
-        const valor = parseFloat(categoria.total.replace('.', '').replace(',', '.'));
+      categorias.forEach((categoria) => {
+        const valor = parseFloat(
+          categoria.total.replace('.', '').replace(',', '.')
+        );
         const porcentagem = categoria.porcentagem;
 
         // Adicionar a todos os dados para a lista à direita
@@ -221,8 +243,6 @@ const fetchData = async (startDate, endDate) => {
     loading.value = false;
   }
 };
-
-
 
 // Registrar os controladores necessários
 Chart.register(
@@ -252,7 +272,6 @@ const renderGrafico = () => {
     myChart.destroy();
   }
 
-  // Configuração básica comum a todos os gráficos
   const baseConfig = {
     type: chartType.value,
     data: {
@@ -284,7 +303,9 @@ const renderGrafico = () => {
                 style: 'currency',
                 currency: 'BRL',
               }).format(tooltipItem.raw);
-              return tooltipItem.label + ': ' + valorFormatado;
+              const porcentagem =
+                graficoPorcentagem.value[tooltipItem.dataIndex];
+              return `${tooltipItem.label}: ${valorFormatado} (${porcentagem})`;
             },
           },
         },
@@ -295,34 +316,16 @@ const renderGrafico = () => {
             padding: 15,
             boxWidth: 10,
           },
-          
         },
         datalabels: {
-          anchor: 'center',
-          align: 'center',
-          color:
-            chartType.value === 'bar' || chartType.value === 'line'
-              ? '#000'
-              : '#fff',
-          font: {
-            weight: 'bold',
-            size: 14,
-          },
-          formatter: (value, ctx) => {
-            const index = ctx.dataIndex;
-            return graficoPorcentagem.value[index];
-          },
-          display:
-            chartType.value === 'pie' ||
-            chartType.value === 'doughnut' ||
-            chartType.value === 'polarArea',
+          display: false, // Desativa as etiquetas diretamente no gráfico
         },
       },
       scales:
         chartType.value === 'bar' || chartType.value === 'line'
           ? {
               x: {
-                type: 'category', // Explicitamente definindo como "category"
+                type: 'category',
               },
               y: {
                 beginAtZero: true,

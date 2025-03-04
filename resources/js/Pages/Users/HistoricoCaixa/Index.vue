@@ -108,7 +108,7 @@
                 <option value="polarArea">Área Polar (Polar Area)</option>
               </select>
             </div>
-            <canvas id="myChart"></canvas> 
+            <canvas id="myChart"></canvas>
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@
         >
           <span class="text-left px-5">OPERAÇÃO</span>
           <span class="text-center">VALOR</span>
-          <span class="text-left">HORA</span>
+          <span class="text-left">DATA/HORA</span>
           <span class="text-center">MOTIVO</span>
           <span class="text-center">RESPONSÁVEL</span>
         </div>
@@ -316,7 +316,6 @@ const renderGrafico = () => {
     myChart.destroy();
   }
 
-  // Configuração básica comum a todos os gráficos
   const baseConfig = {
     type: chartType.value,
     data: {
@@ -348,7 +347,9 @@ const renderGrafico = () => {
                 style: 'currency',
                 currency: 'BRL',
               }).format(tooltipItem.raw);
-              return tooltipItem.label + ': ' + valorFormatado;
+              const porcentagem =
+                graficoPorcentagem.value[tooltipItem.dataIndex];
+              return `${tooltipItem.label}: ${valorFormatado} (${porcentagem})`;
             },
           },
         },
@@ -360,32 +361,16 @@ const renderGrafico = () => {
             boxWidth: 10,
           },
         },
+        // Removemos ou desativamos o datalabels
         datalabels: {
-          anchor: 'center',
-          align: 'center',
-          color:
-            chartType.value === 'bar' || chartType.value === 'line'
-              ? '#000'
-              : '#fff',
-          font: {
-            weight: 'bold',
-            size: 14,
-          },
-          formatter: (value, ctx) => {
-            const index = ctx.dataIndex;
-            return graficoPorcentagem.value[index];
-          },
-          display:
-            chartType.value === 'pie' ||
-            chartType.value === 'doughnut' ||
-            chartType.value === 'polarArea',
+          display: false, // Desativa as etiquetas diretamente no gráfico
         },
       },
       scales:
         chartType.value === 'bar' || chartType.value === 'line'
           ? {
               x: {
-                type: 'category', // Explicitamente definindo como "category"
+                type: 'category',
               },
               y: {
                 beginAtZero: true,

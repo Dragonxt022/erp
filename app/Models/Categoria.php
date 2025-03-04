@@ -8,14 +8,18 @@ class Categoria extends Model
 {
     protected $table = 'categorias';
 
-    protected $fillable = ['nome', 'grupo_id'];
+    protected $fillable = [
+        'nome', 
+        'grupo_id',
+        'exibir_contas_apagar',
+        'exibir_dre',
+        'exibir_seletor_caixa'
+    ];
 
     public function grupo()
     {
         return $this->belongsTo(GrupoDeCategorias::class, 'grupo_id');
     }
-
-
 
     public function contas()
     {

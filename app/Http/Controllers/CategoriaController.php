@@ -35,4 +35,24 @@ class CategoriaController extends Controller
         // Retornar as categorias em formato JSON
         return response()->json($categorias);
     }
+
+    public function listaSeletorCaixa()
+    {
+        // Listar apenas categorias onde exibir_seletor_caixa é true (1)
+        $categorias = Categoria::where('exibir_seletor_caixa', 1)
+            ->with('grupo') // Opcional: incluir o relacionamento com grupo
+            ->get();
+
+        return response()->json($categorias);
+    }
+
+        public function listaSeletorContasApagar()
+    {
+        // Listar apenas categorias onde exibir_seletor_caixa é true (1)
+        $categorias = Categoria::where('exibir_contas_apagar', 1)
+            ->with('grupo') // Opcional: incluir o relacionamento com grupo
+            ->get();
+
+        return response()->json($categorias);
+    }
 }

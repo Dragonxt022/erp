@@ -185,7 +185,7 @@ const valor = ref(null);
 const descricao = ref('');
 const emitidaEm = ref('');
 const vencimento = ref('');
-const diasLembrete = ref(1); // Padrão de 1 dia
+const diasLembrete = ref(1);
 const categoriaSelecionada = ref(null);
 const arquivoNome = ref('');
 
@@ -199,7 +199,7 @@ const emit = defineEmits(['voltar']);
 
 onMounted(async () => {
   try {
-    const response = await axios.get('/api/categorias/lista');
+    const response = await axios.get('/api/categorias/seleto-contas');
     categorias.value = response.data;
   } catch (error) {
     console.error('Erro ao carregar categorias:', error);
