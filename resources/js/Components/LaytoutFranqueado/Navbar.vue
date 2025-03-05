@@ -1,8 +1,6 @@
 <template>
   <div class="navbar">
-    <div class="navbar-background">
-      <!-- Navbar container background -->
-    </div>
+    <div class="navbar-background"></div>
 
     <div class="navbar-content">
       <!-- Logo e ícones de navegação -->
@@ -31,23 +29,20 @@
 
       <!-- Avatar e informações do usuário -->
       <div class="navbar-right">
-        <!-- <div class="notification">
-          <div class="circle">
-            <img
-              src="/storage/images/icon_notification.svg"
-              alt="icone notificação"
-            />
-          </div>
-          <div class="inner-circle"></div>
-        </div> -->
-        <div class="user-info">
+        <div class="user-info" v-if="user">
           <img :src="profilePhoto" alt="Avatar" class="avatar" />
           <div class="user-details">
-            <div class="user-name">{{ user?.name }}</div>
+            <div class="user-name">{{ user.name }}</div>
             <div class="user-location">
               {{ unidade?.cidade || 'Taiksu Franchising' }}
             </div>
-            <!-- Exibindo a cidade da unidade -->
+          </div>
+        </div>
+        <div class="user-info loading" v-else>
+          <div class="avatar-skeleton"></div>
+          <div class="user-details-skeleton">
+            <div class="name-skeleton"></div>
+            <div class="location-skeleton"></div>
           </div>
         </div>
       </div>
@@ -55,42 +50,54 @@
   </div>
 </template>
 
-<script lang="js">
-import { ref, onMounted, computed } from 'vue';
-import { useUserStore } from '@/stores/user';
+<script setup>
+import { ref, computed, onMounted } from 'vue';
 
-export default {
-  setup() {
-    const userStore = useUserStore();
+const user = ref(null);
+const unidade = computed(() => user.value?.unidade);
+const profilePhoto = computed(() => {
+  return (
+    user.value?.profile_photo_url ||
+    `https://ui-avatars.com/api/?name=${getInitials(
+      user.value?.name
+    )}&color=7F9CF5&background=EBF4FF`
+  );
+});
 
+// Função para pegar as iniciais do nome
+const getInitials = (name) => {
+  if (!name) return '*';
+  const nameParts = name.split(' ');
+  return nameParts.map((part) => part.charAt(0).toUpperCase()).join('');
+};
 
-    // Aguardar o carregamento do perfil
-    onMounted(async () => {
-      if (!userStore.user) {
-        await userStore.fetchUserProfile();
-      }
+// Função para buscar os dados do perfil
+const fetchUserProfile = async () => {
+  try {
+    const response = await fetch('/api/navbar-profile', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
     });
 
-    // Variáveis reativas para o template
-    const user = computed(() => userStore.user);
-    const unidade = computed(() => userStore.user?.unidade); // Acessando unidade diretamente do userStore
-    const profilePhoto = computed(() => {
-      // Verifica se existe foto do perfil, senão gera uma imagem com as iniciais
-      return user.value?.profile_photo_url ||
-             `https://ui-avatars.com/api/?name=${getInitials(user.value?.name)}&color=7F9CF5&background=EBF4FF`;
-    });
-
-    // Função para pegar as iniciais do nome
-    function getInitials(name) {
-      if (!name) return '*'; // Se não houver nome, retorna NN
-      const nameParts = name.split(' ');
-      const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join('');
-      return initials;
+    if (!response.ok) {
+      throw new Error('Erro ao carregar perfil do usuário');
     }
 
-    return { user, profilePhoto, unidade };
-  },
+    const data = await response.json();
+    user.value = data.data; // Ajuste conforme a estrutura da sua API
+  } catch (error) {
+    console.error('Erro ao buscar perfil:', error);
+    user.value = null; // Define como null em caso de erro
+  }
 };
+
+// Carrega os dados ao montar o componente
+onMounted(() => {
+  fetchUserProfile();
+});
 </script>
 
 <style scoped>
@@ -98,6 +105,7 @@ a {
   text-decoration: none;
   cursor: pointer;
 }
+
 .navbar {
   width: 100%;
   height: 70px;
@@ -124,21 +132,6 @@ a {
 .navbar-logo {
   display: flex;
   position: relative;
-}
-
-.small-rectangle {
-  width: 22px;
-  height: 22px;
-  background: #5fc338;
-  margin: 0 5px;
-}
-
-.circle-icon {
-  width: 22px;
-  height: 22px;
-  background: #5fc338;
-  border-radius: 50%;
-  margin-right: 5px;
 }
 
 .navbar-right {
@@ -178,31 +171,61 @@ a {
   color: #528429;
 }
 
-.notification {
-  width: 46px;
-  height: 46px;
-  background: rgba(247.62, 255, 240.98, 0);
-  border-radius: 50%;
-  cursor: pointer;
-  position: relative;
+.mr-4 {
+  margin-right: 1rem;
 }
 
-.notification .circle {
-  width: 24px;
-  height: 24px;
-  position: absolute;
-  left: 11px;
-  top: 11px;
-  border-radius: 50%;
+.w-full {
+  width: 100%;
 }
 
-.notification .inner-circle {
-  width: 7px;
-  height: 7px;
-  /* background: #ff2d55; */
+.h-full {
+  height: 100%;
+}
+
+/* Estilos de loading */
+.user-info.loading {
+  pointer-events: none;
+}
+
+.avatar-skeleton {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  position: absolute;
-  left: 13px;
-  top: 13px;
+  background: #e0e0e0;
+  margin-right: 10px;
+  animation: pulse 1.5s infinite;
+}
+
+.user-details-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name-skeleton {
+  width: 100px;
+  height: 14px;
+  background: #e0e0e0;
+  animation: pulse 1.5s infinite;
+}
+
+.location-skeleton {
+  width: 80px;
+  height: 12px;
+  background: #e0e0e0;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 </style>
