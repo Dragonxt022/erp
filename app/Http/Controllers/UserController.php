@@ -425,4 +425,19 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    // atualiza senha de usuario
+        public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+
+        $user = Auth::user();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect()->back()->with('success', 'Senha atualizada com sucesso!');
+    }
 }

@@ -123,6 +123,9 @@ Route::prefix('api')->middleware([
         Route::post('/upsert-permissions', [UserController::class, 'upsertPermissions'])->name('upsertPermissions.upsert');
         Route::post('/regenera-pin', [UserController::class, 'atualizarPin'])->name('atualizarPin.regenera');
 
+        Route::post('/password/update', [UserController::class, 'updatePassword'])->name('usuario.password.update');
+        
+
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
     });
 

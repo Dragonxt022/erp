@@ -29,22 +29,29 @@
 
       <!-- Avatar e informações do usuário -->
       <div class="navbar-right">
-        <div class="user-info" v-if="user">
-          <img :src="profilePhoto" alt="Avatar" class="avatar" />
-          <div class="user-details">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-location">
-              {{ unidade?.cidade || 'Taiksu Franchising' }}
+        <Link
+          v-if="user"
+          :href="route('franqueado.perfil')"
+          class="user-info"
+          :class="{ loading: !user }"
+        >
+          <div class="user-info" v-if="user">
+            <img :src="profilePhoto" alt="Avatar" class="avatar" />
+            <div class="user-details">
+              <div class="user-name">{{ user.name }}</div>
+              <div class="user-location">
+                {{ unidade?.cidade || 'Taiksu Franchising' }}
+              </div>
             </div>
           </div>
-        </div>
-        <div class="user-info loading" v-else>
-          <div class="avatar-skeleton"></div>
-          <div class="user-details-skeleton">
-            <div class="name-skeleton"></div>
-            <div class="location-skeleton"></div>
+          <div class="user-info loading" v-else>
+            <div class="avatar-skeleton"></div>
+            <div class="user-details-skeleton">
+              <div class="name-skeleton"></div>
+              <div class="location-skeleton"></div>
+            </div>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   </div>
@@ -52,6 +59,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 
 const user = ref(null);
 const unidade = computed(() => user.value?.unidade);

@@ -141,27 +141,28 @@ class AuthController extends Controller
     public function getProfile()
     {
         $token = request()->bearerToken();
-        Log::info('Token recebido: ' . $token);  // Verifica o token recebido
-    
+        Log::info('Token recebido: ' . $token); // Verifica o token recebido
+
         if (!Auth::check()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Usuário não autenticado.',
             ], 401);
         }
-    
+
         $user = Auth::user();
-    
-        // Carrega os relacionamentos necessários
-        $user = $user->load('userDetails', 'unidade');
-    
+
+        // Carrega os relacionamentos necessários, incluindo 'cargo'
+        $user = $user->load('userDetails', 'unidade', 'cargo');
+
         // Obtém as permissões do usuário e converte 0/1 para booleanos
         $permissions = array_map('boolval', $user->getPermissions());
-    
+
         // Retorna os dados do usuário com os relacionamentos e permissões
         return response()->json([
             'status' => 'success',
             'data' => array_merge($user->toArray(), ['permissions' => $permissions]),
         ]);
     }
+
 }
