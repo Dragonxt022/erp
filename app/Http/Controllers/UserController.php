@@ -116,6 +116,18 @@ class UserController extends Controller
                 'profile_photo_path' => $profilePhotoPath, // Caminho da foto
             ]);
 
+            // Criar permissões padrão para o novo usuário
+            UserPermission::create([
+                'user_id' => $user->id,
+                'controle_estoque' => true,
+                'controle_saida_estoque' => true,
+                'gestao_equipe' => true,
+                'fluxo_caixa' => true,
+                'dre' => true,
+                'contas_pagar' => true,
+                'gestao_salmao' => true,
+            ]);
+
             // Gerar o token de redefinição de senha
             $token = Password::createToken($user);
 
