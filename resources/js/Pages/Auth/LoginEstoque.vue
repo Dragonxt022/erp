@@ -1,57 +1,63 @@
 <template>
   <Head title="Acessar" />
-  <div class="login-container">
-    <!-- Imagens com alt para acessibilidade -->
-    <img
-      class="background-img transform scale-x-[-1]"
-      src="/storage/images/mulher_login_estoque.png"
-      alt="Imagem de fundo representando uma mulher usando um computador"
-    />
-    <img
-      class="logo-img"
-      src="/storage/images/logo_tipo.png"
-      alt="Logo do Taiksu"
-    />
 
-    <div class="login-box">
-      <div class="login-box-inner">
-        <div class="title-container">
-          <div class="title">Controle de estoque</div>
-          <div class="subtitle">Registro de retirada em estoque da loja.</div>
+  <!-- Faixa verde no topo com logo centralizada -->
+  <div class="w-full h-[71px] bg-[#164110] py-4 fixed top-0 left-0 z-10">
+    <div class="container mx-auto flex justify-center">
+      <img
+        class="h-8"
+        src="/storage/images/logo_tipo.png"
+        alt="Logo do Taiksu"
+      />
+    </div>
+  </div>
+
+  <div class="min-h-screen flex flex-col items-center justify-center px-4 pt-4">
+    <div class="w-full max-w-md rounded-2xl p-8 mt-16">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 text-center">
+          Controle de estoque
+        </h1>
+        <p class="text-gray-500 text-center">
+          Registro de retirada em estoque da loja.
+        </p>
+      </div>
+
+      <form @submit.prevent="submit">
+        <!-- Campo Senha -->
+        <div class="mb-6">
+          <label
+            for="pin"
+            class="block text-2-l font-semibold text-gray-800 mb-1"
+          >
+            PIN
+          </label>
+          <input
+            id="pin"
+            v-model="form.pin"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            type="password"
+            placeholder="●●●●"
+            autocomplete="off"
+            aria-label="Senha"
+          />
+          <!-- Exibindo erro -->
+          <InputError class="mt-2 text-center" :message="form.errors.pin" />
         </div>
 
-        <form @submit.prevent="submit">
-          <!-- Campo Senha -->
-          <div class="input-container">
-            <label for="pin">Seu PIN</label>
-            <input
-              id="pin"
-              v-model="form.pin"
-              class="input"
-              type="pin"
-              placeholder="●●●●"
-              autocomplete="off"
-              aria-label="Senha"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2 text-center" :message="form.errors.pin" />
-          </div>
-          <div
-            v-if="errorMessage"
-            class="mb-4 font-medium text-sm text-red-600 text-center"
-          >
-            {{ errorMessage }}
-          </div>
+        <div v-if="errorMessage" class="mb-4 text-sm text-red-600 text-center">
+          {{ errorMessage }}
+        </div>
 
-          <!-- Botão Acessar -->
-          <ButtonPrimary
-            :class="{ 'opacity-25': form.processing }"
-            :disabled="form.processing"
-          >
-            Acessar
-          </ButtonPrimary>
-        </form>
-      </div>
+        <!-- Botão Acessar -->
+        <ButtonPrimary
+          class="w-full py-3 transition-opacity"
+          :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+          :disabled="form.processing"
+        >
+          Acessar
+        </ButtonPrimary>
+      </form>
     </div>
   </div>
 </template>
@@ -95,99 +101,8 @@ const submit = async () => {
     } else if (error.response?.status === 401) {
       errorMessage.value = 'PIN inválido.';
     } else {
-      console.log('Ouve um erro inesperado');
+      console.log('Ocorreu um erro inesperado');
     }
   }
 };
 </script>
-
-<style scoped>
-.login-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: #f3f8f3;
-}
-
-.background-img {
-  width: 40%; /* Define a largura desejada */
-  height: 100vh; /* A altura ocupa toda a altura da tela */
-  object-fit: cover; /* Garante que a imagem preencha o contêiner sem distorção */
-  object-position: 100% center; /* Desloca o centro da imagem para a direita */
-}
-
-.logo-img {
-  width: 151px;
-  height: 30px;
-  position: absolute;
-  left: 40px;
-  top: 19px;
-}
-
-.login-box {
-  padding: 70px 60px;
-  position: absolute;
-  left: 665px;
-  top: 145px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 20px;
-}
-
-.login-box-inner {
-  width: 367px;
-  height: 402px;
-  position: relative;
-}
-
-.title-container {
-  width: 100%;
-  margin-bottom: 30px;
-}
-
-.title {
-  font-size: 34px;
-  font-weight: 700;
-  color: #262a27;
-  line-height: 41px;
-}
-
-.subtitle {
-  font-size: 17px;
-  color: #6d6d6e;
-}
-
-.input-container {
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-label {
-  font-size: 17px;
-  font-weight: 600;
-  color: #262a27;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.input {
-  width: 100%;
-  height: 48px;
-  padding: 8px 16px;
-  background: white;
-  border: 2px solid #d7d7db;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #222222;
-  opacity: 0.8;
-}
-
-.forgot-password {
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: #262a27;
-  margin-top: 10px;
-}
-</style>

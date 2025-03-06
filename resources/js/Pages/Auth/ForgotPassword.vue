@@ -1,10 +1,115 @@
+<template>
+  <Head title="Recuperar Senha" />
+
+  <!-- Faixa verde no topo com logo centralizada -->
+  <div class="w-full h-[71px] bg-[#164110] py-4 fixed top-0 left-0 z-10">
+    <div class="container mx-auto flex justify-center">
+      <img
+        class="h-8"
+        src="/storage/images/logo_tipo.png"
+        alt="Logo do Taiksu"
+      />
+    </div>
+  </div>
+
+  <div
+    class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 pt-4"
+  >
+    <!-- Formulário de recuperação de senha -->
+    <div v-if="!isEmailSent" class="w-full max-w-md rounded-2xl p-8 mt-16">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Recuperar Senha</h1>
+        <p class="text-gray-500">Digite seu e-mail para redefinir sua senha</p>
+      </div>
+
+      <!-- Mensagem de status de erro ou sucesso -->
+      <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        {{ status }}
+      </div>
+
+      <form @submit.prevent="submit">
+        <!-- Campo Email -->
+        <div class="mb-6">
+          <label
+            for="email"
+            class="block text-sm font-semibold text-gray-800 mb-2"
+          >
+            Email
+          </label>
+          <input
+            id="email"
+            v-model="form.email"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            type="email"
+            placeholder="exemplo@dominio.com"
+            required
+            autofocus
+            autocomplete="username"
+          />
+          <!-- Exibindo erro -->
+          <InputError class="mt-2" :message="form.errors.email" />
+        </div>
+
+        <!-- Botão Enviar -->
+        <ButtonPrimary
+          class="w-full py-3 transition-opacity"
+          :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+          :disabled="form.processing"
+        >
+          Enviar Link de Redefinição
+        </ButtonPrimary>
+      </form>
+
+      <Link :href="route('login')" class="block text-center mt-4">
+        <p
+          class="text-gray-800 font-semibold hover:text-green-600 transition-colors"
+        >
+          Lembrei minha senha
+        </p>
+      </Link>
+    </div>
+
+    <!-- Mensagem de sucesso após envio de e-mail -->
+    <div
+      v-if="isEmailSent"
+      class="w-full max-w-md rounded-2xl p-8 mt-16 text-center"
+    >
+      <div class="flex justify-center mb-6">
+        <div
+          class="relative w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"
+        >
+          <img
+            src="/storage/images/icon_mail.svg"
+            alt="Logo E-mail"
+            class="w-8 h-8"
+          />
+        </div>
+      </div>
+
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">
+        Verifique seu E-mail
+      </h1>
+      <p class="text-gray-500">
+        Enviamos um link de redefinição da sua
+        <br />
+        senha para o seu e-mail cadastrado
+      </p>
+
+      <Link :href="route('login')" class="block text-center mt-8">
+        <ButtonPrimary class="px-6">Voltar para login</ButtonPrimary>
+      </Link>
+    </div>
+  </div>
+</template>
+
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import InputError from '@/Components/InputError.vue';
 import ButtonPrimary from '@/Components/Button/ButtonPrimary.vue';
+import { ref } from 'vue';
 
-let isEmailSent = false;
-let status = null;
+let isEmailSent = ref(false);
+let status = ref(null);
 
 defineProps({
   status: String,
@@ -19,8 +124,8 @@ const submit = async () => {
   form.post(route('password.email'), {
     onSuccess: () => {
       // Quando o e-mail for enviado com sucesso, altere o estado
-      isEmailSent = true;
-      status = 'Verifique sua caixa de entrada!';
+      isEmailSent.value = true;
+      status.value = 'Verifique sua caixa de entrada!';
     },
     onError: (errors) => {
       // Caso haja erros, exiba o erro no formulário
@@ -30,244 +135,3 @@ const submit = async () => {
   });
 };
 </script>
-
-<style lang="css" scoped>
-.login-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: #f3f8f3;
-}
-
-.background-img {
-  width: auto;
-  height: 100vh;
-  position: absolute;
-}
-
-.logo-img {
-  width: 151px;
-  height: 30px;
-  position: absolute;
-  left: 40px;
-  top: 19px;
-}
-
-.login-box {
-  padding: 70px 60px;
-  position: absolute;
-  left: 665px;
-  top: 145px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 20px;
-}
-
-.login-box-inner {
-  width: 367px;
-  position: relative;
-}
-
-.title-container {
-  width: 100%;
-  margin-bottom: 30px;
-}
-
-.title {
-  font-size: 34px;
-  font-family: Figtree, sans-serif;
-  font-weight: 700;
-  color: #262a27;
-  line-height: 41px;
-}
-
-.subtitle {
-  color: #6d6d6e;
-  font-size: 17px;
-  font-family: Figtree, sans-serif;
-}
-
-.input-container {
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-label {
-  font-size: 17px;
-  font-weight: 600;
-  color: #262a27;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.input {
-  width: 100%;
-  height: 48px;
-  padding: 8px 16px;
-  background: white;
-  border: 2px solid #d7d7db;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #222222;
-  opacity: 0.8;
-}
-
-.forgot-password {
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: #262a27;
-  margin-top: 10px;
-}
-
-/* Estilos da caixa de conteúdo */
-.content-box {
-  padding: 70px 60px;
-  position: absolute;
-  left: 44%;
-  top: 160px;
-  background: rgba(255, 255, 255, 0);
-  border-radius: 20px;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* Estilos do círculo */
-.circle-container {
-  width: 50px;
-  height: 50px;
-  position: relative;
-}
-
-.circle-background {
-  width: 50px;
-  height: 50px;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.circle-inner {
-  width: 41.67px;
-  height: 33.33px;
-  position: absolute;
-  top: 8.33px;
-  left: 4.17px;
-}
-
-/* Estilos do conteúdo textual */
-.text-content2 {
-  align-self: stretch;
-  flex: 1 1 0;
-  position: relative;
-}
-
-.title2 {
-  position: absolute;
-  left: 0;
-  top: 0;
-  color: #262a27;
-  font-size: 34px;
-  font-family: Figtree, sans-serif;
-  font-weight: 700;
-  line-height: 41px;
-  letter-spacing: 0.41px;
-  word-wrap: break-word;
-}
-
-.subtitle2 {
-  position: absolute;
-  left: 0;
-  top: 49px;
-  color: #6d6d6e;
-  font-size: 17px;
-  font-family: Figtree, sans-serif;
-  font-weight: 400;
-  line-height: 22px;
-  word-wrap: break-word;
-}
-</style>
-
-<template>
-  <Head title="Recuperar Senha" />
-  <div class="login-container">
-    <!-- Imagens com alt para acessibilidade -->
-    <img
-      class="background-img"
-      src="/storage/images/mulher_login.png"
-      alt="Imagem de fundo representando uma mulher usando um computador"
-    />
-    <img
-      class="logo-img"
-      src="/storage/images/logo_tipo.png"
-      alt="Logo do Taiksu"
-    />
-
-    <!-- Formulário de recuperação de senha -->
-    <div class="login-box" v-if="!isEmailSent">
-      <div class="login-box-inner">
-        <div class="title-container">
-          <div class="title">Recuperar Senha</div>
-          <div class="subtitle">Digite seu e-mail para redefinir sua senha</div>
-        </div>
-
-        <!-- Mensagem de status de erro ou sucesso -->
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-          {{ status }}
-        </div>
-
-        <form @submit.prevent="submit">
-          <!-- Campo Email -->
-          <div class="input-container">
-            <label for="email">Email</label>
-            <input
-              id="email"
-              v-model="form.email"
-              class="input"
-              type="email"
-              placeholder="exemplo@dominio.com"
-              required
-              autofocus
-              autocomplete="username"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.email" />
-          </div>
-
-          <!-- Botão Enviar -->
-          <ButtonPrimary
-            :class="{ 'opacity-25': form.processing }"
-            :disabled="form.processing"
-          >
-            Enviar Link de Redefinição
-          </ButtonPrimary>
-        </form>
-        <Link :href="route('login')" class="cursor-pointer">
-          <p class="forgot-password">Lembrei minha senha</p>
-        </Link>
-      </div>
-    </div>
-
-    <!-- Mensagem de sucesso após envio de e-mail -->
-    <div class="content-box" v-if="isEmailSent">
-      <div class="circle-container">
-        <div class="circle-background"></div>
-        <div class="circle-inner">
-          <img src="/storage/images/icon_mail.svg" alt="Logo E-mail" />
-        </div>
-      </div>
-      <div class="title-container">
-        <div class="title">Verifique seu E-mail</div>
-        <div class="subtitle">
-          Enviamos um link de redefinição da sua
-          <br />
-          senha para o seu e-mail cadastrado
-        </div>
-      </div>
-    </div>
-  </div>
-</template>

@@ -11,10 +11,14 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
 use App\Models\Cargo;
 use App\Models\UserPermission;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
+
 
 class UserController extends Controller
 {
@@ -451,5 +455,45 @@ class UserController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'Senha atualizada com sucesso!');
+    }
+
+
+    /**
+     * Processa a solicitação de atualização de senha
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateRecupePassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->setRememberToken(Str::random(60));
+
+                $user->save();
+
+                event(new PasswordReset($user));
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            // Retorna uma resposta Inertia com um status de sucesso
+            return Inertia::render('ResetPassword', [
+                'success' => true,
+                'message' => 'Senha atualizada com sucesso!',
+            ]);
+        }
+
+        // Em caso de erro, retorna os erros para o frontend
+        return back()->withErrors(['email' => __($status)]);
     }
 }

@@ -1,77 +1,92 @@
 <template>
   <Head title="Acessar" />
-  <div class="login-container">
-    <!-- Imagens com alt para acessibilidade -->
-    <img
-      class="background-img"
-      src="/storage/images/mulher_login.png"
-      alt="Imagem de fundo representando uma mulher usando um computador"
-    />
-    <img
-      class="logo-img"
-      src="/storage/images/logo_tipo.png"
-      alt="Logo do Taiksu"
-    />
 
-    <div class="login-box">
-      <div class="login-box-inner">
-        <div class="title-container">
-          <div class="title">Entrar no Taiksu</div>
-          <div class="subtitle">Acompanhe seu negócio em tempo real</div>
-        </div>
+  <!-- Faixa verde no topo com logo centralizada -->
+  <div class="w-full h-[71px] bg-[#164110] py-4 fixed top-0 left-0 z-10">
+    <div class="container mx-auto flex justify-center">
+      <img
+        class="h-8"
+        src="/storage/images/logo_tipo.png"
+        alt="Logo do Taiksu"
+      />
+    </div>
+  </div>
 
-        <!-- Mensagem de status de erro ou sucesso -->
-        <div v-if="status" class="mb-4 font-medium text-sm text-green-600">
-          {{ status }}
-        </div>
-
-        <form @submit.prevent="submit">
-          <!-- Campo CPF -->
-          <div class="input-container">
-            <label for="cpf">Entre com CPF ou E-mail</label>
-            <input
-              id="cpf"
-              v-model="form.cpf"
-              class="input"
-              type="text"
-              placeholder="Entre com CPF ou E-mail"
-              autocomplete="off"
-              aria-label="CPF"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.cpf" />
-          </div>
-
-          <!-- Campo Senha -->
-          <div class="input-container">
-            <label for="password">Senha</label>
-            <input
-              id="password"
-              v-model="form.password"
-              class="input"
-              type="password"
-              placeholder="●●●●●●●●●●●●"
-              autocomplete="off"
-              aria-label="Senha"
-            />
-            <!-- Exibindo erro -->
-            <InputError class="mt-2" :message="form.errors.password" />
-          </div>
-
-          <!-- Botão Acessar -->
-          <ButtonPrimary
-            :class="{ 'opacity-25': form.processing }"
-            :disabled="form.processing"
-          >
-            Acessar
-          </ButtonPrimary>
-
-          <!-- Link Esqueci minha senha -->
-          <Link :href="route('password.request')" class="cursor-pointer">
-            <p class="forgot-password">Esqueci minha senha</p>
-          </Link>
-        </form>
+  <div
+    class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 pt-4"
+  >
+    <div class="w-full max-w-md rounded-2xl p-8 mt-16">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Entrar no Taiksu</h1>
+        <p class="text-gray-500">Acompanhe seu negócio em tempo real</p>
       </div>
+
+      <!-- Mensagem de status de erro ou sucesso -->
+      <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+        {{ status }}
+      </div>
+
+      <form @submit.prevent="submit">
+        <!-- Campo CPF -->
+        <div class="mb-6">
+          <label
+            for="cpf"
+            class="block text-sm font-semibold text-gray-800 mb-2"
+          >
+            Entre com CPF ou E-mail
+          </label>
+          <input
+            id="cpf"
+            v-model="form.cpf"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            type="text"
+            placeholder="Entre com CPF ou E-mail"
+            autocomplete="off"
+            aria-label="CPF"
+          />
+          <!-- Exibindo erro -->
+          <InputError class="mt-2" :message="form.errors.cpf" />
+        </div>
+
+        <!-- Campo Senha -->
+        <div class="mb-6">
+          <label
+            for="password"
+            class="block text-sm font-semibold text-gray-800 mb-2"
+          >
+            Senha
+          </label>
+          <input
+            id="password"
+            v-model="form.password"
+            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            type="password"
+            placeholder="●●●●●●●●●●●●"
+            autocomplete="off"
+            aria-label="Senha"
+          />
+          <!-- Exibindo erro -->
+          <InputError class="mt-2" :message="form.errors.password" />
+        </div>
+
+        <!-- Botão Acessar -->
+        <ButtonPrimary
+          class="w-full py-3 transition-opacity"
+          :class="{ 'opacity-50 cursor-not-allowed': form.processing }"
+          :disabled="form.processing"
+        >
+          Acessar
+        </ButtonPrimary>
+
+        <!-- Link Esqueci minha senha -->
+        <Link :href="route('password.request')" class="block text-center mt-4">
+          <p
+            class="text-gray-800 font-semibold hover:text-green-600 transition-colors"
+          >
+            Esqueci minha senha
+          </p>
+        </Link>
+      </form>
     </div>
   </div>
 </template>
@@ -109,112 +124,4 @@ const submit = async () => {
     },
   });
 };
-
-// Função para aplicar a máscara de CPF
-// const applyCpfMask = (event) => {
-//   let value = event.target.value.replace(/\D/g, ''); // Remove todos os caracteres não numéricos
-//   if (value.length > 11) value = value.slice(0, 11); // Limita o valor a 11 dígitos
-
-//   // Aplica a formatação do CPF
-//   if (value.length > 9) {
-//     value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-//   } else if (value.length > 6) {
-//     value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-//   } else if (value.length > 3) {
-//     value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-//   }
-
-//   event.target.value = value;
-//   form.cpf = value;
-// };
 </script>
-
-<style scoped>
-.login-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background: #f3f8f3;
-}
-
-.background-img {
-  width: auto;
-  height: 100vh;
-  position: absolute;
-}
-
-.logo-img {
-  width: 151px;
-  height: 30px;
-  position: absolute;
-  left: 40px;
-  top: 19px;
-}
-
-.login-box {
-  padding: 70px 60px;
-  position: absolute;
-  left: 665px;
-  top: 145px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 20px;
-}
-
-.login-box-inner {
-  width: 367px;
-  height: 402px;
-  position: relative;
-}
-
-.title-container {
-  width: 100%;
-  margin-bottom: 30px;
-}
-
-.title {
-  font-size: 34px;
-  font-weight: 700;
-  color: #262a27;
-  line-height: 41px;
-}
-
-.subtitle {
-  font-size: 17px;
-  color: #6d6d6e;
-}
-
-.input-container {
-  width: 100%;
-  margin-bottom: 20px;
-}
-
-label {
-  font-size: 17px;
-  font-weight: 600;
-  color: #262a27;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.input {
-  width: 100%;
-  height: 48px;
-  padding: 8px 16px;
-  background: white;
-  border: 2px solid #d7d7db;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #222222;
-  opacity: 0.8;
-}
-
-.forgot-password {
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: #262a27;
-  margin-top: 10px;
-}
-</style>

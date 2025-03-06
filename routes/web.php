@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -9,6 +10,8 @@ Route::get('/', [AuthController::class, 'paginLogin'])->name('pagina.login');
 
 // Rota para o login (POST) - Processa o login
 Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painel');
+
+Route::post('/resetar-password/{token}', [UserController::class, 'updateRecupePassword'])->name('updateRecupe.update');
 
 // Defina a rota para buscar o token
 Route::get('/get-token', function () {
