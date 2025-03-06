@@ -1,11 +1,13 @@
 <template>
   <div>
-    <!-- Link do item principal -->
-    <Link
+    <!-- Link externo ou interno -->
+    <component
+      :is="isExternalLink ? 'a' : Link"
       v-if="!isLogout && link && isVisible"
       class="menu-item"
       :class="[menuItemClass, { active: isActive || isAnySubmenuActive }]"
-      :href="link || '#'"
+      :href="linkHref"
+      :target="isExternalLink ? '_blank' : null"
       @click="handleClick"
     >
       <div class="icon">
@@ -19,10 +21,14 @@
       >
         <img src="/storage/images/arrow_drop_down.svg" alt="arrow icon" />
       </div>
-    </Link>
+    </component>
 
     <!-- Caso seja logout, trata com POST -->
-    <form v-else-if="isLogout && isVisible" @submit.prevent="handleLogout" class="menu-item">
+    <form
+      v-else-if="isLogout && isVisible"
+      @submit.prevent="handleLogout"
+      class="menu-item"
+    >
       <button type="submit" class="w-full h-full flex items-center">
         <div class="icon">
           <img :src="icon" alt="icon" />
@@ -33,10 +39,15 @@
 
     <!-- Submenu -->
     <div
-      v-if="filteredSubmenuItems.length > 0 && (showSubmenu || isAnySubmenuActive)"
+      v-if="
+        filteredSubmenuItems.length > 0 && (showSubmenu || isAnySubmenuActive)
+      "
       class="submenu"
     >
-      <div v-for="(submenu, submenuIndex) in filteredSubmenuItems" :key="submenuIndex">
+      <div
+        v-for="(submenu, submenuIndex) in filteredSubmenuItems"
+        :key="submenuIndex"
+      >
         <Link
           class="submenu-item"
           :href="route(submenu.link)"
@@ -71,15 +82,32 @@ const userPermissions = inject('userPermissions', ref({}));
 const showSubmenu = ref(false);
 const isIconRotated = computed(() => showSubmenu.value);
 
+// Verifica se o link é externo (começa com http:// ou https://)
+const isExternalLink = computed(() => {
+  return props.link && /^https?:\/\//.test(props.link);
+});
+
+// Calcula o href dependendo se é interno ou externo
+const linkHref = computed(() => {
+  return isExternalLink.value
+    ? props.link
+    : props.link
+    ? route(props.link)
+    : '#';
+});
+
 // Verifica se o item principal é visível
 const isVisible = computed(() => {
-  return !props.requiredPermission || userPermissions.value[props.requiredPermission];
+  return (
+    !props.requiredPermission || userPermissions.value[props.requiredPermission]
+  );
 });
 
 // Filtra submenus com base nas permissões
 const filteredSubmenuItems = computed(() => {
-  return props.submenuItems.filter(sub => 
-    !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
+  return props.submenuItems.filter(
+    (sub) =>
+      !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
   );
 });
 
@@ -88,6 +116,7 @@ const handleClick = (e) => {
     e.preventDefault();
     toggleSubmenu();
   }
+  // Para links externos, o clique não precisa ser tratado aqui, pois o <a> já redireciona
 };
 
 const toggleSubmenu = () => {
@@ -103,7 +132,10 @@ const loadSubmenuState = () => {
 };
 
 const saveSubmenuState = () => {
-  localStorage.setItem(`submenu-${props.link}`, JSON.stringify(showSubmenu.value));
+  localStorage.setItem(
+    `submenu-${props.link}`,
+    JSON.stringify(showSubmenu.value)
+  );
 };
 
 const menuItemClass = computed(() => {

@@ -25,9 +25,9 @@
           :key="item.link || 'no-link'"
           :label="item.label"
           :icon="item.icon"
-          :link="item.link ? route(item.link) : null"
+          :link="item.link"
           :submenuItems="item.submenuItems"
-          :isActive="item.link ? isActive(route(item.link)) : false"
+          :isActive="item.link ? isActive(item.link) : false"
           :isLogout="item.isLogout"
           :requiredPermission="item.requiredPermission"
         />
@@ -75,32 +75,35 @@ const menuCategories = [
     ],
   },
   // Ferramentas
-  // {
-  //   name: 'Ferramentas',
-  //   items: [
-  //     {
-  //       label: 'E-mail',
-  //       icon: '/storage/images/email.svg',
-  //       link: 'franqueado.email',
-  //       isLogout: false,
-  //       isActive: false,
-  //     },
-  //     {
-  //       label: 'Comunidade',
-  //       icon: '/storage/images/diversity_4.svg',
-  //       link: 'franqueado.comunidade',
-  //       isLogout: false,
-  //       isActive: false,
-  //     },
-  //     {
-  //       label: 'Mídias',
-  //       icon: '/storage/images/perm_media.svg',
-  //       link: 'franqueado.midias',
-  //       isLogout: false,
-  //       isActive: false,
-  //     },
-  //   ],
-  // },
+  {
+    name: 'Ferramentas',
+    items: [
+      {
+        label: 'E-mail',
+        icon: '/storage/images/email.svg',
+        link: 'https://arquivos.taiksu.com.br/apps/mail/box/1',
+        isLogout: false,
+        isActive: false,
+        requiredPermission: null,
+      },
+      // {
+      //   label: 'Comunidade',
+      //   icon: '/storage/images/diversity_4.svg',
+      //   link: 'franqueado.comunidade',
+      //   isLogout: false,
+      //   isActive: false,
+      //   requiredPermission: null,
+      // },
+      // {
+      //   label: 'Mídias',
+      //   icon: '/storage/images/perm_media.svg',
+      //   link: 'franqueado.midias',
+      //   isLogout: false,
+      //   isActive: false,
+      //   requiredPermission: null,
+      // },
+    ],
+  },
 
   // Gestão da loja
   {
@@ -154,7 +157,6 @@ const menuCategories = [
             label: 'Limpeza de salmão',
             link: 'franqueado.limpesaSalmoes',
             requiredPermission: 'gestao_salmao',
-
           },
         ],
         isActive: false,
@@ -263,24 +265,27 @@ const menuCategories = [
 
 const filteredMenuCategories = computed(() => {
   return menuCategories
-    .map(category => ({
+    .map((category) => ({
       ...category,
-      items: category.items.filter(item => 
-        (!item.requiredPermission || userPermissions.value[item.requiredPermission]) ||
-        (item.submenuItems && item.submenuItems.some(sub => 
-          !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
-        ))
+      items: category.items.filter(
+        (item) =>
+          !item.requiredPermission ||
+          userPermissions.value[item.requiredPermission] ||
+          (item.submenuItems &&
+            item.submenuItems.some(
+              (sub) =>
+                !sub.requiredPermission ||
+                userPermissions.value[sub.requiredPermission]
+            ))
       ),
     }))
-    .filter(category => category.items.length > 0);
+    .filter((category) => category.items.length > 0);
 });
-
 
 // Recuperar a posição da rolagem do localStorage
 onMounted(async () => {
-  
   await fetchPermissions();
-  
+
   const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
   if (savedScrollPosition && sidebar.value) {
     sidebar.value.scrollTop = savedScrollPosition;
