@@ -68,105 +68,6 @@ class CaixaController extends Controller
         }
     }
 
-    // Método para fechar o caixa
-    // public function fecharCaixa(Request $request)
-    // {
-    //     // Identifica o usuário autenticado
-    //     $usuario = Auth::user();
-    //     $unidade_id = $usuario->unidade_id;
-
-    //     // Busca o caixa aberto da unidade (com status 1)
-    //     $caixa = Caixa::where('unidade_id', $unidade_id)
-    //         ->where('status', 1)
-    //         ->first();
-
-    //     if (!$caixa || !$caixa->id) {
-    //         return response()->json(['message' => 'Nenhum caixa aberto encontrado.'], 404);
-    //     }
-
-    //     $metodosLimpos = array_map(function ($metodo) {
-
-    //         return [
-    //             'metodo_pagamento_id' => $metodo['default_payment_method']['id'] ?? null,
-    //             'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $metodo['total_vendas_metodos_pagamento'] ?? 0),
-    //         ];
-    //     }, $request->metodos);
-
-    //     // Limpando e estruturando os dados de canais de venda
-    //     $canaisLimpos = array_map(function ($canal) {
-    //         return [
-    //             'canal_de_vendas_id' => $canal['default_canal_de_vendas']['id'] ?? null, // Corrigido para acessar 'default_canal_de_vendas'
-    //             'valor_total_vendas' => (float) str_replace(['R$', '.', ','], ['', '', '.'], $canal['total_vendas_canais_vendas'] ?? 0),
-    //             'quantidade_vendas_feitas' => (int) ($canal['quantidade_vendas_canais_vendas'] ?? 0),
-    //         ];
-    //     }, $request->canais);
-
-
-    //     // Calcula o valor final somando os totais de métodos e canais de venda
-    //     $totalMetodosPagamento = array_sum(array_column($metodosLimpos, 'valor_total_vendas'));
-    //     $totalCanaisVendas = array_sum(array_column($canaisLimpos, 'valor_total_vendas'));
-    //     $valorFinal = $totalMetodosPagamento;
-
-    //     // dd($totalMetodosPagamento, $totalCanaisVendas, $valorFinal, $metodosLimpos, $canaisLimpos, $request);
-
-    //     DB::beginTransaction();
-
-    //     try {
-    //         // Criar o fechamento de caixa para métodos de pagamento
-    //         foreach ($metodosLimpos as $metodo) {
-    //             if ($metodo['metodo_pagamento_id']) {
-    //                 FechamentoCaixa::create([
-    //                     'unidade_id' => $unidade_id,
-    //                     'metodo_pagamento_id' => $metodo['metodo_pagamento_id'],
-    //                     'caixa_id' => $caixa->id,
-    //                     'valor_total_vendas' => $metodo['valor_total_vendas'],
-    //                 ]);
-    //             }
-    //         }
-
-    //         // Criar os registros de canais de venda
-    //         foreach ($canaisLimpos as $canal) {
-    //             if ($canal['canal_de_vendas_id']) {
-    //                 CanalVenda::create([
-    //                     'unidade_id' => $unidade_id,
-    //                     'canal_de_vendas_id' => $canal['canal_de_vendas_id'],
-    //                     'caixa_id' => $caixa->id,
-    //                     'valor_total_vendas' => $canal['valor_total_vendas'],
-    //                     'quantidade_vendas_feitas' => $canal['quantidade_vendas_feitas'],
-    //                 ]);
-    //             }
-    //         }
-
-    //         // Registro no histórico (fechamento)
-    //         FluxoCaixa::create([
-    //             'unidade_id' => $unidade_id,
-    //             'responsavel_id' => $usuario->id,
-    //             'caixa_id' => $caixa->id,
-    //             'operacao' => 'fechamento',
-    //             'valor' => $valorFinal,
-    //             'hora' => now(),
-    //             'motivo' => $request->motivo ?? 'Fechamento de caixa',
-    //         ]);
-
-    //         // Atualiza o valor final e o status do caixa
-    //         $caixa->valor_final = $valorFinal;
-    //         $caixa->status = 0;
-    //         $caixa->motivo = $request->motivo ?? 'Fechamento de caixa';
-    //         $caixa->save();
-
-    //         DB::commit();
-
-    //         return response()->json([
-    //             'status' => 'success',
-    //             'message' => 'Caixa fechado com sucesso!',
-    //             'caixa' => $caixa,
-    //         ], 200);
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
-    //     }
-    // }
-
     public function fecharCaixa(Request $request)
     {
         // Identifica o usuário autenticado
@@ -285,8 +186,6 @@ class CaixaController extends Controller
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
-
-
 
     // Método para exibir os detalhes do caixa
     public function detalhesCaixa($id)
@@ -538,4 +437,80 @@ class CaixaController extends Controller
             ], 500);
         }
     }
+
+    public function getCaixas(Request $request)
+        {
+            // Obtém o ID da unidade do usuário autenticado
+            $unidadeId = Auth::user()->unidade_id;
+
+            if (!$unidadeId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Usuário não pertence a nenhuma unidade.',
+                ], 403);
+            }
+
+            try {
+                // Define o início e fim do mês corrente como padrão
+                $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+                $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+                // Converte para Carbon e garante que as datas incluam todo o período do dia
+                $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
+                $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+            }
+
+            // Busca os caixas do mês corrente, filtrados por unidade_id e ordenados do mais recente para o mais antigo
+            $caixas = Caixa::where('unidade_id', $unidadeId)
+                ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtra pelo mês corrente
+                ->with('responsavel') // Carrega o relacionamento com o usuário responsável
+                ->orderBy('id', 'desc') // Ordena pelo ID de forma decrescente (mais recente primeiro)
+                ->get();
+
+            // Mapeia os dados para o formato desejado
+            $response = $caixas->map(function ($caixa) {
+                // Formata o valor total de fechamento como Real Brasileiro
+                $valorFormatado = number_format($caixa->valor_final ?? 0, 2, ',', '.');
+
+                // Define o texto do status com base no valor numérico
+                $statusTexto = $caixa->status == 0 ? 'Fechado' : ($caixa->status == 1 ? 'Aberto' : $caixa->status);
+
+                // Calcula a diferença em segundos entre abertura e fechamento
+                $horaAbertura = Carbon::parse($caixa->created_at);
+                $horaFechamento = Carbon::parse($caixa->updated_at);
+                $diferencaSegundos = $horaAbertura->diffInSeconds($horaFechamento);
+
+                // Converte segundos totais em horas, minutos e segundos
+                $horas = floor($diferencaSegundos / 3600); // Horas inteiras
+                $minutos = floor(($diferencaSegundos % 3600) / 60); // Minutos restantes
+                $segundos = $diferencaSegundos % 60; // Segundos restantes
+
+                // Define o formato e sufixo com base no maior componente de tempo
+                if ($horas > 0) {
+                    $horasFormatadas = sprintf('%02d:%02d:%02dh', $horas, $minutos, $segundos);
+                } elseif ($minutos > 0) {
+                    $horasFormatadas = sprintf('00:%02d:%02dm', $minutos, $segundos);
+                } else {
+                    $horasFormatadas = sprintf('00:00:%02ds', $segundos);
+                }
+
+                return [
+                    'id' => $caixa->id,
+                    'status' => $statusTexto,
+                    'valor_total_fechamento' => "R$ {$valorFormatado}",
+                    'hora_abertura' => $caixa->created_at->toDateTimeString(),
+                    'hora_fechamento' => $caixa->updated_at->toDateTimeString(),
+                    'usuario_fechou' => $caixa->responsavel ? $caixa->responsavel->name : 'N/A',
+                    'horas_aberto' => $horasFormatadas,
+                ];
+            });
+
+            // Retorna os dados em formato JSON
+            return response()->json([
+                'success' => true,
+                'data' => $response,
+            ], 200);
+        }
 }

@@ -2,7 +2,7 @@
   <button
     :type="type"
     @click="onClick"
-    class="h-[46px] px-[38px] py-3 bg-[#F3F8F3] rounded-[10px] flex justify-center items-center gap-2.5"
+    class="h-[46px] rounded-[10px] flex justify-center items-center gap-2.5"
   >
     <!-- Ícone opcional -->
     <img v-if="iconPath" :src="iconPath" alt="icon" class="h-6 w-6" />

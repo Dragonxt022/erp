@@ -180,6 +180,8 @@ Route::prefix('api')->middleware([
         Route::post('/adicionar-suprimento', [CaixaController::class, 'adicionarSuprimento']);
         Route::post('/remover-suprimento', [CaixaController::class, 'removeSuprimento']);
         Route::get('/valor-disponivel', [CaixaController::class, 'valorDisponivel']);
+
+        Route::get('/lista', [CaixaController::class, 'getCaixas']);
     });
 
     // Analitycos do caixa

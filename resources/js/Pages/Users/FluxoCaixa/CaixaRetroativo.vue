@@ -1,11 +1,11 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Gestão de Equipe" />
+    <Head title="Caixa Retroativo" />
 
     <!-- Grid de Listagem e Detalhes (visível apenas se showCadastro for false) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 h-full">
       <!-- Componente de Listagem -->
-      <ListarColaboradores
+      <ListarCaixas
         :key="listaKey"
         ref="listaDados"
         @usuario-selecionado="dadoSelecionado"
@@ -18,7 +18,7 @@
 
       <!-- Componente de Detalhes (mostra apenas se houver um item selecionado) -->
       <div v-if="dadosSelecionado">
-        <DetalhesColaborador
+        <DetalhesCaixa
           :dados="dadosSelecionado"
           @voltar="atualizaConponetes"
           @atualiza="atualizalista"
@@ -32,9 +32,9 @@
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
-import DetalhesColaborador from '@/Components/EstruturaFranqueado/DetalhesColaborador.vue';
-import ListarColaboradores from '@/Components/EstruturaFranqueado/ListarColaboradores.vue';
 import CadastroColaborador from '@/Components/EstruturaFranqueado/CadastroColaborador.vue';
+import ListarCaixas from '@/Components/EstruturaFranqueado/ListarCaixas.vue';
+import DetalhesCaixa from '@/Components/EstruturaFranqueado/DetalhesCaixa.vue';
 
 const listaKey = ref(0);
 const dadosSelecionado = ref(null);

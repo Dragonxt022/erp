@@ -72,6 +72,7 @@ Route::middleware([
             return Inertia::render('Users/FolhaPagamento/Index');
         })->name('franqueado.folhaPagamento')->middleware('check.permission:gestao_equipe');
     
+        // Caixa
         Route::get('/franqueado/abir-caixa', function () {
             return Inertia::render('Users/FluxoCaixa/Index');
         })->name('franqueado.abrirCaixa')->middleware('check.permission:fluxo_caixa');
@@ -79,19 +80,27 @@ Route::middleware([
         Route::get('/franqueado/fluxo-caixa', function () {
             return Inertia::render('Users/FluxoCaixa/Fluxo');
         })->name('franqueado.fluxoCaixa')->middleware('check.permission:fluxo_caixa');
+
+        Route::get('/franqueado/caixa-retroativo', function () {
+            return Inertia::render('Users/FluxoCaixa/CaixaRetroativo');
+        })->name('franqueado.caixaRetroativo')->middleware('check.permission:fluxo_caixa');
     
+        // Metodos de pagamento
         Route::get('/franqueado/metodos-pagamentos', function () {
             return Inertia::render('Users/MetodosPagamentos/Index');
         })->name('franqueado.metodosPagamentos')->middleware('check.permission:fluxo_caixa');
     
+        // metodos de pagamentos
         Route::get('/franqueado/canais-vendas', function () {
             return Inertia::render('Users/CanaisVendas/Index');
         })->name('franqueado.canaisVendas')->middleware('check.permission:fluxo_caixa');
     
+        // Histórico
         Route::get('/franqueado/historico-caixa', function () {
             return Inertia::render('Users/HistoricoCaixa/Index');
         })->name('franqueado.historicoCaixa')->middleware('check.permission:fluxo_caixa');
     
+        // DRE
         Route::get('/franqueado/dre-gerencial', function () {
             return Inertia::render('Users/Dre/Index');
         })->name('franqueado.dreGerencial')->middleware('check.permission:dre');

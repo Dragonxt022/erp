@@ -220,6 +220,12 @@ const menuCategories = [
             link: 'franqueado.historicoCaixa',
             requiredPermission: 'fluxo_caixa',
           },
+
+          {
+            label: 'Caixa Retroativo',
+            link: 'franqueado.caixaRetroativo',
+            requiredPermission: 'fluxo_caixa',
+          },
         ],
         isActive: false,
       },
