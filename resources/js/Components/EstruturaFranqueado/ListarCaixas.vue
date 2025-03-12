@@ -67,7 +67,7 @@ import { Inertia } from '@inertiajs/inertia'; // Importa o Inertia
 const emit = defineEmits(['caixa-selecionado', 'abrir-cadastro']);
 const caixas = ref([]);
 
-// Buscar os caixas da API
+// Buscar os caixas da API infromações sobre os caixas
 const fetchCaixas = async () => {
   try {
     const response = await axios.get('/api/caixas/lista'); // Ajuste o endpoint conforme sua rota
