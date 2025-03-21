@@ -46,7 +46,9 @@
 
             <LabelModel text="Fornecedor" class="mb-2" />
             <select v-model="form.fornecedor_id" class="input-select" required>
-              <option value="" disabled selected>Selecione um fornecedor</option>
+              <option value="" disabled selected>
+                Selecione um fornecedor
+              </option>
               <option
                 v-for="fornecedor in fornecedores"
                 :key="fornecedor.id"
@@ -65,7 +67,7 @@
               :class="{
                 'font-bold text-[120.01px] tracking-wider': true,
                 'text-[#1d5915]': aproveitamento >= 70,
-                'text-red-600': aproveitamento < 70, 
+                'text-red-600': aproveitamento < 70,
               }"
             >
               {{ aproveitamento }}%
@@ -104,7 +106,7 @@
 
             <!-- Peso Bruto -->
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
-              <LabelModel text="Peso Bruto" class="text-gray-800" />
+              <LabelModel text="Peso Líquido" class="text-gray-800" />
               <input
                 v-model="form.peso_bruto"
                 @input="formatarPeso('peso_bruto', $event.target.value)"
