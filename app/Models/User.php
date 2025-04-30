@@ -130,5 +130,13 @@ class User extends Authenticatable
         return UserPermission::getPermissions($this->id);
     }
 
-    
+    /**
+     * Notificações 
+     */
+
+    public function notificacoes()
+    {
+        return $this->hasMany(Notificacao::class);
+    }
+     
 }

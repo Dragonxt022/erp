@@ -16,6 +16,7 @@ use App\Http\Controllers\DefaultPaymentMethodController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
+use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\SalmaoCalibreController;
 use App\Http\Controllers\SalmaoHistoricoController;
@@ -38,6 +39,19 @@ Route::prefix('api')->middleware([
 
     // Principais
     Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
+
+    // Listar notificações do usuário
+    Route::get('/notificacoes', [NotificacaoController::class, 'minhasNotificacoes']);
+    
+    // Marcar uma notificação como lida
+    Route::post('/notificacoes/{id}/ler', [NotificacaoController::class, 'marcarComoLida']);
+    
+    // Marcar todas as notificações como lidas
+    Route::post('/notificacoes/ler-todas', [NotificacaoController::class, 'marcarTodasComoLidas']);
+    
+    // Obter o total de notificações não lidas
+    Route::get('/notificacoes/nao-lidas', [NotificacaoController::class, 'totalNaoLidas']);
+
 });
 
 // Rotas protegidas por autenticação Administrador

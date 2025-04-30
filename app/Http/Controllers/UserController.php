@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
 use App\Models\Cargo;
+use App\Models\Notificacao;
 use App\Models\UserPermission;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Auth;
@@ -137,6 +138,7 @@ class UserController extends Controller
 
             // Enviar o e-mail com o link para redefinir a senha
             Mail::to($user->email)->send(new ResetPasswordMail($user, $token));
+
 
             return response()->json(['message' => 'Usuário criado com sucesso. Um e-mail para redefinição de senha foi enviado.', 'user' => $user], 201);
         } catch (\Exception $e) {
@@ -271,6 +273,13 @@ class UserController extends Controller
             // Atualizar o PIN
             $user->update(['pin' => $novoPin]);
 
+            // Notificação de bem vindo
+            Notificacao::create([
+                'user_id' => $user->id,
+                'titulo' => 'PIN Atualizado!',
+                'mensagem' => 'O seu PIN de acesso foi atualizado.',
+            ]);            
+
             return response()->json([
                 'message' => 'PIN atualizado com sucesso',
                 'novo_pin' => $novoPin
@@ -292,7 +301,6 @@ class UserController extends Controller
      */
     public function novoColaborador(Request $request)
     {
-        // dd($request->all());
 
         // Validação dos dados
         $request->validate([
