@@ -6,48 +6,38 @@
         <div class="spinner"></div>
       </div>
       <div>
-        <div
-          class="w-full h-[300px] bg-white rounded-tl-[20px] rounded-tr-[20px] p-7 relative"
-        >
+        <div class="w-full h-[300px] bg-white rounded-tl-[20px] rounded-tr-[20px] p-7 relative">
           <div class="flex justify-between items-center">
             <div class="w-1/1 flex justify-center">
-              <img
-                :src="
-                  dados.profile_photo_url ||
-                  '/storage/images/default-profile.png'
-                "
-                alt="Foto do Usuário"
-                class="w-20 h-20 rounded-md shadow-sm"
-              />
+              <img :src="dados.profile_photo_url ||
+                '/storage/images/default-profile.png'
+                " alt="Foto do Usuário" class="w-20 h-20 rounded-md shadow-sm" />
             </div>
 
-            <!-- Coluna do Nome e CPF (Agora com Select) -->
-            <div class="w-2/3">
-              <div
-                class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
-              >
+            <div class=" w-2/3">
+              <div class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight">
                 {{ dados.name || 'N/A' }}
               </div>
+              <div class="flex">
+                <div
+                  class="w-full h-[44px] mr-2 bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500 mt-2 flex items-center">
+                  <span>
+                    {{ dados.cargo?.nome || 'Cargo não atribuído' }}
+                  </span>
+                </div>
 
-              <!-- Seletor desabilitado para exibição do nome do cargo -->
-              <!-- Div com o nome do cargo, sem a seta do seletor -->
-              <div
-                class="w-72 h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500 mt-2 flex items-center"
-              >
-                <span>
-                  {{ dados.cargo?.nome || 'Cargo não atribuído' }}
-                </span>
+                <div
+                  class="w-full h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500 mt-2 flex items-center">
+                  <span>
+                    {{ dados.setor?.name || 'Setor não atribuído' }}
+                  </span>
+                </div>
               </div>
+
             </div>
-            <button
-              class="text-gray-500 hover:text-red-600"
-              @click="isConfirmExluirDialogVisible('Excluir essa conta?')"
-            >
-              <img
-                src="/storage/images/delete.svg"
-                alt="Excluir"
-                class="w-6 h-6"
-              />
+            <button class="text-gray-500 hover:text-red-600 mt-8"
+              @click="isConfirmExluirDialogVisible('Excluir essa conta?')">
+              <img src="/storage/images/delete.svg" alt="Excluir" class="w-6 h-6" />
             </button>
           </div>
 
@@ -56,8 +46,7 @@
             <div>
               <LabelModel text="E-mail" />
               <p
-                class="w-full h-[44px] bg-white border-gray-300 rounded-lg border-2 border-[#d7d7db] p-2 text-base font-bold text-gray-800 focus:ring-2 focus:ring-green-500"
-              >
+                class="w-full h-[44px] bg-white border-gray-300 rounded-lg border-2 border-[#d7d7db] p-2 text-base font-bold text-gray-800 focus:ring-2 focus:ring-green-500">
                 {{ dados.email }}
               </p>
             </div>
@@ -66,8 +55,7 @@
             <div>
               <LabelModel text="Salário" />
               <p
-                class="w-full h-[44px] bg-white border-gray-300 rounded-lg border-2 border-[#d7d7db] p-2 text-base font-bold text-gray-800 focus:ring-2 focus:ring-green-500"
-              >
+                class="w-full h-[44px] bg-white border-gray-300 rounded-lg border-2 border-[#d7d7db] p-2 text-base font-bold text-gray-800 focus:ring-2 focus:ring-green-500">
                 {{ salarioFormatado }}
               </p>
             </div>
@@ -75,22 +63,12 @@
           <div class="flex justify-between items-center mt-5 w-full p-1">
             <!-- Coluna 1 -->
             <div class="flex items-center w-2/3">
-              <img
-                class="w-5 h-5 mr-2"
-                src="/storage/images/security_bleck.svg"
-                alt="icone svg"
-              />
-              <LabelModel
-                class="font-semibold text-gray-900"
-                text="Permissões"
-              />
+              <img class="w-5 h-5 mr-2" src="/storage/images/security_bleck.svg" alt="icone svg" />
+              <LabelModel class="font-semibold text-gray-900" text="Permissões" />
             </div>
             <!-- Coluna 2 -->
             <div class="w-1/2 flex justify-end">
-              <p
-                class="font-bold text-[#6DB631] cursor-pointer"
-                @click="alternarVisao"
-              >
+              <p class="font-bold text-[#6DB631] cursor-pointer" @click="alternarVisao">
                 <span class="underline">***</span>
                 PIN
               </p>
@@ -98,45 +76,28 @@
           </div>
         </div>
         <!-- Tela das permissões -->
-        <div
-          v-if="mostrarPermissoes"
-          class="bg-[#EFEFEF] p-3 px-8 w-full rounded-bl-[20px] rounded-br-[20px]"
-        >
-          <div
-            v-for="chave in Object.keys(dados.user_permission || {}).filter(
-              (k) => !ocultarCampos.includes(k)
-            )"
-            :key="chave"
-            class="flex justify-between items-center"
-          >
+        <div v-if="mostrarPermissoes" class="bg-[#EFEFEF] p-3 px-8 w-full rounded-bl-[20px] rounded-br-[20px]">
+          <div v-for="chave in Object.keys(dados.user_permission || {}).filter(
+            (k) => !ocultarCampos.includes(k)
+          )" :key="chave" class="flex justify-between items-center">
             <!-- Coluna 1 -->
             <div class="flex flex-col w-2/3">
-              <LabelModel
-                class="font-semibold text-gray-900"
-                :text="formatarPermissao(chave)"
-              />
+              <LabelModel class="font-semibold text-gray-900" :text="formatarPermissao(chave)" />
             </div>
             <!-- Coluna 2 -->
             <div class="w-1/2 flex justify-end">
-              <Deslizante
-                v-model:status="dados.user_permission[chave]"
-                @click="atualizarMetodo(chave, dados.user_permission[chave])"
-              />
+              <Deslizante v-model:status="dados.user_permission[chave]"
+                @click="atualizarMetodo(chave, dados.user_permission[chave])" />
             </div>
           </div>
         </div>
         <!-- Exibir PIN no centro -->
-        <div
-          v-else
-          class="flex flex-col h-[270px] items-center justify-center bg-[#EFEFEF] rounded-lg"
-        >
+        <div v-else class="flex flex-col h-[270px] items-center justify-center bg-[#EFEFEF] rounded-lg">
           <p class="text-[100px] font-bold text-[#6DB631]">
             {{ props.dados.pin }}
           </p>
-          <button
-            @click="isConfirmAtualizarPinDialogVisible('Redefinir PIN?')"
-            class="text-[#FF2D55] font-semibold rounded-lg underline"
-          >
+          <button @click="isConfirmAtualizarPinDialogVisible('Redefinir PIN?')"
+            class="text-[#FF2D55] font-semibold rounded-lg underline">
             Redefinir PIN
           </button>
         </div>
@@ -144,35 +105,18 @@
     </div>
   </div>
   <div v-if="dados.id && !isEditMode" class="mt-4">
-    <ButtonEditeMedio
-      text="Editar Colaborador"
-      icon-path="/storage/images/border_color.svg"
-      @click="toggleEditMode"
-      class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-    />
+    <ButtonEditeMedio text="Editar Colaborador" icon-path="/storage/images/border_color.svg" @click="toggleEditMode"
+      class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg" />
   </div>
   <!-- Componete de editar colaborador! -->
-  <EditarColaborador
-    v-if="isEditMode"
-    :user="dados"
-    :isVisible="isEditMode"
-    @voltar="cancelEdit"
-    @atualizado="handleAtualizacao"
-  />
+  <EditarColaborador v-if="isEditMode" :user="dados" :isVisible="isEditMode" @voltar="cancelEdit"
+    @atualizado="handleAtualizacao" />
 
-  <ConfirmDialog
-    :isVisible="isConfirmExlusaoDialogVisible"
-    :motivo="motivo"
-    @confirm="handleConfirmExlucao"
-    @cancel="handleCancelExlusao"
-  />
+  <ConfirmDialog :isVisible="isConfirmExlusaoDialogVisible" :motivo="motivo" @confirm="handleConfirmExlucao"
+    @cancel="handleCancelExlusao" />
 
-  <ConfirmDialog
-    :isVisible="isConfirmAtualizarPinDialogVisibl"
-    :motivo="motivo"
-    @confirm="atualizarPin"
-    @cancel="handleCancelar"
-  />
+  <ConfirmDialog :isVisible="isConfirmAtualizarPinDialogVisibl" :motivo="motivo" @confirm="atualizarPin"
+    @cancel="handleCancelar" />
 </template>
 
 <script setup>
@@ -380,8 +324,10 @@ const excluirConta = async () => {
 
 /* Estilos para o spinner */
 .spinner {
-  border: 4px solid #f3f3f3; /* Cor de fundo */
-  border-top: 4px solid #6db631; /* Cor do topo */
+  border: 4px solid #f3f3f3;
+  /* Cor de fundo */
+  border-top: 4px solid #6db631;
+  /* Cor do topo */
   border-radius: 50%;
   width: 50px;
   height: 50px;
@@ -393,26 +339,34 @@ const excluirConta = async () => {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
 }
 
 .elemento-fixo {
-  position: -webkit-sticky; /* Para navegadores que exigem o prefixo */
+  position: -webkit-sticky;
+  /* Para navegadores que exigem o prefixo */
   position: sticky;
-  top: 0; /* Defina o valor para o topo de onde o elemento ficará fixo */
-  z-index: 10; /* Para garantir que o elemento fique sobre outros */
+  top: 0;
+  /* Defina o valor para o topo de onde o elemento ficará fixo */
+  z-index: 10;
+  /* Para garantir que o elemento fique sobre outros */
 }
+
 /* Tornando a lista rolável com barra de rolagem invisível */
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
 
 .scrollbar-hidden {
-  -ms-overflow-style: none; /* Para o IE e Edge */
-  scrollbar-width: none; /* Para o Firefox */
+  -ms-overflow-style: none;
+  /* Para o IE e Edge */
+  scrollbar-width: none;
+  /* Para o Firefox */
 }
+
 .owner {
   font-size: 13px;
   font-family: Figtree;

@@ -40,6 +40,7 @@ class UserController extends Controller
                 'cpf' => $user->cpf,
                 'unidade_id' => $user->unidade_id,
                 'cargo_id' => $user->cargo_id,
+                'setor_id' => $user->setor_id,
                 'pin' => $user->pin,
                 'profile_photo_url' => $user->profile_photo_url,
                 'colaborador' => $user->colaborador,
@@ -101,7 +102,7 @@ class UserController extends Controller
             chmod($folderPath . '/' . $fileName, 0644);  // Permissões para leitura e escrita para o proprietário e leitura para outros
 
             // Caminho correto para salvar no banco de dados
-            $profilePhotoPath = 'images/' . $fileName;  // Corrigido para 'images/', sem duplicação de 'storage'
+            $profilePhotoPath = 'images/' . $fileName;  // Corrigido para 'images/', sem duplicação de 'storage' 
         }
 
 
@@ -197,7 +198,7 @@ class UserController extends Controller
 
         // Buscar todos os usuários da mesma unidade_id, excluir o próprio usuário e incluir o cargo e permissões
         $colaboradores = User::where('unidade_id', $user->unidade_id)
-            ->with(['userPermission', 'cargo']) // Carrega as permissões e cargos dos usuários
+            ->with(['userPermission', 'cargo', 'setor']) // Carrega as permissões e cargos dos usuários
             ->get();
 
         // Retornar a lista de colaboradores com cargos e permissões em formato JSON
@@ -273,11 +274,14 @@ class UserController extends Controller
             // Atualizar o PIN
             $user->update(['pin' => $novoPin]);
 
-            // Notificação de bem vindo
+            // Notificação de PIN atualizado (individual)
             Notificacao::create([
-                'user_id' => $user->id,
-                'titulo' => 'PIN Atualizado!',
-                'mensagem' => 'O seu PIN de acesso foi atualizado.',
+                'user_id'   => $user->id,
+                'titulo'    => 'PIN Atualizado!',
+                'mensagem'  => 'O seu PIN de acesso foi atualizado.',
+                'tipo'      => 'info',
+                'global'    => false,
+                'setor_id'  => null,
             ]);            
 
             return response()->json([
@@ -308,6 +312,7 @@ class UserController extends Controller
             'cpf' => 'required|string|unique:users,cpf',
             'salario' => 'required|numeric',
             'cargo_id' => 'required|exists:cargos,id',
+            'setor_id' => 'required|exists:operacionais,id',
             'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
@@ -349,6 +354,7 @@ class UserController extends Controller
                 'cpf' => $request->input('cpf'),
                 'salario' => $request->input('salario'), // Salvar o salário
                 'cargo_id' => $request->input('cargo_id'), // Associar o cargo
+                'setor_id' => $request->input('setor_id'), // Associar o setor
                 'unidade_id' => Auth::user()->unidade_id, // Unidade do usuário autenticado
                 'colaborador' => true,
                 'franqueado' => true,
@@ -402,6 +408,7 @@ class UserController extends Controller
                 'cpf' => 'required|string|unique:users,cpf,' . $userId,
                 'salario' => 'required|numeric',
                 'cargo_id' => 'required|exists:cargos,id',
+                'setor_id' => 'required|exists:operacionais,id',
                 'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             ]);
 
@@ -433,6 +440,7 @@ class UserController extends Controller
             $user->cpf = $request->input('cpf');
             $user->salario = $request->input('salario');
             $user->cargo_id = $request->input('cargo_id');
+            $user->setor_id = $request->input('setor_id');
             $user->profile_photo_path = $profilePhotoPath ?? $user->profile_photo_path; // Manter a foto antiga se não for fornecida
 
 

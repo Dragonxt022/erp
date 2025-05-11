@@ -51,7 +51,7 @@
             <!-- Usuários ou mensagem de unidade sem franqueado -->
             <div class="owner">
               <template v-if="item.usuarios.length > 0">
-                {{ item.usuarios.map((user) => user.name).join(', ') }}
+                Colaboradores: {{ item.quantidade_usuarios}}
               </template>
               <template v-else>Unidade sem Franqueado</template>
             </div>
@@ -95,6 +95,7 @@ export default {
         unidade: item.unidade,
         usuarios: item.usuarios,
         cidade: item.cidade,
+        quantidade_usuarios: item.quantidade_usuarios,
       });
     },
   },

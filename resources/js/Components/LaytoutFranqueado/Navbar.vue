@@ -24,7 +24,6 @@
         <!-- Ícone de Notificações -->
         <div class="notification-container">
           <div class="notification-icon" @click="toggleNotifications">
-
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <mask id="mask0_4631_13059" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24"
                 height="24">
@@ -57,6 +56,24 @@
               </div>
               <div v-else v-for="notification in notifications" :key="notification.id" class="notification-item"
                 :class="{ 'unread': notification.lida === 0 }" @click="markAsRead(notification.id)">
+                <div class="notification-icon-type">
+                  <svg v-if="notification.tipo === 'info'" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 100-16 8 8 0 000 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z"
+                      fill="#6DB631" />
+                  </svg>
+                  <svg v-else-if="notification.tipo === 'alerta'" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-7v2h2v-2h-2zm0-8v6h2V7h-2z"
+                      fill="#FF9800" />
+                  </svg>
+                  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 19h16v2H4v-2zm5-4h11v2H9v-2zm-5-4h16v2H4v-2zm5-4h11v2H9V7zM4 3h16v2H4V3z"
+                      fill="#6DB631" />
+                  </svg>
+                </div>
                 <div class="notification-content">
                   <div class="notification-title">{{ notification.titulo }}</div>
                   <div class="notification-message">{{ notification.mensagem }}</div>
@@ -320,65 +337,69 @@ a {
 }
 
 /* Notificações */
-.notification-container {
+notification-container {
   position: relative;
+  display: inline-block;
 }
 
 .notification-icon {
   cursor: pointer;
   position: relative;
-  padding: 5px;
-  color: #555;
+  width: 40px;
+  height: 40px;
+  background-color: #f0f0f0;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 0.2s ease;
 }
 
 .notification-icon:hover {
-  color: #333;
+  background-color: #e5e5e5;
 }
 
 .notification-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 10px;
-  height: 10px;
-  background-color: #e63946;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background-color: #ff4747;
   border-radius: 50%;
+  border: 2px solid white;
 }
 
 .notification-tray {
-  position: fixed;
+  position: absolute;
   top: 50px;
-  right: calc(15% - 350px + 175px);
-  width: 350px;
+  right: 0;
+  width: 320px;
   max-height: 400px;
-  background: white;
+  background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
+  z-index: 100;
   overflow: hidden;
-  border: 1px solid #eaeaea;
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 15px;
   border-bottom: 1px solid #eaeaea;
 }
 
 .notification-header h3 {
-  margin: 0;
   font-size: 16px;
   font-weight: 600;
+  color: #333;
 }
 
 .mark-all-read {
   font-size: 12px;
-  color: #528429;
+  color: #6DB631;
   cursor: pointer;
   font-weight: 500;
 }
@@ -392,18 +413,13 @@ a {
   overflow-y: auto;
 }
 
-.no-notifications {
-  padding: 20px 16px;
-  text-align: center;
-  color: #888;
-  font-size: 14px;
-}
-
 .notification-item {
-  padding: 12px 16px;
+  display: flex;
+  padding: 12px 15px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
+  align-items: center;
 }
 
 .notification-item:hover {
@@ -415,52 +431,74 @@ a {
 }
 
 .notification-item.unread:hover {
-  background-color: #e8f4e0;
+  background-color: #e7f2e0;
+}
+
+.notification-icon-type {
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #eaf2e3;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .notification-content {
-  display: flex;
-  flex-direction: column;
+  flex: 1;
 }
 
 .notification-title {
-  font-weight: 600;
   font-size: 14px;
-  margin-bottom: 4px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
 }
 
 .notification-message {
   font-size: 13px;
-  color: #555;
-  margin-bottom: 8px;
+  color: #666;
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 .notification-time {
-  font-size: 12px;
-  color: #888;
+  font-size: 11px;
+  color: #999;
 }
 
-/* Esquelestos de carregamento */
+.no-notifications {
+  padding: 40px 0;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
 .notification-loading {
-  padding: 12px 16px;
+  padding: 15px;
 }
 
 .notification-skeleton {
-  height: 80px;
-  margin-bottom: 12px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: 3px;
+  height: 60px;
+  background-color: #f0f0f0;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
 }
 
-@keyframes loading {
+@keyframes pulse {
   0% {
-    background-position: 200% 0;
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
   }
 
   100% {
-    background-position: -200% 0;
+    opacity: 0.6;
   }
 }
 

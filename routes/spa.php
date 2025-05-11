@@ -17,6 +17,7 @@ use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\NotificacaoController;
+use App\Http\Controllers\OperacionalController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\SalmaoCalibreController;
 use App\Http\Controllers\SalmaoHistoricoController;
@@ -40,17 +41,13 @@ Route::prefix('api')->middleware([
     // Principais
     Route::get('/navbar-profile', [AuthController::class, 'getProfile'])->name('profile.get');
 
-    // Listar notificações do usuário
+    // Notificações
     Route::get('/notificacoes', [NotificacaoController::class, 'minhasNotificacoes']);
-    
-    // Marcar uma notificação como lida
     Route::post('/notificacoes/{id}/ler', [NotificacaoController::class, 'marcarComoLida']);
-    
-    // Marcar todas as notificações como lidas
     Route::post('/notificacoes/ler-todas', [NotificacaoController::class, 'marcarTodasComoLidas']);
-    
-    // Obter o total de notificações não lidas
     Route::get('/notificacoes/nao-lidas', [NotificacaoController::class, 'totalNaoLidas']);
+
+    Route::post('/notificacoes/setor', [NotificacaoController::class, 'enviarParaSetor']);
 
 });
 
@@ -73,6 +70,8 @@ Route::prefix('api')->middleware([
         Route::get('/', [UserController::class, 'index'])->name('usuarios.index');
         Route::post('/', [UserController::class, 'store'])->name('usuarios.store');
         Route::delete('/{id}', [UserController::class, 'destroy']);
+        Route::post('/update', [UserController::class, 'updatePassword'])->name('admin.password.update');
+
     });
 
 
@@ -117,6 +116,15 @@ Route::prefix('api')->middleware([
         Route::post('/atualizar', [DefaultCanaisVendaController::class, 'update'])->name('canaisVendas.admin.update');
         Route::delete('/excluir/{id}', [DefaultCanaisVendaController::class, 'destroy'])->name('canaisVendas.admin.destroy');
     });
+
+    // Cadastrar Operacional
+    Route::prefix('admin-operacionais')->group(function () {
+        Route::get('/', [OperacionalController::class, 'index']);
+        Route::post('/', [OperacionalController::class, 'store']);
+        Route::get('/{id}', [OperacionalController::class, 'show']);
+        Route::put('/{id}', [OperacionalController::class, 'update'])->name('operacionais.update');
+        Route::delete('/{id}', [OperacionalController::class, 'destroy']);
+    });
 });
 
 // Rotas protegidas por autenticação Usuarios
@@ -139,9 +147,12 @@ Route::prefix('api')->middleware([
 
         Route::post('/password/update', [UserController::class, 'updatePassword'])->name('usuario.password.update');
         
+        // lista de setores operacionais
+        Route::get('/operacionais', [OperacionalController::class, 'index'])->name('operacionais.index');
 
         Route::delete('/delete/{id}', [UserController::class, 'destroy']);
     });
+
 
     // Lista de Produtos
     Route::prefix('estoque')->group(function () {
@@ -241,4 +252,6 @@ Route::prefix('api')->middleware([
         Route::post('/adicionar', [SalmaoHistoricoController::class, 'store'])->name('salmao.adicionar');
         Route::get('/listar', [SalmaoHistoricoController::class, 'getHistoricoSalmao'])->name('salmao.lista');
     });
+
+
 });

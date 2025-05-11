@@ -103,6 +103,30 @@ const menuCategories = [
         link: 'franqueadora.franqueados',
         isLogout: false,
       },
+      // Produtividade
+      {
+        label: 'Produtividade',
+        icon: '/storage/images/skillet.svg',
+        link: 'franqueadora.produtividade',
+        isLogout: false,
+        submenuItems: [
+          {
+            label: 'Gestão de atividades',
+            link: 'franqueadora.GestaoAtividades',
+          },
+          {
+            label: 'Setores operacionais',
+            link: 'franqueadora.SetorOperacionais',
+          },
+/*           {
+            label: 'Agenda da rede',
+            link: 'franqueadora.canaisVendas',
+          }, */
+        ],
+        isActive: false,
+      },
+
+      //  Unidades 
       {
         label: 'Unidades',
         icon: '/storage/images/storefront.svg',

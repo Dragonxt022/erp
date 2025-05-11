@@ -18,11 +18,14 @@ class Notificacao extends Model
         'mensagem',
         'lida',
         'lida_em',
+        'global',
+        'tipo',
+        'setor_id',
     ];
 
     protected $appends = ['tempo'];
 
-
+    // Acessor para o tempo formatado
     public function getTempoAttribute()
     {
         $createdAt = Carbon::parse($this->created_at);
@@ -47,10 +50,27 @@ class Notificacao extends Model
         return $createdAt->format('d/m/Y H:i');
     }
 
+    // Relacionamento com o usuário que recebe a notificação
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    // Relacionamento com o setor (opcional)
+    public function setor()
+    {
+        return $this->belongsTo(Operacional::class, 'setor_id');
+    }
 
+    // Método para verificar se a notificação é global
+    public function isGlobal()
+    {
+        return $this->global;
+    }
+
+    // Método para verificar se a notificação é específica de um setor
+    public function isSetor()
+    {
+        return $this->setor_id !== null;
+    }
 }

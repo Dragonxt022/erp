@@ -17,20 +17,25 @@ class UnitController extends Controller
      */
     public function getUnidades()
     {
-        // Recupera todas as unidades
         $unidades = InforUnidade::orderBy('id', 'desc')->get();
-
-        // Para cada unidade, recupera os usuários relacionados
+    
         $resultados = $unidades->map(function ($unidade) {
+            $usuarios = User::with('cargo') // eager load do cargo
+                ->where('unidade_id', $unidade->id)
+                ->get();
+    
             return [
                 'unidade' => $unidade,
-                'usuarios' => User::where('unidade_id', $unidade->id)->get(),
-                'cidade' => $unidade->cidade ?? 'Taiksu Franchising', // Verifica se cidade é null e substitui
+                'usuarios' => $usuarios,
+                'quantidade_usuarios' => $usuarios->count(),
+                'cidade' => $unidade->cidade ?? 'Taiksu Franchising',
             ];
         });
-
+    
         return response()->json($resultados);
     }
+    
+
 
     /**
      * Criar uma nova unidade.

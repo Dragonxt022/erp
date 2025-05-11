@@ -58,7 +58,7 @@
           <LabelModel text="Cargo" class="mb-2" />
           <select
             v-model="selectedCargo"
-            class="w-72 h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
+            class="w-full h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
           >
             <option value="" disabled selected>Selecione um cargo</option>
             <option
@@ -68,6 +68,24 @@
               class="text-base font-semibold"
             >
               {{ cargo.nome }}
+            </option>
+          </select>
+        </div>
+        <!-- Coluna 2: Seletor de Setor Operacional -->
+        <div class="flex flex-col flex-1">
+          <LabelModel text="Setor operacional" class="mb-2" />
+          <select
+            v-model="selectedSetor"
+            class="w-full h-[44px] bg-[#F3F8F3] border-gray-100 rounded-lg border-2 border-[#d7d7db] p-2 text-base text-[#6DB631] font-bold focus:ring-2 focus:ring-green-500"
+          >
+            <option value="" disabled selected>Selecione um setor</option>
+            <option
+              v-for="setor in setores"
+              :key="setor.id"
+              :value="setor.id"
+              class="text-base font-semibold"
+            >
+              {{ setor.name }}
             </option>
           </select>
         </div>
@@ -171,10 +189,12 @@ const email = ref('');
 const cpf = ref('');
 const salario = ref('');
 const selectedCargo = ref(null);
+const selectedSetor = ref(null);
 const profilePhotoUrl = ref('');
 const selectedFile = ref(null);
 const fileInput = ref(null);
 const cargos = ref([]);
+const setores = ref([]);
 const errors = ref({});
 
 // Diálogo de confirmação
@@ -197,12 +217,23 @@ onMounted(async () => {
       cpf.value = formatarCPF(props.user.cpf);
       salario.value = formatarValorBR(props.user.salario.toString());
       selectedCargo.value = props.user.cargo_id;
+      selectedSetor.value = props.user.setor_id;
       profilePhotoUrl.value = props.user.profile_photo_url || '';
     }
   } catch (error) {
     console.error('Erro ao carregar dados:', error);
   }
 });
+// Carregar setores
+const fetchSetores = async () => {
+  try {
+    const response = await axios.get('/api/usuarios/operacionais');
+    setores.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao carregar setores:', error);
+  }
+};
+fetchSetores();
 
 const formatarCPF = (valor) => {
   // Remove tudo que não for número
@@ -249,6 +280,7 @@ const submitForm = async () => {
   if (!cpf.value) errors.value.cpf = 'O CPF é obrigatório';
   if (!salario.value) errors.value.salario = 'O salário é obrigatório';
   if (!selectedCargo.value) errors.value.cargo = 'O cargo é obrigatório';
+  if (!selectedSetor.value) errors.value.setor = 'O setor é obrigatório';
 
   if (Object.keys(errors.value).length === 0) {
     try {
@@ -261,6 +293,7 @@ const submitForm = async () => {
       formData.append('cpf', cpf.value);
       formData.append('salario', converterParaDecimal(salario.value)); // Converte o salário
       formData.append('cargo_id', selectedCargo.value);
+      formData.append('setor_id', selectedSetor.value);
 
       // Adicionar a foto de perfil se estiver presente
       if (selectedFile.value) {
@@ -283,6 +316,7 @@ const submitForm = async () => {
       emit('voltar');
       // Limpar o formulário
       cancelForm();
+      window.location.reload();
     } catch (error) {
       toast.error('Erro ao atualizar colaborador');
       console.error('Erro ao atualizar colaborador:', error);

@@ -12,6 +12,10 @@ Route::middleware([
     CheckFranqueadora::class
 ])->group(function () {
 
+    Route::get('/franqueadora/perfil', function () {
+        return Inertia::render('Admin/Perfil/Index');
+    })->name('franqueadora.perfil');
+
     Route::get('/franqueadora/painel', function () {
         return Inertia::render('Admin/Painel/Index');
     })->name('franqueadora.painel');
@@ -61,6 +65,19 @@ Route::middleware([
         return Inertia::render('Admin/CanaisVendas/Index');
     })->name('franqueadora.canaisVendas');
 
+    // Produtividade
+    Route::get('/franqueadora/produtividade', function () {
+        return Inertia::render('Admin/Produtividade/index');
+    })->name('franqueadora.produtividade');
+
+    Route::get('/franqueadora/gestao-atividade', function () {
+        return Inertia::render('Admin/Produtividade/GestaoAtividades');
+    })->name('franqueadora.GestaoAtividades');
+
+    Route::get('/franqueadora/setor-operacionais', function () {
+        return Inertia::render('Admin/Produtividade/SetorOperacionais');
+    })->name('franqueadora.SetorOperacionais');
+    
     // 
 
     Route::get('/franqueadora/sair', function () {

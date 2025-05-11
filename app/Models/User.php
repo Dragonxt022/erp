@@ -28,12 +28,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'unidade_id',  // Novo campo de unidade
-        'pin',         // Novo campo para PIN
-        'cpf',         // Novo campo para CPF
+        'unidade_id', 
+        'pin', 
+        'cpf', 
         'profile_photo_path',
-        'cargo_id',    // Novo campo para cargo
-        'salario',     // Novo campo para salário
+        'cargo_id',    
+        'setor_id',
+        'salario',     
         'franqueado',
         'colaborador'
     ];
@@ -112,7 +113,12 @@ class User extends Authenticatable
 
     public function cargo()
     {
-        return $this->belongsTo(Cargo::class); // Assumindo que o usuário tem um cargo
+        return $this->belongsTo(Cargo::class);
+    }
+
+    public function setor()
+    {
+        return $this->belongsTo(Operacional::class, 'setor_id');
     }
 
     /**

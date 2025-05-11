@@ -8,7 +8,10 @@
 /.nova
 /.vscode
 /.zed
-/public/storage
+/public/storage/arquivos
+/public/storage/images
+/public/storage/pedidos
+/public/storage/public/pedidos
 
 .env
 .env.backup
@@ -21,3 +24,5 @@ Homestead.yaml
 auth.json
 npm-debug.log
 yarn-error.log
+.DS_Store
+Thumbs.db
