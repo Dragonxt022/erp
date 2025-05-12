@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class AtividadeEtapa extends Model
 {
-    protected $fillable = ['descricao', 'atividade_id'];
+    protected $table = 'atividades_etapas';
+
+    protected $fillable = [
+        'descricao', 
+        'atividade_id'
+    ];
 
     public function atividade()
     {

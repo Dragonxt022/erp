@@ -2,7 +2,7 @@
   <AppLayout>
     <!-- Cabeçalho da página -->
 
-    <Head title="Setores Operacionais" />
+    <Head title="Gestão de Atividades" />
 
     <!-- Container principal da grade com 2 colunas -->
     <div class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2">
@@ -19,11 +19,11 @@
         <template v-if="!showView">
           <template v-if="DadosSelecionados">
             <!-- Mostrar Detalhes da informacoes Selecionada -->
-            <DetalhesSetorOperacao :informacoes="DadosSelecionados" />
+            <DetalhesGestaoOperacional :informacoes="DadosSelecionados" />
           </template>
-          <div class="absolute bottom-4 right-4">7
+          <div class="absolute bottom-4 right-4">
 
-            
+
             <ButtonPrimaryMedio text="Cadastrar novo setor" iconPath="/storage/images/arrow_left_alt.svg"
               @click="toggleCadastro" :class="{ hidden: isEditMode }" />
           </div>
@@ -45,7 +45,7 @@ import { ref } from 'vue';
 import AppLayout from '@/Layouts/LayoutFranqueadora.vue';
 import { Head } from '@inertiajs/vue3';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
-import DetalhesSetorOperacao from '@/Components/EstruturaFranqueadora/DetalhesSetorOperacao.vue';
+import DetalhesGestaoOperacional from '@/Components/EstruturaFranqueadora/DetalhesGestaoOperacional.vue';
 import ListarGestaoAtividade from '@/Components/EstruturaFranqueadora/ListarGestaoAtividade.vue';
 import CadastroSetorOpeperacional from '@/Components/EstruturaFranqueadora/CadastroSetorOpeperacional.vue';
 

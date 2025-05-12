@@ -24,7 +24,7 @@ class Operacional extends Model
         }
 
         // Caminho da imagem padrão
-        return asset('storage/images/no-imagem.webp');
+        return asset('storage/images/no-imagem.jpg');
     }
 
     public function notificacoes(): HasMany
@@ -32,5 +32,5 @@ class Operacional extends Model
         return $this->hasMany(Notificacao::class, 'setor_id');
     }
 
-    
+
 }

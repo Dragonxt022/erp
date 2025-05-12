@@ -28,13 +28,15 @@
           </div>
           <div class="text-container">
             <div class="city">{{ item.name }}</div>
-            <div class="owner text-gray-500 text-sm">Nenhum colaborador</div>
+            <!-- Exibe a quantidade de etapas -->
+            <div class="owner text-gray-500 text-sm">{{ item.etapas.length }} Etapas</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted, defineEmits } from 'vue'
@@ -47,7 +49,7 @@ const emit = defineEmits(['selecionado']);
 
 const fetchOperacionais = async () => {
   try {
-    const response = await axios.get('/api/admin-operacionais')
+    const response = await axios.get('/api/atividades')
     operacionais.value = response.data.data
   } catch (error) {
     console.error('Erro ao carregar operacionais:', error)

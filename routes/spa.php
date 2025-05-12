@@ -18,6 +18,7 @@ use App\Http\Controllers\HistoricoPedidoController;
 use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\OperacionalController;
+use App\Http\Controllers\AtividadeController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\SalmaoCalibreController;
 use App\Http\Controllers\SalmaoHistoricoController;
@@ -125,6 +126,10 @@ Route::prefix('api')->middleware([
         Route::put('/{id}', [OperacionalController::class, 'update'])->name('operacionais.update');
         Route::delete('/{id}', [OperacionalController::class, 'destroy']);
     });
+
+    // Controle de atividade operacionais
+    Route::apiResource('atividades', AtividadeController::class);
+
 });
 
 // Rotas protegidas por autenticação Usuarios
@@ -146,7 +151,7 @@ Route::prefix('api')->middleware([
         Route::post('/regenera-pin', [UserController::class, 'atualizarPin'])->name('atualizarPin.regenera');
 
         Route::post('/password/update', [UserController::class, 'updatePassword'])->name('usuario.password.update');
-        
+
         // lista de setores operacionais
         Route::get('/operacionais', [OperacionalController::class, 'index'])->name('operacionais.index');
 
