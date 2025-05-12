@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('atividades', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('setor_id')->constrained()->onDelete('cascade');
+            $table->foreignId('setor_id')->constrained('operacionais')->onDelete('cascade');
             $table->integer('tempo_estimated'); 
             $table->string('profile_photo')->nullable();
             $table->timestamps();
