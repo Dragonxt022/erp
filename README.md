@@ -80,6 +80,15 @@ cp .env.example .env
 
 ---
 
+### Precisa instalar os pacotes da pasta vendor
+Estará criando à pasta vendor/ e os arquivos do Composer.
+
+```bash
+composer install
+```
+
+---
+
 ### 7️⃣ Gere a chave da aplicação
 
 ```bash
