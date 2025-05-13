@@ -24,7 +24,7 @@
           <div class="absolute bottom-4 right-4">
 
 
-            <ButtonPrimaryMedio text="Cadastrar novo setor" iconPath="/storage/images/arrow_left_alt.svg"
+            <ButtonPrimaryMedio text="Cadastrar nova atividade" iconPath="/storage/images/arrow_left_alt.svg"
               @click="toggleCadastro" :class="{ hidden: isEditMode }" />
           </div>
         </template>
