@@ -18,7 +18,7 @@
                     <template v-if="!showView">
                         <template v-if="DadosSelecionados">
                             <!-- Mostrar Detalhes da informacoes Selecionada -->
-                            <DetalhesSetorOperacao :informacoes="DadosSelecionados" />
+                            <DetalhesSetorOperacao @cancelar="toggleCadastro" :informacoes="DadosSelecionados" />
                         </template>
                         <div class="absolute bottom-4 right-4">
                             <ButtonPrimaryMedio text="Cadastrar novo setor"
@@ -52,23 +52,31 @@ import CadastroSetorOpeperacional from '@/Components/EstruturaFranqueadora/Cadas
 
 const DadosSelecionados = ref(null);
 const showView = ref(false);
+const isEditMode = ref(false); // Para controle de edição, se necessário
+const listar = ref();
+
+
+const fetch = () => {
+    listar.value?.fetch(); // Chama o método exposto do componente filho
+};
 
 // Alterna a visibilidade entre Cadastro e Detalhes
 const toggleCadastro = () => {
     showView.value = !showView.value;
+
 };
 
-// Função para atualizar informacoess após o cadastro
+// Define a funcao para atualizar a lista de informacoess
 const handleCadastro = () => {
-    fetch();
-    showView.value = false;
+    DadosSelecionados.value = null;
+    showView.value = false; // Retorna para a tela de listagem
+
+    fetch(); // Atualiza a lista de informacoess
+
+
 };
 
-// Atualiza a lista de informacoess
-const fetch = () => {
-    const listar = ref.listar;
-    listar.fetch();
-};
+
 
 // Define a informacoes selecionada
 const dadoSelecionado = (dados) => {

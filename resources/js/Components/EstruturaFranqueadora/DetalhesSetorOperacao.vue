@@ -67,12 +67,16 @@
 </template>
 
 <script setup>
-import { defineProps, ref } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
 import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
 import EditarSetorOperacional from './EditarSetorOperacional.vue';
 import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
-import { useToast } from 'vue-toastification'; // Importa o hook useToast
+import { useToast } from 'vue-toastification';
+import axios from 'axios';
+
+const emit = defineEmits(['cancelar']);
+
 const toast = useToast();
 
 const props = defineProps({
@@ -93,20 +97,23 @@ const showConfirmDialog = (action) => {
 };
 const isLoading = ref(false);
 const handleConfirm = () => {
-  deleteUsuario();
+  deleteSelecionado();
   isConfirmDialogVisible.value = false;
+  emit('cancelar');
 };
 const handleCancel = () => {
   // Lógica para cancelar a ação
   isConfirmDialogVisible.value = false;
 };
 
-const deleteUsuario = async () => {
+const deleteSelecionado = async () => {
   try {
     isLoading.value = true;
     const response = await axios.delete(`/api/admin-operacionais/${props.informacoes.id}`);
     toast.success('setor excluído com sucesso!');
     isLoading.value = false;
+    window.location.reload();
+
   } catch (error) {
     console.error('Erro ao excluir setor:', error);
     toast.error('Erro ao excluir setor.');

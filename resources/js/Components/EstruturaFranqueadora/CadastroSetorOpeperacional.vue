@@ -89,6 +89,7 @@ const cancelForm = () => {
 const resetForm = () => {
   name.value = '';
   errorMessage.value = '';
+  emit('cancelar');
 };
 
 // Valida os campos do formulário
@@ -110,7 +111,7 @@ const submitForm = async () => {
 
     const formData = new FormData();
     formData.append('name', name.value);
-      
+
     // Inclua o arquivo de imagem apenas se ele for selecionado
     if (selectedFile.value) {
       formData.append('profile_photo', selectedFile.value); // Envia o arquivo real

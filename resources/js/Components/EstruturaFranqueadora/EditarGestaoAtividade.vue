@@ -5,25 +5,25 @@
         </div>
 
         <!-- Título principal -->
-        <div class="painel-title">Cadastrar nova atividade</div>
+        <div class="painel-title">Editar atividade</div>
 
         <!-- Subtítulo da página -->
         <div class="painel-subtitle">
-            <p>Cadastre atividades para os processos da franquia</p>
+            <p>Edite atividade para os processos da franquia</p>
         </div>
 
         <div v-if="!showView" key="listagem" class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2">
 
-            <!--Bloco -->
+            <!-- Bloco de informações -->
             <div class="w-full h-full bg-white rounded-[20px] p-12">
-
                 <div class="flex justify-center mb-6 relative group">
                     <!-- Quadrado com a imagem ou ícone -->
                     <div class="w-[110px] h-[110px] bg-[#f3f8f3] rounded-xl flex items-center justify-center cursor-pointer overflow-hidden relative"
                         @click="openFileSelector">
                         <template v-if="profilePhotoUrl">
                             <!-- Exibe a imagem selecionada -->
-                            <img :src="profilePhotoUrl" alt="Imagem selecionada" class="w-full h-full object-cover" />
+                            <img :src="profilePhotoUrl" alt="Imagem selecionada"
+                                class="w-full h-full p-2 object-cover" />
                             <!-- Fundo escuro e botão de remoção ao passar o mouse -->
                             <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                 @click.stop>
@@ -42,10 +42,9 @@
                 </div>
                 <LabelModel text="Nome da atividade" />
                 <InputModel v-model="name" placeholder="Limpar camarão" />
-
             </div>
 
-            <!-- Bloco -->
+            <!-- Bloco de Etapas -->
             <div class="w-full h-full bg-white rounded-[20px] p-12">
                 <LabelModel text="Etapas da atividade" />
                 <InputModel v-model="novaEtapa" placeholder="Descreva a etapa aqui..." />
@@ -72,10 +71,8 @@
                 <ButtonPrimaryMedio @click="adicionarEtapa" text="Adicionar nova etapa" class="w-full mt-3" />
             </div>
 
-
-            <!--Bloco -->
+            <!-- Bloco de Setor e Tempo Estimado -->
             <div class="w-full h-full bg-white rounded-[20px] p-12">
-
                 <div class="flex-1">
                     <LabelModel text="Setor" />
                     <select v-model="setorSelecionado"
@@ -85,7 +82,6 @@
                             {{ setor.name }}
                         </option>
                     </select>
-
                 </div>
 
                 <LabelModel text="Tempo estimado em minutos" />
@@ -93,36 +89,32 @@
                     <InputModel v-model="tempoEstimado" placeholder="0" />
                     <span class="absolute right-[130px] top-1/2 transform -translate-y-1/2 text-gray-500">minutos</span>
                 </div>
-
-
             </div>
         </div>
     </div>
+
     <div class="absolute bottom-6 right-6 flex space-x-4 z-10">
         <ButtonCancelar text="Cancelar" @click="cancelForm" />
-        <ButtonPrimaryMedio @click="submitForm" text="Cadastrar atividade" />
+        <ButtonPrimaryMedio @click="submitForm" text="Atualizar atividade" />
     </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import axios from 'axios';
 import { defineProps, defineEmits } from 'vue';
 import InputModel from '../Inputs/InputModel.vue';
 import LabelModel from '../Label/LabelModel.vue';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
-
 import { useToast } from 'vue-toastification'; // Importa o hook useToast
 import ButtonCancelar from '../Button/ButtonCancelar.vue';
 
 const toast = useToast(); // Cria a instância do toast
 
 const props = defineProps({
-    isVisible: {
-        type: Boolean,
-        required: true,
-    },
-});
+    informacoes: Object,
+    isVisible: Boolean
+})
 
 const emit = defineEmits(['cancelar']);
 const showView = ref(false);
@@ -130,7 +122,6 @@ const name = ref('');
 const profilePhotoUrl = ref('');
 const selectedFile = ref(null);
 const fileInput = ref(null);
-
 
 const setores = ref([]);
 const setorSelecionado = ref(null);
@@ -141,6 +132,16 @@ const tempoEstimado = ref('');
 const errorMessage = ref('');
 
 const isLoading = ref(false);
+
+watch(() => props.informacoes, (novoValor) => {
+    if (novoValor) {
+        name.value = novoValor.name || '';
+        setorSelecionado.value = novoValor.setor_id || null;
+        tempoEstimado.value = novoValor.tempo_estimated || '';
+        etapas.value = novoValor.etapas || [];
+        profilePhotoUrl.value = novoValor.profile_photo_url || '';
+    }
+}, { immediate: true }); // A opção 'immediate: true' garante que a função será chamada imediatamente quando o componente for montado
 
 
 // Buscar setores operacionais ao montar
@@ -199,37 +200,35 @@ const submitForm = async () => {
 
     try {
         isLoading.value = true;
-
         const formData = new FormData();
         formData.append('name', name.value);
-        formData.append('setor_id', setorSelecionado.value);
-        formData.append('tempo_estimated', parseInt(tempoEstimado.value));
-        etapas.value.forEach((etapa, index) => {
-            formData.append(`etapas[${index}][descricao]`, etapa.descricao);
+        formData.append('setor_id', setorSelecionado.value || '');
+        formData.append('tempo_estimated', parseInt(tempoEstimado.value) || 0);
+
+        etapas.value.forEach((etapa) => {
+            formData.append('etapas[][descricao]', etapa.descricao);
         });
 
-
-
-        // Inclua o arquivo de imagem apenas se ele for selecionado
         if (selectedFile.value) {
-            formData.append('profile_photo', selectedFile.value); // Envia o arquivo real
+            formData.append('profile_photo', selectedFile.value);
         }
 
+        // Log do FormData
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
 
-        const response = await axios.post('/api/atividades', formData, {
+        const response = await axios.put(`/api/atividades/${props.informacoes.id}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
 
-        toast.success('setor cadastrada com sucesso!');
-
+        toast.success('Atividade atualizada com sucesso!');
         cancelForm();
-
     } catch (error) {
-        toast.error('Erro ao cadastrar setor.');
-        errorMessage.value =
-            error.response?.data?.message || 'Erro ao cadastrar setor.';
+        console.error('Erro ao atualizar atividade:', error.response?.data || error.message);
+        toast.error('Erro ao atualizar atividade: ' + (error.response?.data?.message || error.message));
     } finally {
         isLoading.value = false;
     }

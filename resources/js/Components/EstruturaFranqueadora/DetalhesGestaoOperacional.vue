@@ -50,8 +50,6 @@
         <ButtonEditeMedio text="Editar informacoes" icon-path="/storage/images/border_color.svg" @click="toggleEditMode"
             class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg" />
     </div>
-    <EditarSetorOperacional v-if="isEditMode" ref="dadosinformacoes" :isVisible="isEditMode" :informacoes="informacoes"
-        @dadosinformacoes="fetchinformacoes" @cancelar="cancelEdit" />
 
 
 </template>
@@ -59,7 +57,6 @@
 <script setup>
 import { defineProps, ref } from 'vue';
 import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
-import EditarSetorOperacional from './EditarSetorOperacional.vue';
 import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 import { useToast } from 'vue-toastification'; // Importa o hook useToast
 const toast = useToast();
@@ -70,6 +67,8 @@ const props = defineProps({
         required: true,
     },
 });
+
+const emit = defineEmits(['editar']);
 
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
@@ -116,34 +115,16 @@ const fetchinformacoes = () => {
 };
 
 const toggleEditMode = () => {
+    emit('editar', props.informacoes);
     isEditMode.value = !isEditMode.value;
     showCadastroinformacoes.value = false;
+
 };
 
 // Função de cancelamento que será emitida pelo componente de edição
 const cancelEdit = () => {
     isEditMode.value = false;
     showCadastroinformacoes.value = true;
-};
-
-// Função para enviar o comunicado
-const enviarComunicado = async () => {
-    if (comunicado.value.length === 0 || comunicado.value.length > 255) {
-        toast.error('A mensagem deve ter entre 1 e 255 caracteres.');
-        return;
-    }
-
-    try {
-        await axios.post('/api/notificacoes/setor', {
-            mensagem: comunicado.value,
-            setor_id: props.informacoes.id,
-        });
-        toast.success('Comunicado enviado com sucesso!');
-        comunicado.value = '';
-    } catch (error) {
-        console.error('Erro ao enviar comunicado:', error);
-        toast.error('Erro ao enviar comunicado.');
-    }
 };
 
 </script>
