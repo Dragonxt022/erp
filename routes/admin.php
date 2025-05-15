@@ -56,7 +56,7 @@ Route::middleware([
         return Inertia::render('Admin/Inspetor/Index');
     })->name('franqueadora.inspetor');
 
-    // 
+    //
     Route::get('/franqueadora/metodos-pagamentos', function () {
         return Inertia::render('Admin/MetodosPagamentos/Index');
     })->name('franqueadora.metodosPagamentos');
@@ -66,9 +66,9 @@ Route::middleware([
     })->name('franqueadora.canaisVendas');
 
     // Produtividade
-    Route::get('/franqueadora/produtividade', function () {
-        return Inertia::render('Admin/Produtividade/index');
-    })->name('franqueadora.produtividade');
+    Route::get('/franqueadora/produtividade/visao-geral', function () {
+        return Inertia::render('Admin/Produtividade/Index');
+    })->name('franqueadora.produtividade.geral');
 
     Route::get('/franqueadora/gestao-atividade', function () {
         return Inertia::render('Admin/Produtividade/GestaoAtividades');
@@ -77,8 +77,8 @@ Route::middleware([
     Route::get('/franqueadora/setor-operacionais', function () {
         return Inertia::render('Admin/Produtividade/SetorOperacionais');
     })->name('franqueadora.SetorOperacionais');
-    
-    // 
+
+    //
 
     Route::get('/franqueadora/sair', function () {
         return Inertia::render('Admin/sair/Index');

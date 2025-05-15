@@ -17,7 +17,7 @@
                     <ConfirmDialog :isVisible="isConfirmDialogVisible" :motivo="motivo" @confirm="handleConfirm"
                         @cancel="handleCancel" />
                     <div class="absolute top-[110px] right-[70px] cursor-pointer"
-                        @click="showConfirmDialog('excluir setor operacional')">
+                        @click="showConfirmDialog('Excluir Atividade')">
                         <img src="/storage/images/delete.svg" alt="excluir" class="w-6 h-6" />
                     </div>
                 </div>
@@ -55,7 +55,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref } from 'vue';
+import { defineProps, defineEmits, ref } from 'vue';
 import ButtonEditeMedio from '../Button/ButtonEditeMedio.vue';
 import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
 import { useToast } from 'vue-toastification'; // Importa o hook useToast
@@ -68,7 +68,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['editar']);
+const emit = defineEmits(['editar', 'cancelar']);
 
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
@@ -81,7 +81,7 @@ const showConfirmDialog = (action) => {
 };
 const isLoading = ref(false);
 const handleConfirm = () => {
-    deleteUsuario();
+    deleteAtividade();
     isConfirmDialogVisible.value = false;
 };
 const handleCancel = () => {
@@ -89,12 +89,13 @@ const handleCancel = () => {
     isConfirmDialogVisible.value = false;
 };
 
-const deleteUsuario = async () => {
+const deleteAtividade = async () => {
     try {
         isLoading.value = true;
-        const response = await axios.delete(`/api/admin-operacionais/${props.informacoes.id}`);
+        const response = await axios.delete(`/api/atividades/${props.informacoes.id}`);
         toast.success('setor excluído com sucesso!');
         isLoading.value = false;
+        emit('cancelar');
     } catch (error) {
         console.error('Erro ao excluir setor:', error);
         toast.error('Erro ao excluir setor.');

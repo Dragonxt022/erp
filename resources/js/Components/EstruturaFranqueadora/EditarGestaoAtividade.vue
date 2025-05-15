@@ -201,24 +201,32 @@ const submitForm = async () => {
     try {
         isLoading.value = true;
         const formData = new FormData();
+
+        // Adiciona o campo _method para simular PUT
+        formData.append('_method', 'PUT');
+
+        // Campos normais
         formData.append('name', name.value);
         formData.append('setor_id', setorSelecionado.value || '');
         formData.append('tempo_estimated', parseInt(tempoEstimado.value) || 0);
 
+        // Etapas
         etapas.value.forEach((etapa) => {
             formData.append('etapas[][descricao]', etapa.descricao);
         });
 
+        // Imagem
         if (selectedFile.value) {
             formData.append('profile_photo', selectedFile.value);
         }
 
-        // Log do FormData
+        // Log para depuração
         for (let pair of formData.entries()) {
             console.log(pair[0] + ': ' + pair[1]);
         }
 
-        const response = await axios.put(`/api/atividades/${props.informacoes.id}`, formData, {
+        // Use POST (não PUT!) para multipart com _method
+        const response = await axios.post(`/api/atividades/${props.informacoes.id}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
@@ -233,6 +241,7 @@ const submitForm = async () => {
         isLoading.value = false;
     }
 };
+
 
 
 // Funções para upload de imagem

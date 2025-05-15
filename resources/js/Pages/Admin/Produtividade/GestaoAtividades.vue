@@ -16,7 +16,7 @@
                 </div>
                 <div class="flex flex-col gap-4">
                     <template v-if="DadosSelecionados">
-                        <DetalhesGestaoOperacional @editar="editarInformacoes" :informacoes="DadosSelecionados" />
+                        <DetalhesGestaoOperacional @editar="editarInformacoes" @cancelar="cancelEdit" :informacoes="DadosSelecionados" />
                     </template>
                     <template v-else>
                         <div class="text-gray-500 text-center mt-12">

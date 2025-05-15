@@ -101,10 +101,17 @@ class AtividadeController extends Controller
         return response()->json($atividade->load('etapas'), 200);
     }
 
-    // Remover atividade e suas etapas
+    // Remover atividade e sua imagem
     public function destroy($id)
     {
         $atividade = Atividade::findOrFail($id);
+
+        // Excluir imagem do disco, se existir
+        if ($atividade->profile_photo) {
+            Storage::disk('public')->delete($atividade->profile_photo);
+        }
+
+        // Excluir a atividade (e por cascade, as etapas, se configurado)
         $atividade->delete();
 
         return response()->json(['message' => 'Atividade removida com sucesso.']);

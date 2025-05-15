@@ -1,23 +1,12 @@
 <template>
-  <div class="sidebar" ref="sidebar" @scroll="saveScrollPosition">
-    <div
-      v-for="category in menuCategories"
-      :key="category.name"
-      class="menu-category"
-    >
-      <div class="category-title">{{ category.name }}</div>
-      <MenuItem
-        v-for="item in category.items"
-        :key="item.link || 'no-link'"
-        :label="item.label"
-        :icon="item.icon"
-        :link="item.link ? route(item.link) : null"
-        :submenuItems="item.submenuItems"
-        :isActive="item.link ? isActive(route(item.link)) : false"
-        :isLogout="item.isLogout"
-      />
+    <div class="sidebar" ref="sidebar" @scroll="saveScrollPosition">
+        <div v-for="category in menuCategories" :key="category.name" class="menu-category">
+            <div class="category-title">{{ category.name }}</div>
+            <MenuItem v-for="item in category.items" :key="item.link || 'no-link'" :label="item.label" :icon="item.icon"
+                :link="item.link ? route(item.link) : null" :submenuItems="item.submenuItems"
+                :isActive="item.link ? isActive(route(item.link)) : false" :isLogout="item.isLogout" />
+        </div>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -30,211 +19,215 @@ const sidebar = ref(null);
 
 // Recuperar a posição da rolagem do localStorage
 onMounted(() => {
-  const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
-  if (savedScrollPosition && sidebar.value) {
-    sidebar.value.scrollTop = savedScrollPosition;
-  }
+    const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+    if (savedScrollPosition && sidebar.value) {
+        sidebar.value.scrollTop = savedScrollPosition;
+    }
 });
 
 // Salvar a posição da rolagem no localStorage sempre que a sidebar for rolada
 const saveScrollPosition = () => {
-  if (sidebar.value) {
-    localStorage.setItem('sidebarScrollPosition', sidebar.value.scrollTop);
-  }
+    if (sidebar.value) {
+        localStorage.setItem('sidebarScrollPosition', sidebar.value.scrollTop);
+    }
 };
 
 // Função para verificar se o link está ativo
 const isActive = (link) => {
-  const currentPath = window.location.pathname;
-  const resolvedPath = new URL(link, window.location.origin).pathname;
-  return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
+    const currentPath = window.location.pathname;
+    const resolvedPath = new URL(link, window.location.origin).pathname;
+    return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
 };
 
 // Definindo as categorias de menu
 const menuCategories = [
-  {
-    name: '',
-    items: [
-      {
-        label: 'Visão Geral',
-        icon: '/storage/images/insert_chart.svg',
-        link: 'franqueadora.painel',
-        isLogout: false,
-      },
-    ],
-  },
-
-  // Painel
-  //   {
-  //     name: 'Painel',
-  //     items: [
-  //       {
-  //         label: 'E-mail',
-  //         icon: '/storage/images/email.svg',
-  //         link: 'franqueadora.email',
-  //         isLogout: false,
-  //       },
-  //       {
-  //         label: 'Comunidade',
-  //         icon: '/storage/images/diversity_4.svg',
-  //         link: 'franqueadora.comunidade',
-  //         isLogout: false,
-  //       },
-  //       {
-  //         label: 'Mídias',
-  //         icon: '/storage/images/perm_media.svg',
-  //         link: 'franqueadora.midias',
-  //         isLogout: false,
-  //       },
-  //     ],
-  //   },
-  {
-    name: 'Gestão da rede',
-    items: [
-      //   {
-      //     label: 'Megafone',
-      //     icon: '/storage/images/campaign.svg',
-      //     link: 'franqueadora.megafone',
-      //     isLogout: false,
-      //   },
-      {
-        label: 'Franqueados',
-        icon: '/storage/images/person.svg',
-        link: 'franqueadora.franqueados',
-        isLogout: false,
-      },
-      // Produtividade
-      {
-        label: 'Produtividade',
-        icon: '/storage/images/skillet.svg',
-        link: 'franqueadora.produtividade',
-        isLogout: false,
-        submenuItems: [
-          {
-            label: 'Gestão de atividades',
-            link: 'franqueadora.GestaoAtividades',
-          },
-          {
-            label: 'Setores operacionais',
-            link: 'franqueadora.SetorOperacionais',
-          },
-/*           {
-            label: 'Agenda da rede',
-            link: 'franqueadora.canaisVendas',
-          }, */
+    {
+        name: '',
+        items: [
+            {
+                label: 'Visão Geral',
+                icon: '/storage/images/insert_chart.svg',
+                link: 'franqueadora.painel',
+                isLogout: false,
+            },
         ],
-        isActive: false,
-      },
+    },
 
-      //  Unidades 
-      {
-        label: 'Unidades',
-        icon: '/storage/images/storefront.svg',
-        link: 'franqueadora.unidades',
-        isLogout: false,
-      },
-    ],
-  },
-  {
-    name: 'Parâmetros da franquia',
-    items: [
-      {
-        label: 'Fornecedores',
-        icon: '/storage/images/handshake_branca.svg',
-        link: 'franqueadora.fornecedores',
-        isLogout: false,
-      },
-      {
-        label: 'Insumos',
-        icon: '/storage/images/insumos_nova.svg',
-        link: 'franqueadora.insumos',
-        isLogout: false,
-      },
-      {
-        label: 'Inspetor',
-        icon: '/storage/images/inspecionador.svg',
-        link: 'franqueadora.inspetor',
-        isLogout: false,
-      },
+    // Painel
+    //   {
+    //     name: 'Painel',
+    //     items: [
+    //       {
+    //         label: 'E-mail',
+    //         icon: '/storage/images/email.svg',
+    //         link: 'franqueadora.email',
+    //         isLogout: false,
+    //       },
+    //       {
+    //         label: 'Comunidade',
+    //         icon: '/storage/images/diversity_4.svg',
+    //         link: 'franqueadora.comunidade',
+    //         isLogout: false,
+    //       },
+    //       {
+    //         label: 'Mídias',
+    //         icon: '/storage/images/perm_media.svg',
+    //         link: 'franqueadora.midias',
+    //         isLogout: false,
+    //       },
+    //     ],
+    //   },
+    {
+        name: 'Gestão da rede',
+        items: [
+            //   {
+            //     label: 'Megafone',
+            //     icon: '/storage/images/campaign.svg',
+            //     link: 'franqueadora.megafone',
+            //     isLogout: false,
+            //   },
+            {
+                label: 'Franqueados',
+                icon: '/storage/images/person.svg',
+                link: 'franqueadora.franqueados',
+                isLogout: false,
+            },
+            // Produtividade
+            {
+                label: 'Produtividade',
+                icon: '/storage/images/skillet.svg',
+                link: 'franqueadora.produtividade.geral',
+                isLogout: false,
+                submenuItems: [
+                    {
+                        label: 'Visão Geral',
+                        link: 'franqueadora.produtividade.geral',
+                    },
+                    {
+                        label: 'Gestão de atividades',
+                        link: 'franqueadora.GestaoAtividades',
+                    },
+                    {
+                        label: 'Setores operacionais',
+                        link: 'franqueadora.SetorOperacionais',
+                    },
+                    /*           {
+                                label: 'Agenda da rede',
+                                link: 'franqueadora.canaisVendas',
+                              }, */
+                ],
+                isActive: false,
+            },
 
-      // Caixas
-      {
-        label: 'Caixa',
-        icon: '/storage/images/fluxo_caixa.svg',
-        link: 'franqueadora.metodosPagamentos',
-        isLogout: false,
-        submenuItems: [
-          {
-            label: 'Métodos de pagamento',
-            link: 'franqueadora.metodosPagamentos',
-          },
-          {
-            label: 'Canais de Vendas',
-            link: 'franqueadora.canaisVendas',
-          },
+            //  Unidades
+            {
+                label: 'Unidades',
+                icon: '/storage/images/storefront.svg',
+                link: 'franqueadora.unidades',
+                isLogout: false,
+            },
         ],
-        isActive: false,
-      },
-      //   {
-      //     label: 'Taiksu IA',
-      //     icon: '/storage/images/TAIKSU_IA_ICONE.svg',
-      //     link: 'franqueado.midias',
-      //     isLogout: false,
-      //     isActive: false,
-      //   },
-      {
-        label: 'Sair',
-        icon: '/storage/images/log-out.png',
-        link: 'logout',
-        isLogout: true,
-      },
-    ],
-  },
+    },
+    {
+        name: 'Parâmetros da franquia',
+        items: [
+            {
+                label: 'Fornecedores',
+                icon: '/storage/images/handshake_branca.svg',
+                link: 'franqueadora.fornecedores',
+                isLogout: false,
+            },
+            {
+                label: 'Insumos',
+                icon: '/storage/images/insumos_nova.svg',
+                link: 'franqueadora.insumos',
+                isLogout: false,
+            },
+            {
+                label: 'Inspetor',
+                icon: '/storage/images/inspecionador.svg',
+                link: 'franqueadora.inspetor',
+                isLogout: false,
+            },
+
+            // Caixas
+            {
+                label: 'Caixa',
+                icon: '/storage/images/fluxo_caixa.svg',
+                link: 'franqueadora.metodosPagamentos',
+                isLogout: false,
+                submenuItems: [
+                    {
+                        label: 'Métodos de pagamento',
+                        link: 'franqueadora.metodosPagamentos',
+                    },
+                    {
+                        label: 'Canais de Vendas',
+                        link: 'franqueadora.canaisVendas',
+                    },
+                ],
+                isActive: false,
+            },
+            //   {
+            //     label: 'Taiksu IA',
+            //     icon: '/storage/images/TAIKSU_IA_ICONE.svg',
+            //     link: 'franqueado.midias',
+            //     isLogout: false,
+            //     isActive: false,
+            //   },
+            {
+                label: 'Sair',
+                icon: '/storage/images/log-out.png',
+                link: 'logout',
+                isLogout: true,
+            },
+        ],
+    },
 ];
 </script>
 
 <style scoped>
 .sidebar {
-  width: 249px;
-  padding: 10px;
-  height: calc(100% - 70px);
-  position: fixed;
-  top: 70px;
-  left: 0;
-  background-color: #164110;
-  display: flex;
-  flex-direction: column;
-  padding-top: 27px;
-  padding-bottom: 27px;
-  color: white;
-  overflow-y: scroll;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+    width: 249px;
+    padding: 10px;
+    height: calc(100% - 70px);
+    position: fixed;
+    top: 70px;
+    left: 0;
+    background-color: #164110;
+    display: flex;
+    flex-direction: column;
+    padding-top: 27px;
+    padding-bottom: 27px;
+    color: white;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
 }
 
 .sidebar::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background-color: transparent;
+    background-color: transparent;
 }
 
 .sidebar::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 .menu-category {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .category-title {
-  color: #87ba73;
-  font-size: 14px;
-  font-family: Figtree, sans-serif;
-  font-weight: 500;
-  word-wrap: break-word;
-  margin-bottom: 10px;
-  padding-left: 14px;
+    color: #87ba73;
+    font-size: 14px;
+    font-family: Figtree, sans-serif;
+    font-weight: 500;
+    word-wrap: break-word;
+    margin-bottom: 10px;
+    padding-left: 14px;
 }
 </style>
