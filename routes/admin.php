@@ -78,6 +78,10 @@ Route::middleware([
         return Inertia::render('Admin/Produtividade/SetorOperacionais');
     })->name('franqueadora.SetorOperacionais');
 
+    Route::get('/franqueadora/pontuacao-criteiros', function () {
+        return Inertia::render('Admin/Produtividade/PontuaCriterio');
+    })->name('franqueadora.PontuaCriterio');
+
     //
 
     Route::get('/franqueadora/sair', function () {

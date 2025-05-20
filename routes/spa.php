@@ -19,6 +19,7 @@ use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\OperacionalController;
 use App\Http\Controllers\AtividadeController;
 use App\Http\Controllers\PainelAnaliticos;
+use App\Http\Controllers\PontoController;
 use App\Http\Controllers\SalmaoHistoricoController;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
@@ -47,7 +48,6 @@ Route::prefix('api')->middleware([
     Route::get('/notificacoes/nao-lidas', [NotificacaoController::class, 'totalNaoLidas']);
 
     Route::post('/notificacoes/setor', [NotificacaoController::class, 'enviarParaSetor']);
-
 });
 
 // Rotas protegidas por autenticação Administrador
@@ -70,7 +70,6 @@ Route::prefix('api')->middleware([
         Route::post('/', [UserController::class, 'store'])->name('usuarios.store');
         Route::delete('/{id}', [UserController::class, 'destroy']);
         Route::post('/update', [UserController::class, 'updatePassword'])->name('admin.password.update');
-
     });
 
 
@@ -127,6 +126,10 @@ Route::prefix('api')->middleware([
 
     // Controle de atividade operacionais
     Route::apiResource('atividades', AtividadeController::class);
+
+    // Rotas de controle de pontos
+    Route::get('/pontos', [PontoController::class, 'index']);
+    Route::put('/pontos/{ponto}', [PontoController::class, 'update']);
 
 });
 
@@ -255,6 +258,4 @@ Route::prefix('api')->middleware([
         Route::post('/adicionar', [SalmaoHistoricoController::class, 'store'])->name('salmao.adicionar');
         Route::get('/listar', [SalmaoHistoricoController::class, 'getHistoricoSalmao'])->name('salmao.lista');
     });
-
-
 });

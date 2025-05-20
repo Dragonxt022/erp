@@ -111,10 +111,10 @@ const menuCategories = [
                         label: 'Setores operacionais',
                         link: 'franqueadora.SetorOperacionais',
                     },
-                    /*           {
-                                label: 'Agenda da rede',
-                                link: 'franqueadora.canaisVendas',
-                              }, */
+                    {
+                        label: 'Pontuação por critério',
+                        link: 'franqueadora.PontuaCriterio',
+                    },
                 ],
                 isActive: false,
             },
