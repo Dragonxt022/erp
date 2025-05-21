@@ -121,4 +121,10 @@ Route::middleware([
     Route::get('/franqueado/produtividade/visao-geral', function () {
         return Inertia::render('Users/Produtividade/Index');
     })->name('franqueado.produtividade.geral');
+
+    Route::get('/franqueado/produtividade/gestao-producao', function () {
+        return Inertia::render('Users/Produtividade/AgendaProducao');
+    })->name('franqueado.AgendaProducao');
+
+
 });

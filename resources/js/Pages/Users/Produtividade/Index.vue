@@ -175,7 +175,7 @@
                 </p>
 
                 <p class="text-[20px] font-medium text-[#262a27]">
-                  Hot Filadelfia
+                  Marcos Silva
                 </p>
               </div>
 
@@ -189,7 +189,7 @@
                 </p>
 
                 <p class="text-[20px] font-medium text-[#262a27] text-gray-900">
-                  Montar Combo Taiksu
+                  Fernada Oliveira
                 </p>
               </div>
 
@@ -225,7 +225,7 @@
                 </p>
 
                 <p class="text-[20px] font-medium text-[#262a27]">
-                  Domingo
+                  Genivaldo Santos
                 </p>
               </div>
 
@@ -239,7 +239,7 @@
                 </p>
 
                 <p class="text-[20px] font-medium text-[#262a27] text-gray-900">
-                  Sexta-feira
+                  Clotiude Oliveira
                 </p>
               </div>
 

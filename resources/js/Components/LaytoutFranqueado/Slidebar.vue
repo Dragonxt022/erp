@@ -201,6 +201,10 @@ const menuCategories = [
                         label: 'Visão Geral',
                         link: 'franqueado.produtividade.geral',
                     },
+                    {
+                        label: 'Agenda de Produção',
+                        link: 'franqueado.AgendaProducao',
+                    },
 
                 ],
                 isActive: false,
