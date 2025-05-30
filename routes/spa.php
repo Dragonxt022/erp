@@ -18,6 +18,7 @@ use App\Http\Controllers\ListaProdutoController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\OperacionalController;
 use App\Http\Controllers\AtividadeController;
+use App\Http\Controllers\CargaHorarioController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\PontoController;
 use App\Http\Controllers\SalmaoHistoricoController;
@@ -130,6 +131,9 @@ Route::prefix('api')->middleware([
     // Rotas de controle de pontos
     Route::get('/pontos', [PontoController::class, 'index']);
     Route::put('/pontos/{ponto}', [PontoController::class, 'update']);
+
+
+
 
 });
 
@@ -258,4 +262,7 @@ Route::prefix('api')->middleware([
         Route::post('/adicionar', [SalmaoHistoricoController::class, 'store'])->name('salmao.adicionar');
         Route::get('/listar', [SalmaoHistoricoController::class, 'getHistoricoSalmao'])->name('salmao.lista');
     });
+
+    //** Carga Horaria */
+    Route::apiResource('carga-horarios', CargaHorarioController::class);
 });

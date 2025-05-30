@@ -64,9 +64,9 @@ Route::middleware([
         return Inertia::render('Users/GestaoEquipes/Index');
     })->name('franqueado.gestaoEquipe')->middleware('check.permission:gestao_equipe');
 
-    Route::get('/franqueado/controle-ponto', function () {
-        return Inertia::render('Users/ControlePonto/Index');
-    })->name('franqueado.controlePonto')->middleware('check.permission:gestao_equipe');
+    Route::get('/franqueado/carga-horaria', function () {
+        return Inertia::render('Users/CargaHoraria/Index');
+    })->name('franqueado.cargaHoraria')->middleware('check.permission:gestao_equipe');
 
     Route::get('/franqueado/folha-pagamento', function () {
         return Inertia::render('Users/FolhaPagamento/Index');

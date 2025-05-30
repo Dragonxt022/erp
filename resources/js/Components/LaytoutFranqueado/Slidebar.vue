@@ -81,7 +81,7 @@ const menuCategories = [
             {
                 label: 'Treinamento',
                 icon: '/storage/images/treinamento.svg',
-                link: 'https://treinamento.taiksu.com.br/',
+                link: 'https://treinamento.taiksu.com.br',
                 isLogout: false,
                 isActive: false,
                 requiredPermission: null,
@@ -162,9 +162,9 @@ const menuCategories = [
                 requiredPermission: 'gestao_equipe',
                 submenuItems: [
                     {
-                        label: 'Controle de ponto',
+                        label: 'Carga Horária',
                         icon: '/storage/images/add_product.svg',
-                        link: 'franqueado.controlePonto',
+                        link: 'franqueado.cargaHoraria',
                         requiredPermission: 'gestao_equipe',
                     },
                     {
