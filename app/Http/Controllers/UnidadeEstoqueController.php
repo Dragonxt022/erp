@@ -7,8 +7,8 @@ use App\Models\ControleSaldoEstoque;
 use App\Models\Fornecedor;
 use App\Models\HistoricoPedido;
 use App\Models\MovimentacoesEstoque;
-
 use App\Models\UnidadeEstoque;
+use App\Services\AnalyticService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,22 +22,34 @@ use Inertia\Inertia;
 
 class UnidadeEstoqueController extends Controller
 {
+    /**
+     *
+     * Serviço próprio para lidar com CMV e DRE
+     *
+     */
+    protected $analyticService;
+
+    public function __construct(AnalyticService $analyticService)
+    {
+        $this->analyticService = $analyticService;
+    } // Fim
+
     public function consumirEstoque(Request $request)
     {
         $usuario = Auth::user();
-    
+
         if ($usuario->pin !== $request->pin) {
             return response()->json(['error' => 'PIN incorreto'], 403);
         }
-    
+
         $validatedData = $request->validate([
             'itens' => 'required|array',
             'itens.*.id' => 'required|integer|exists:lista_produtos,id',
             'itens.*.quantidade' => 'required|numeric|min:0',
         ]);
-    
+
         DB::beginTransaction();
-    
+
         try {
             foreach ($validatedData['itens'] as $item) {
                 $quantidadeRestante = floatval($item['quantidade']);
@@ -46,17 +58,17 @@ class UnidadeEstoqueController extends Controller
                     ->where('unidade_id', Auth::user()->unidade_id)
                     ->orderBy('created_at', 'asc') // FIFO
                     ->get();
-    
+
                 foreach ($estoques as $estoque) {
                     if ($quantidadeRestante <= 0) {
                         break;
                     }
-    
+
                     $quantidadeConsumir = min($estoque->quantidade, $quantidadeRestante);
-    
+
                     // Nova quantidade após retirada
                     $novaQuantidade = $estoque->quantidade - $quantidadeConsumir;
-    
+
                     // Se a quantidade restante for zero ou negativa, excluir o registro
                     if ($novaQuantidade <= 0) {
                         DB::table('unidade_estoque')
@@ -70,10 +82,10 @@ class UnidadeEstoqueController extends Controller
                                 'quantidade' => $novaQuantidade,
                             ]);
                     }
-    
+
                     // Calcular o valor consumido para registrar na movimentação
                     $valorConsumido = $estoque->preco_insumo * $quantidadeConsumir;
-    
+
                     // Registrar movimentação com o preço por unidade/quilo
                     MovimentacoesEstoque::create([
                         'insumo_id' => $item['id'],
@@ -85,24 +97,24 @@ class UnidadeEstoqueController extends Controller
                         'unidade' => $estoque->unidade,
                         'unidade_id' => Auth::user()->unidade_id,
                     ]);
-    
+
                     $quantidadeRestante -= $quantidadeConsumir;
                 }
-    
+
                 if ($quantidadeRestante > 0) {
                     throw new \Exception("Estoque insuficiente para o produto ID {$item['id']}");
                 }
             }
-    
+
             $unidade_id = Auth::user()->unidade_id;
-    
+
             // Calcular o valor total do estoque
             $valorInsumos = UnidadeEstoque::where('unidade_id', $unidade_id)
                 ->where('quantidade', '>', 0)
                 ->sum(DB::raw('preco_insumo * quantidade'));
-    
+
             $saldoAtual = $valorInsumos;
-    
+
             DB::table('controle_saldo_estoques')->insert([
                 'ajuste_saldo' => $saldoAtual,
                 'data_ajuste' => now(),
@@ -112,13 +124,13 @@ class UnidadeEstoqueController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-    
+
             DB::commit();
-    
+
             Auth::guard('web')->logout();
             request()->session()->invalidate();
             request()->session()->regenerateToken();
-    
+
             return response()->json([
                 'message' => 'Operação realizada com sucesso! O usuário foi desconectado.',
                 'redirect_url' => route('login.pagina.estoque')
@@ -128,6 +140,7 @@ class UnidadeEstoqueController extends Controller
             return response()->json(['error' => 'Erro ao retirar os itens: ' . $e->getMessage()], 500);
         }
     }
+
     // Cria novos pedidos
     public function criarPedido(Request $request)
     {
@@ -266,32 +279,32 @@ class UnidadeEstoqueController extends Controller
     {
         // Obtém a unidade do usuário autenticado
         $unidadeId = Auth::user()->unidade_id;
-    
+
         $estoques = UnidadeEstoque::with(['insumo', 'fornecedor', 'categoriaProduto'])
             ->where('unidade_id', $unidadeId)
             ->orderBy('created_at', 'desc')
             ->get();
-    
+
         // Agrupa os estoques pelo insumo
         $produtosAgrupados = $estoques->groupBy('insumo_id')->map(function ($lotes) {
             // Pega o primeiro lote para obter informações do produto
             $primeiroLote = $lotes->first();
             $insumo = $primeiroLote->insumo;
-    
+
             // Obtém o nome da categoria, garantindo que nunca seja null
             $categoriaNome = optional($insumo->categoriaProduto)->nome ?? 'Sem Categoria';
-    
+
             // Filtra os lotes com quantidade > 0
             $lotesDisponiveis = $lotes->filter(fn($lote) => $lote->quantidade > 0);
-    
+
             // Se não houver lotes disponíveis, não exibe o produto
             if ($lotesDisponiveis->isEmpty()) {
                 return null;
             }
-    
+
             // Calcular a soma do valor total dos lotes
             $valorTotalLotes = $lotesDisponiveis->sum(fn($lote) => $lote->preco_insumo * $lote->quantidade);
-    
+
             return [
                 'id' => $insumo->id,
                 'nome' => $insumo->nome,
@@ -300,7 +313,7 @@ class UnidadeEstoqueController extends Controller
                 'unidadeDeMedida' => $insumo->unidadeDeMedida,
                 'lotes' => $lotesDisponiveis->map(function ($lote) use ($insumo) {
                     $valorTotal = $lote->preco_insumo * $lote->quantidade;
-    
+
                     return [
                         'id' => $lote->id,
                         'data' => $lote->created_at->format('d/m/Y'),
@@ -311,10 +324,10 @@ class UnidadeEstoqueController extends Controller
                     ];
                 })->values(),
                 'valor_total_lote' => number_format($valorTotalLotes, 2, ',', '.'), // Soma dos valores totais dos lotes
-             
+
             ];
         })->filter();
-    
+
         // Agrupar os produtos por categoria
         $produtosPorCategoria = $produtosAgrupados->groupBy('categoria')->map(function ($produtos, $categoria) {
             return [
@@ -322,7 +335,7 @@ class UnidadeEstoqueController extends Controller
                 'produtos' => $produtos->values(),
             ];
         })->values();
-    
+
         // Retorna os dados no formato JSON
         return response()->json($produtosPorCategoria);
     }
@@ -433,19 +446,31 @@ class UnidadeEstoqueController extends Controller
     public function painelInicialEstoque(Request $request)
     {
         $unidadeId = Auth::user()->unidade_id;
-    
+
         // Obter as datas de início e fim
         try {
             $startDate = $request->input('start_date', Carbon::now()->startOfDay()->format('d-m-Y'));
             $endDate = $request->input('end_date', Carbon::now()->endOfDay()->format('d-m-Y'));
-    
+
             $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
             $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
-    
-        // Histórico de movimentações filtrado por data
+
+        // Use the service to get the updated calculations
+        $analysedData = $this->analyticService->calculatePeriodData(
+            $unidadeId,
+            $startDateConverted,
+            $endDateConverted,
+            false, // Assuming not in calendar mode for this context
+            null,
+            null
+        );
+
+        $cmv = $analysedData['cmv']; // Get the CMV value from the returned array
+
+        // Histórico de movimentações filtrado por data (keep existing logic)
         $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
@@ -457,11 +482,11 @@ class UnidadeEstoqueController extends Controller
                     'Retirada' => -$estoque->quantidade,
                     default => $estoque->quantidade,
                 };
-    
+
                 if ($quantidade == 0) {
                     return null;
                 }
-    
+
                 return [
                     'operacao' => $estoque->operacao,
                     'unidade' => $estoque->unidade,
@@ -471,76 +496,32 @@ class UnidadeEstoqueController extends Controller
                     'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
                 ];
             })->filter();
-    
-        // Dados principais do painel
+
+        // Dados principais do painel (keep existing logic or update as needed)
         $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)
             ->where('quantidade', '>', 0)
             ->get();
-    
+
         $valorInsumos = $estoque->sum(fn($item) => $item->preco_insumo * $item->quantidade);
         $itensNoEstoque = $estoque->sum('quantidade');
-    
-        // 1. Calcular o CMV
-        $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-            ->whereDate('data_ajuste', '=', $startDateConverted)
-            ->orderBy('data_ajuste', 'desc')
-            ->first();
 
-        if (!$saldoInicial) {
-            $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                ->whereDate('data_ajuste', '<', $startDateConverted)
-                ->orderBy('data_ajuste', 'desc')
-                ->first();
-
-            if (!$saldoInicial) {
-                $saldoInicial = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                    ->orderBy('data_ajuste', 'asc') // Busca o primeiro ajuste da unidade
-                    ->first();
-
-                if (!$saldoInicial) {
-                    return response()->json(['error' => 'Não há saldo inicial disponível para esta unidade.'], 400);
-                }
-            }
-        }
-
-        $estoqueInicialValor = $saldoInicial ? $saldoInicial->ajuste_saldo : 0;
-    
-        // Compras no período
-        $compras = MovimentacoesEstoque::where('unidade_id', $unidadeId)
-            ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get();
-    
-        $comprasValor = $compras->sum(fn($item) => $item->preco_insumo * $item->quantidade);
-    
-        // Estoque final
-        $estoqueFinal = UnidadeEstoque::where('unidade_id', $unidadeId)
-            ->where('quantidade', '>', 0)
-            ->where('created_at', '<=', $endDateConverted)
-            ->get();
-    
-        $estoqueFinalValor = $estoqueFinal->sum(fn($item) => $item->preco_insumo * $item->quantidade);
-    
-        // Calcular o CMV
-        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
-    
         Log::info('Calculando CMV', [
-            'estoqueInicialValor' => $estoqueInicialValor,
-            'comprasValor' => $comprasValor,
-            'estoqueFinalValor' => $estoqueFinalValor,
-            'cmv' => $cmv,
+            'cmv' => $cmv, // Use the CMV from the new calculation
+            // You can also log other data from $analysedData if needed
         ]);
-    
+
         return response()->json([
             'valorInsumos' => number_format($valorInsumos, 2, ',', '.'),
-            'itensNoEstoque' => number_format($itensNoEstoque, 2, ',', '.'), // Mantém 2 casas para kg
+            'itensNoEstoque' => number_format($itensNoEstoque, 2, ',', '.'),
             'historicoMovimentacoes' => $historicoMovimentacoes->values(),
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
-            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
-            'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
+            // Use the CMV from the AnalyticService
             'cmv' => number_format($cmv, 2, ',', '.'),
+            // You can also include other relevant data from $analysedData if needed
+            'saldo_estoque_inicial' => number_format($analysedData['total_caixas'] - $analysedData['total_despesas_categorias_sem_folha'] , 2, ',', '.'), // Example, replace with actual field from analysedData
+            'entradas_durante_periodo' => number_format($analysedData['total_caixas'], 2, ',', '.'), // Example
+            'saldo_estoque_final' => number_format($analysedData['cmv'], 2, ',', '.'), // Example, replace with actual field from analysedData
         ]);
     }
 
@@ -596,7 +577,7 @@ class UnidadeEstoqueController extends Controller
                 $unidadeMedida = $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade';
 
                 // Calcular o preço por unidade corretamente
-                $precoPorUnidade = ($unidadeMedida === 'kg' && $quantidade > 0) 
+                $precoPorUnidade = ($unidadeMedida === 'kg' && $quantidade > 0)
                     ? floatval($item['valorUnitario']) / $quantidade // Valor total dividido pela quantidade para obter preço por kg
                     : floatval($item['valorUnitario']);             // Para unitário, mantém o valor informado
 
@@ -663,24 +644,24 @@ class UnidadeEstoqueController extends Controller
         $request->validate([
             'quantidade' => 'required|numeric|min:0',
         ]);
-    
+
         DB::beginTransaction();
-    
+
         try {
             // Busca o lote pelo ID
             $lote = UnidadeEstoque::findOrFail($loteId);
-    
+
             // Obtém a nova quantidade informada
             $novaQuantidade = floatval($request->input('quantidade'));
-    
+
             // Calcula a diferença (quantidade adicionada ou removida)
             $diferencaQuantidade = $novaQuantidade - $lote->quantidade;
-    
+
             // Atualiza a quantidade e o timestamp
             $lote->quantidade = $novaQuantidade;
             $lote->updated_at = now();
             $lote->save();
-    
+
             // Registrar a movimentação com a diferença
             MovimentacoesEstoque::create([
                 'insumo_id' => $lote->insumo_id,
@@ -692,17 +673,17 @@ class UnidadeEstoqueController extends Controller
                 'unidade' => $lote->unidade,
                 'unidade_id' => Auth::user()->unidade_id,
             ]);
-    
+
             // Atualiza o saldo do estoque
             $unidade_id = Auth::user()->unidade_id;
-    
+
             // Calcular o valor total do estoque
             $valorInsumos = UnidadeEstoque::where('unidade_id', $unidade_id)
                 ->where('quantidade', '>', 0)
                 ->sum(DB::raw('preco_insumo * quantidade'));
-    
+
             $saldoAtual = $valorInsumos;
-    
+
             DB::table('controle_saldo_estoques')->insert([
                 'ajuste_saldo' => $saldoAtual,
                 'data_ajuste' => now(),
@@ -712,9 +693,9 @@ class UnidadeEstoqueController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-    
+
             DB::commit();
-    
+
             return response()->json([
                 'message' => 'Quantidade atualizada com sucesso!',
                 'lote' => [

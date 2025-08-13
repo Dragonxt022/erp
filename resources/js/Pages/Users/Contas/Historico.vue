@@ -12,31 +12,12 @@
       <div class="grid grid-cols-2 grid-rows-1 gap-4">
         <!-- Segunda coluna -->
         <div class="bg-white rounded-lg p-2">
-          <!--  -->
-        </div>
-
-        <div class="bg-white rounded-lg p-7">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
-        </div>
-
-        <!-- Terceira coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
-        </div>
-        <div class="bg-white rounded-lg p-4">
-          <div
-            class="text-[#262a27] text-[12px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            <!--  -->
-          </div>
+          <ListarContasApagarHistorico
+            api-url="/api/cursto/contas-a-pagar/historico"
+            title="Histórico Completo"
+            subtitle="Todas as despesas pagas."
+            @dado-selecionado="handleContaSelecionada"
+          />
         </div>
       </div>
     </div>
@@ -47,6 +28,7 @@
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
+import ListarContasApagarHistorico from '@/Components/EstruturaFranqueado/ListarContasApagarHistorico.vue';
 //
 </script>
 

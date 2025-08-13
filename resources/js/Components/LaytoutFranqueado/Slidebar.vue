@@ -1,8 +1,17 @@
 <template>
     <div>
+        <div v-if="loading" class="loader-container">
+            <div class="spinner"></div>
+        </div>
+
+
         <!-- Sidebar -->
-        <div class="sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-3 overflow-y-auto h-full sm:w-64 md:w-72 lg:w-80 xl:w-80"
-            ref="sidebar" @scroll="saveScrollPosition">
+        <div v-else :class="[
+            'sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-3 overflow-y-auto h-full transition-transform duration-300 ease-in-out',
+            sidebarStore.isOpen ? 'translate-x-0' : '-translate-x-full',
+            'md:translate-x-0 md:relative  md:top-0 md:left-0'
+        ]" ref="sidebar" @scroll="saveScrollPosition" >
+
             <div v-for="category in filteredMenuCategories" :key="category.name" class="menu-category mb-6">
                 <!-- Categoria de menu (Título escondido em telas pequenas) -->
                 <div class="category-title menu-categorias text-sm sm:text-base font-medium text-[#87ba73] mb-3 pl-4"
@@ -17,337 +26,147 @@
                     :requiredPermission="item.requiredPermission" />
             </div>
         </div>
+
+
     </div>
 </template>
+
 <script setup>
 import { ref, onMounted, computed, provide } from 'vue';
+import { useSidebarStore } from '@/stores/sidebar';
+
 import MenuItem from './MenuItem.vue';
 import axios from 'axios';
 
 const sidebar = ref(null);
-
 const userPermissions = ref({});
+const menuCategories = ref([]);
+const sidebarStore = useSidebarStore();
+const loading = ref(true);
 
-// Função para buscar os dados da API
-const fetchPermissions = async () => {
-    try {
-        const response = await axios.get('/api/navbar-profile');
-        userPermissions.value = response.data.data.permissions || {};
-    } catch (error) {
-        console.error('Erro ao carregar permissões:', error);
-        userPermissions.value = {}; // Valor padrão em caso de erro
-    }
+const toggleSidebar = () => {
+  sidebarStore.toggle();
 };
 
-// Fornece userPermissions para os componentes filhos
+// Busca permissões do usuário
+const fetchPermissions = async () => {
+  try {
+    const response = await axios.get('/api/navbar-profile');
+    userPermissions.value = response.data.data.permissions || {};
+  } catch (error) {
+    console.error('Erro ao carregar permissões:', error);
+    userPermissions.value = {};
+  }
+};
+
+// Busca o menu e ordena categorias, itens e filhos
+const fetchMenu = async () => {
+  try {
+    const response = await axios.get('/api/menu');
+    const categories = response.data.data || [];
+
+    // Ordena categorias pelo campo 'order'
+    const orderedCategories = categories
+      .map(category => {
+        // Ordena os itens da categoria
+        const orderedItems = (category.items || []).slice().sort((a, b) => a.order - b.order);
+
+        // Ordena os filhos de cada item, se existirem
+        orderedItems.forEach(item => {
+          if (item.children && Array.isArray(item.children)) {
+            item.children = item.children.slice().sort((a, b) => a.order - b.order);
+          }
+        });
+
+        return { ...category, items: orderedItems };
+      })
+      .sort((a, b) => a.order - b.order);
+
+    menuCategories.value = orderedCategories;
+  } catch (error) {
+    console.error('Erro ao carregar menu:', error);
+    menuCategories.value = [];
+  }
+};
+
+// Fornece userPermissions para componentes filhos via provide/inject
 provide('userPermissions', userPermissions);
 
-// Definindo as categorias de menu
-const menuCategories = [
-    // Inicio
-    {
-        name: '',
-        items: [
-            {
-                label: 'Inicio',
-                icon: '/storage/images/inicio.svg',
-                link: 'franqueado.painel',
-                isLogout: false,
-                isActive: false,
-                requiredPermission: null,
-            },
-        ],
-    },
-    // Ferramentas
-    {
-        name: 'Ferramentas',
-        items: [
-            {
-                label: 'E-mail',
-                icon: '/storage/images/email.svg',
-                link: 'https://arquivos.taiksu.com.br/apps/mail/box/1',
-                isLogout: false,
-                isActive: false,
-                requiredPermission: null,
-            },
-            {
-                label: 'Comunidade',
-                icon: '/storage/images/diversity_4.svg',
-                link: 'https://arquivos.taiksu.com.br/call/wprjfww7',
-                isLogout: false,
-                isActive: false,
-                requiredPermission: null,
-            },
-            {
-                label: 'Treinamento',
-                icon: '/storage/images/treinamento.svg',
-                link: 'https://treinamento.taiksu.com.br',
-                isLogout: false,
-                isActive: false,
-                requiredPermission: null,
-            },
-            {
-                label: 'Mídias',
-                icon: '/storage/images/perm_media.svg',
-                link: 'https://arquivos.taiksu.com.br/s/P5nypCADKccgcib',
-                isLogout: false,
-                isActive: false,
-                requiredPermission: null,
-            },
-        ],
-    },
-
-    // Gestão da loja
-    {
-        name: 'Gestão da loja',
-        items: [
-            {
-                label: 'Gestão de estoque',
-                icon: '/storage/images/estoque.svg',
-                link: 'franqueado.estoque',
-                isLogout: false,
-                requiredPermission: 'controle_estoque',
-                submenuItems: [
-                    {
-                        label: 'Inventário',
-                        link: 'franqueado.inventario',
-                        requiredPermission: 'controle_estoque',
-                    },
-                    {
-                        label: 'Saida de estoque',
-                        link: 'franqueado.controleEstoque',
-                        requiredPermission: 'controle_saida_estoque',
-                    },
-                    {
-                        label: 'Fornecedores',
-                        link: 'franqueado.fornecedores',
-                        requiredPermission: 'controle_estoque',
-                    },
-                    {
-                        label: 'Novo Pedidos',
-                        link: 'franqueado.pedidos',
-                        requiredPermission: 'controle_estoque',
-                    },
-                    {
-                        label: 'Histórico de Pedidos',
-                        link: 'franqueado.historicoPedidos',
-                        requiredPermission: 'controle_estoque',
-                    },
-                ],
-                isActive: false,
-            },
-
-            {
-                label: 'Gestão de resíduos',
-                icon: '/storage/images/delete_branco.svg',
-                link: 'franqueado.supervisaoResidos',
-                isLogout: false,
-                requiredPermission: 'gestao_salmao',
-
-                submenuItems: [
-                    {
-                        label: 'Limpeza de salmão',
-                        link: 'franqueado.limpesaSalmoes',
-                        requiredPermission: 'gestao_salmao',
-                    },
-                ],
-                isActive: false,
-            },
-
-            {
-                label: 'Gestão de equipe',
-                icon: '/storage/images/gestao_servisos.svg',
-                link: 'franqueado.gestaoEquipe',
-                isLogout: false,
-                requiredPermission: 'gestao_equipe',
-                submenuItems: [
-                    {
-                        label: 'Carga Horária',
-                        icon: '/storage/images/add_product.svg',
-                        link: 'franqueado.cargaHoraria',
-                        requiredPermission: 'gestao_equipe',
-                    },
-                    {
-                        label: 'Folha de pagamento',
-                        link: 'franqueado.folhaPagamento',
-                        requiredPermission: 'gestao_equipe',
-                    },
-                ],
-                isActive: false,
-            },
-
-            // {
-            //   label: 'Taiksu IA',
-            //   icon: '/storage/images/TAIKSU_IA_ICONE.svg',
-            //   link: 'franqueado.midias',
-            //   isLogout: false,
-            //   isActive: false,
-            // },
-        ],
-    },
-
-    // Gestão de Redes
-    {
-        name: 'Gestão de Redes',
-        items: [
-            // Produtividade
-            {
-                label: 'Produtividade',
-                icon: '/storage/images/skillet.svg',
-                link: 'franqueado.produtividade.geral',
-                isLogout: false,
-                submenuItems: [
-                    {
-                        label: 'Visão Geral',
-                        link: 'franqueado.produtividade.geral',
-                    },
-                    {
-                        label: 'Agenda de Produção',
-                        link: 'franqueado.AgendaProducao',
-                    },
-
-                ],
-                isActive: false,
-            },
-        ],
-    },
-
-    // Financeiro
-    {
-        name: 'Financeiro',
-        items: [
-            {
-                label: 'Fluxo de caixa',
-                icon: '/storage/images/fluxo_caixa.svg',
-                link: 'franqueado.abrirCaixa',
-                isLogout: false,
-                requiredPermission: 'fluxo_caixa',
-                submenuItems: [
-                    {
-                        label: 'Métodos de pagamento',
-                        link: 'franqueado.metodosPagamentos',
-                        requiredPermission: 'fluxo_caixa',
-                    },
-                    {
-                        label: 'Canais de Vendas',
-                        link: 'franqueado.canaisVendas',
-                        requiredPermission: 'fluxo_caixa',
-                    },
-                    {
-                        label: 'Histórico de Caixa',
-                        link: 'franqueado.historicoCaixa',
-                        requiredPermission: 'fluxo_caixa',
-                    },
-
-                    {
-                        label: 'Caixa Retroativo',
-                        link: 'franqueado.caixaRetroativo',
-                        requiredPermission: 'fluxo_caixa',
-                    },
-                ],
-                isActive: false,
-            },
-            {
-                label: 'Contas a pagar',
-                icon: '/storage/images/attach_money.svg',
-                link: 'franqueado.contasApagar',
-                isLogout: false,
-                requiredPermission: 'contas_pagar',
-                submenuItems: [
-                    {
-                        label: 'Histórico de Despesas',
-                        link: 'franqueado.historicoContas',
-                        requiredPermission: 'contas_pagar',
-                    },
-                ],
-                isActive: false,
-            },
-            {
-                label: 'DRE Gerencial',
-                icon: '/storage/images/analitic.svg',
-                link: 'franqueado.dreGerencial',
-                isLogout: false,
-                requiredPermission: 'dre',
-                isActive: false,
-            },
-        ],
-    },
-
-    // Rota de saida da aplicação
-    {
-        name: '',
-        items: [
-            {
-                label: 'Sair',
-                icon: '/storage/images/log-out.png',
-                link: 'logout',
-                isLogout: true,
-            },
-        ],
-    },
-];
-
+// Computed que filtra categorias e itens com base nas permissões do usuário
 const filteredMenuCategories = computed(() => {
-    return menuCategories
-        .map((category) => ({
-            ...category,
-            items: category.items.filter(
-                (item) =>
-                    !item.requiredPermission ||
-                    userPermissions.value[item.requiredPermission] ||
-                    (item.submenuItems &&
-                        item.submenuItems.some(
-                            (sub) =>
-                                !sub.requiredPermission ||
-                                userPermissions.value[sub.requiredPermission]
-                        ))
-            ),
-        }))
-        .filter((category) => category.items.length > 0);
+  return menuCategories.value
+    .map(category => ({
+      ...category,
+      items: category.items
+        .filter(item =>
+          !item.required_permission ||
+          userPermissions.value[item.required_permission] ||
+          (item.children &&
+            item.children.some(
+              child =>
+                !child.required_permission || userPermissions.value[child.required_permission]
+            ))
+        )
+        .map(item => ({
+          ...item,
+          submenuItems: item.children || [],
+        })),
+    }))
+    .filter(category => category.items.length > 0);
 });
 
-// Recuperar a posição da rolagem do localStorage
 onMounted(async () => {
-    await fetchPermissions();
+  loading.value = true;
+  await fetchPermissions();
+  await fetchMenu();
 
-    const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
-    if (savedScrollPosition && sidebar.value) {
-        sidebar.value.scrollTop = savedScrollPosition;
-    }
+  // Restaura posição de scroll da sidebar
+  const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+  if (savedScrollPosition && sidebar.value) {
+    sidebar.value.scrollTop = savedScrollPosition;
+  }
+  loading.value = false;
 });
 
-// Salvar a posição da rolagem no localStorage sempre que a sidebar for rolada
+// Salva posição de scroll da sidebar
 const saveScrollPosition = () => {
-    if (sidebar.value) {
-        localStorage.setItem('sidebarScrollPosition', sidebar.value.scrollTop);
-    }
+  if (sidebar.value) {
+    localStorage.setItem('sidebarScrollPosition', sidebar.value.scrollTop);
+  }
 };
 
-// Função para verificar se o link está ativo
+// Verifica se o link está ativo (para destacar menu)
 const isActive = (link) => {
-    const currentPath = window.location.pathname;
-    const resolvedPath = new URL(link, window.location.origin).pathname;
-    return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
+  const currentPath = window.location.pathname;
+  const resolvedPath = new URL(link, window.location.origin).pathname;
+  return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
 };
 </script>
+
 
 <style scoped>
 .sidebar {
     height: calc(100% - 60px);
-    /* Ajuste para ocupar toda a altura restante */
     top: 70px;
     width: 249px;
-    /* Largura padrão para telas grandes */
     padding-top: 27px;
     padding-bottom: 27px;
     background-color: #164110;
     display: flex;
     flex-direction: column;
     color: white;
-    overflow-y: scroll;
+    overflow-y: hidden;
+
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
+    /* Para a animação do toggle */
+    transform: translateX(0);
 }
+
+.sidebar.-translate-x-full {
+    transform: translateX(-100%);
+}
+
 
 /* Personalizando a barra de rolagem */
 .sidebar::-webkit-scrollbar {
@@ -361,4 +180,22 @@ const isActive = (link) => {
 .sidebar::-webkit-scrollbar-track {
     background: transparent;
 }
+
+.spinner {
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #6DB631;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+
+
+/* Overlay para mobile */
 </style>

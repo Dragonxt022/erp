@@ -19,6 +19,7 @@ use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\OperacionalController;
 use App\Http\Controllers\AtividadeController;
 use App\Http\Controllers\CargaHorarioController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\PontoController;
 use App\Http\Controllers\SalmaoHistoricoController;
@@ -49,6 +50,16 @@ Route::prefix('api')->middleware([
     Route::get('/notificacoes/nao-lidas', [NotificacaoController::class, 'totalNaoLidas']);
 
     Route::post('/notificacoes/setor', [NotificacaoController::class, 'enviarParaSetor']);
+
+    // Menu do sistema
+    Route::get('/menu', [MenuController::class, 'index']);
+    Route::post('/menu/items', [MenuController::class, 'store'])->name('menu.items.store');
+    Route::post('/menu/items/reorder', [MenuController::class, 'reorder']);
+    Route::put('/menu/items/{id}', [MenuController::class, 'update']);
+    Route::delete('/menu/items/{id}', [MenuController::class, 'destroy']);
+
+
+
 });
 
 // Rotas protegidas por autenticação Administrador
@@ -240,6 +251,9 @@ Route::prefix('api')->middleware([
         Route::post('/contas-a-pagar/{id}/pagar', [ContaAPagarController::class, 'marcarComoPago']);
         Route::delete('/contas-a-pagar/{id}', [ContaAPagarController::class, 'destroy']);
         Route::get('/listar-contas-a-pagar', [ContaAPagarController::class, 'index']);
+        Route::get('/contas-a-pagar/historico', [ContaAPagarController::class, 'historicoPagas']);
+        Route::put('/cursto/contas-a-pagar/{id}/status', [ContaAPagarController::class, 'atualizarStatus']);
+
     });
 
     // Painel de Analitycos

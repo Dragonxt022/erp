@@ -6,10 +6,10 @@
       <!-- Logo e ícones de navegação -->
       <div class="navbar-left">
         <div class="navbar-logo">
-          <div class="mr-4">
-            <a href="https://www.taiksu.com.br/office/" target="_blank">
-              <img src="/storage/images/quadrados_verdes.svg" alt="Quadrados verdes" class="w-full h-full" />
-            </a>
+          <div class="mr-4 mt-2 hide-mobile">
+            <button @click="toggleSidebar">
+                <img src="/storage/images/quadrados_verdes.svg" alt="Menu" class="w-full h-full" />
+            </button>
           </div>
           <div>
             <a :href="route('franqueado.painel')">
@@ -22,7 +22,7 @@
       <!-- Avatar e informações do usuário -->
       <div class="navbar-right">
         <!-- Ícone de Notificações -->
-        <div class="notification-container">
+        <div class="notification-container mr-4">
           <div class="notification-icon" @click="toggleNotifications">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <mask id="mask0_4631_13059" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="24"
@@ -35,7 +35,7 @@
                   fill="#6DB631" />
               </g>
             </svg>
-            <div v-if="unreadNotifications > 0" class="notification-badge"></div>
+            <div v-if="unreadNotifications > 0" class="notification-badge "></div>
           </div>
 
           <!-- Bandeja de Notificações -->
@@ -84,186 +84,207 @@
           </div>
         </div>
 
-        <Link v-if="user" :href="route('franqueado.perfil')" class="user-info" :class="{ loading: !user }">
-        <div class="user-info" v-if="user">
-          <img :src="profilePhoto" alt="Avatar" class="avatar" />
-          <div class="user-details">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-location">
-              {{ unidade?.cidade || 'Taiksu Franchising' }}
+        <div class="view-mobile">
+            <button @click="toggleSidebar">
+                <img src="/storage/images/bx-menuv.svg" alt="Menu" class="w-full h-full" />
+            </button>
+        </div>
+
+        <Link
+            v-if="user"
+            :href="route('franqueado.perfil')"
+            class="user-info hide-mobile"
+            :class="{ loading: !user }"
+            >
+            <div class="user-info" v-if="user">
+                <img :src="profilePhoto" alt="Avatar" class="avatar" />
+                <div class="user-details">
+                <div class="user-name">{{ user.name }}</div>
+                <div class="user-location">
+                    {{ unidade?.cidade || 'Taiksu Franchising' }}
+                </div>
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="user-info loading" v-else>
-          <div class="avatar-skeleton"></div>
-          <div class="user-details-skeleton">
-            <div class="name-skeleton"></div>
-            <div class="location-skeleton"></div>
-          </div>
-        </div>
-        </Link>
+
+            <div class="user-info loading" v-else>
+                <div class="avatar-skeleton"></div>
+                <div class="user-details-skeleton">
+                <div class="name-skeleton"></div>
+                <div class="location-skeleton"></div>
+                </div>
+            </div>
+            </Link>
       </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { Link } from '@inertiajs/vue3';
-import axios from 'axios';
+    import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+    import { Link } from '@inertiajs/vue3';
+    import axios from 'axios';
 
-const user = ref(null);
-const unidade = computed(() => user.value?.unidade);
-const notifications = ref([]);
-const notificationsLoading = ref(false);
-const showNotifications = ref(false);
-const unreadNotifications = computed(() => {
-  return notifications.value.filter(notification => notification.lida === 0).length;
-});
+    import { useSidebarStore } from '@/stores/sidebar';
+    const sidebarStore = useSidebarStore();
 
-const profilePhoto = computed(() => {
-  return (
-    user.value?.profile_photo_url ||
-    `https://ui-avatars.com/api/?name=${getInitials(
-      user.value?.name
-    )}&color=7F9CF5&background=EBF4FF`
-  );
-});
+    const toggleSidebar = () => {
+    sidebarStore.toggle();
+    };
 
-// Função para pegar as iniciais do nome
-const getInitials = (name) => {
-  if (!name) return '*';
-  const nameParts = name.split(' ');
-  return nameParts.map((part) => part.charAt(0).toUpperCase()).join('');
-};
-
-// Função para buscar os dados do perfil
-const fetchUserProfile = async () => {
-  try {
-    const response = await fetch('/api/navbar-profile', {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+    const user = ref(null);
+    const unidade = computed(() => user.value?.unidade);
+    const notifications = ref([]);
+    const notificationsLoading = ref(false);
+    const showNotifications = ref(false);
+    const unreadNotifications = computed(() => {
+    return notifications.value.filter(notification => notification.lida === 0).length;
     });
 
-    if (!response.ok) {
-      throw new Error('Erro ao carregar perfil do usuário');
-    }
-
-    const data = await response.json();
-    user.value = data.data;
-  } catch (error) {
-    console.error('Erro ao buscar perfil:', error);
-    user.value = null;
-  }
-};
-
-// Função para buscar notificações
-const fetchNotifications = async () => {
-  notificationsLoading.value = true;
-  try {
-    const response = await fetch('/api/notificacoes', {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+    const profilePhoto = computed(() => {
+    return (
+        user.value?.profile_photo_url ||
+        `https://ui-avatars.com/api/?name=${getInitials(
+        user.value?.name
+        )}&color=7F9CF5&background=EBF4FF`
+    );
     });
 
-    if (!response.ok) {
-      throw new Error('Erro ao carregar notificações');
+    // Função para pegar as iniciais do nome
+    const getInitials = (name) => {
+    if (!name) return '*';
+    const nameParts = name.split(' ');
+    return nameParts.map((part) => part.charAt(0).toUpperCase()).join('');
+    };
+
+    // Função para buscar os dados do perfil
+    const fetchUserProfile = async () => {
+    try {
+        const response = await fetch('/api/navbar-profile', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        });
+
+        if (!response.ok) {
+        throw new Error('Erro ao carregar perfil do usuário');
+        }
+
+        const data = await response.json();
+        user.value = data.data;
+    } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+        user.value = null;
     }
+    };
 
-    const data = await response.json();
-    notifications.value = data.data;
-  } catch (error) {
-    console.error('Erro ao buscar notificações:', error);
-    notifications.value = [];
-  } finally {
-    notificationsLoading.value = false;
-  }
-};
+    // Função para buscar notificações
+    const fetchNotifications = async () => {
+    notificationsLoading.value = true;
+    try {
+        const response = await fetch('/api/notificacoes', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
+        });
 
-// Função para marcar notificação como lida
-const markAsRead = async (id) => {
-  try {
-    const response = await axios.post(`/api/notificacoes/${id}/ler`);
+        if (!response.ok) {
+        throw new Error('Erro ao carregar notificações');
+        }
 
-    if (response.status === 200) {
-      // Atualiza o estado das notificações localmente
-      const index = notifications.value.findIndex(n => n.id === id);
-      if (index !== -1) {
-        notifications.value[index].lida = 1;
-        notifications.value[index].lida_em = new Date().toISOString();
-      }
+        const data = await response.json();
+        notifications.value = data.data;
+    } catch (error) {
+        console.error('Erro ao buscar notificações:', error);
+        notifications.value = [];
+    } finally {
+        notificationsLoading.value = false;
     }
-  } catch (error) {
-    console.error('Erro ao marcar notificação como lida:', error);
-  }
-};
+    };
 
-// Função para marcar todas notificações como lidas
-const markAllAsRead = async () => {
-  try {
-    const response = await axios.post('/api/notificacoes/ler-todas');
+    // Função para marcar notificação como lida
+    const markAsRead = async (id) => {
+    try {
+        const response = await axios.post(`/api/notificacoes/${id}/ler`);
 
-    if (response.status === 200) {
-      // Atualiza todas as notificações como lidas
-      notifications.value.forEach(notification => {
-        notification.lida = 1;
-        notification.lida_em = new Date().toISOString();
-      });
+        if (response.status === 200) {
+        // Atualiza o estado das notificações localmente
+        const index = notifications.value.findIndex(n => n.id === id);
+        if (index !== -1) {
+            notifications.value[index].lida = 1;
+            notifications.value[index].lida_em = new Date().toISOString();
+        }
+        }
+    } catch (error) {
+        console.error('Erro ao marcar notificação como lida:', error);
     }
-  } catch (error) {
-    console.error('Erro ao marcar todas notificações como lidas:', error);
-  }
-};
-// Função para alternar a visibilidade da bandeja de notificações
-const toggleNotifications = (event) => {
-  // Impede que o clique se propague para o documento
-  event.stopPropagation();
+    };
 
-  showNotifications.value = !showNotifications.value;
-  if (showNotifications.value) {
-    fetchNotifications();
-  }
-};
+    // Função para marcar todas notificações como lidas
+    const markAllAsRead = async () => {
+    try {
+        const response = await axios.post('/api/notificacoes/ler-todas');
 
-// Função para fechar as notificações ao clicar fora
-const handleClickOutside = (event) => {
-  const container = document.querySelector('.notification-container');
-  if (container && !container.contains(event.target)) {
-    showNotifications.value = false;
-  }
-};
-
-// Intervalo para verificar novas notificações periodicamente
-let checkNotificationsInterval;
-
-onMounted(() => {
-  fetchUserProfile();
-  fetchNotifications(); // Busca notificações inicialmente
-
-  // Adiciona listener para fechar o dropdown ao clicar fora
-  document.addEventListener('click', handleClickOutside);
-
-  // Configura verificação periódica de notificações (a cada 5 minutos)
-  checkNotificationsInterval = setInterval(() => {
-    if (!showNotifications.value) { // Só busca se o painel estiver fechado
-      fetchNotifications();
+        if (response.status === 200) {
+        // Atualiza todas as notificações como lidas
+        notifications.value.forEach(notification => {
+            notification.lida = 1;
+            notification.lida_em = new Date().toISOString();
+        });
+        }
+    } catch (error) {
+        console.error('Erro ao marcar todas notificações como lidas:', error);
     }
-  }, 300000); // 5 minutos
-});
+    };
+    // Função para alternar a visibilidade da bandeja de notificações
+    const toggleNotifications = (event) => {
+    // Impede que o clique se propague para o documento
+    event.stopPropagation();
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-  clearInterval(checkNotificationsInterval);
-});
+    showNotifications.value = !showNotifications.value;
+    if (showNotifications.value) {
+        fetchNotifications();
+    }
+    };
+
+    // Função para fechar as notificações ao clicar fora
+    const handleClickOutside = (event) => {
+    const container = document.querySelector('.notification-container');
+    if (container && !container.contains(event.target)) {
+        showNotifications.value = false;
+    }
+    };
+
+    // Intervalo para verificar novas notificações periodicamente
+    let checkNotificationsInterval;
+
+    onMounted(() => {
+    fetchUserProfile();
+    fetchNotifications(); // Busca notificações inicialmente
+
+    // Adiciona listener para fechar o dropdown ao clicar fora
+    document.addEventListener('click', handleClickOutside);
+
+    // Configura verificação periódica de notificações (a cada 5 minutos)
+    checkNotificationsInterval = setInterval(() => {
+        if (!showNotifications.value) { // Só busca se o painel estiver fechado
+        fetchNotifications();
+        }
+    }, 300000); // 5 minutos
+    });
+
+    onBeforeUnmount(() => {
+    document.removeEventListener('click', handleClickOutside);
+    clearInterval(checkNotificationsInterval);
+    });
 </script>
 
 <style scoped>
+
 a {
   text-decoration: none;
   cursor: pointer;
@@ -273,7 +294,7 @@ a {
   width: 100%;
   height: 70px;
   user-select: none;
-  position: relative;
+  position: fixed;
   background: white;
   z-index: 9000;
 }
@@ -409,8 +430,8 @@ notification-container {
 }
 
 .notification-list {
-  max-height: 350px;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .notification-item {
@@ -559,6 +580,27 @@ notification-container {
 
   100% {
     opacity: 1;
+  }
+}
+
+.hide-mobile {
+  display: none;
+}
+
+.view-mobile {
+  display: flex;
+}
+
+@media (min-width: 768px) {
+  .view-mobile {
+    display: none;
+  }
+}
+
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: block; /* ou flex, dependendo do seu layout */
   }
 }
 </style>

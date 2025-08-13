@@ -70,16 +70,22 @@
           </div>
 
           <div class="flex space-x-4 mt-5">
-            <ButtonClaroMedio
-              :text="props.dados.status === 'pendente' ? 'Pagar' : 'Pago'"
-              :class="getStatusClass(props.dados.status)"
-              @click="showConfirmDialog('Marca como paga essa conta?')"
-              :iconPath="getStatusIcon(props.dados.status)"
-              :disabled="props.dados.status === 'pago'"
-            />
+            <div>
+                <select
+                    id="status"
+                    v-model="statusSelecionado"
+                    @change="atualizarStatus"
+                    class=" h-[46px] px-[38px] py-3 rounded-[10px] shadow-[2px_2px_10px_0px_rgba(0,0,0,0.04)] flex justify-center items-center gap-2.5"
+                >
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago</option>
+                    <option value="atrasado">Atrasado</option>
+                </select>
+            </div>
+
             <ButtonClaroMedio
               text="Baixar boleto"
-              class="text-[#6db631] w-full bg-[#f4faf4] hover:bg-[#c1fab6] transition duration-200 ease-in-out"
+              class="text-[#6db631] bg-[#f4faf4] hover:bg-[#c1fab6] transition duration-200 ease-in-out"
               @click="baixarArquivo"
             />
           </div>
@@ -109,9 +115,9 @@ import LabelModel from '../Label/LabelModel.vue';
 import ButtonClaroMedio from '../Button/ButtonClaroMedio.vue';
 import { useToast } from 'vue-toastification';
 import ConfirmDialog from '../LaytoutFranqueadora/ConfirmDialog.vue';
+import { onMounted, watch } from 'vue';
 
 const toast = useToast();
-
 const props = defineProps({
   dados: {
     type: Object,
@@ -120,7 +126,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['voltar', 'atualiza']);
-
+const statusSelecionado = ref(props.dados.status);
 const isEditMode = ref(false);
 const indexEditavel = ref(null);
 const isConfirmDialogVisible = ref(false);
@@ -137,6 +143,11 @@ const isConfirmExluirDialogVisible = (motivoParam) => {
   motivo.value = motivoParam; // Agora 'motivo' é reativo e você pode alterar seu valor
   isConfirmExlusaoDialogVisible.value = true; // Exibe o diálogo de confirmação
 };
+
+watch(() => props.dados.status, (novoStatus) => {
+  statusSelecionado.value = novoStatus;
+});
+
 
 const getStatusIcon = (status) => {
   return status === 'pendente'
@@ -173,6 +184,21 @@ const ativarEdicao = (index) => {
   indexEditavel.value = index;
 };
 
+// Seletor de status
+const atualizarStatus = async () => {
+  try {
+    const response = await axios.put(`/api/cursto/cursto/contas-a-pagar/${props.dados.id}/status`, {
+      status: statusSelecionado.value,
+    });
+    toast.success(response.data.message);
+    emit('atualiza');
+  } catch (error) {
+    console.error(error);
+    toast.error('Erro ao atualizar o status da conta');
+  }
+};
+
+// botão
 const pagarConta = async () => {
   if (!props.dados || !props.dados.id) {
     toast.error('Erro: Dados da conta não encontrados.');
@@ -187,7 +213,7 @@ const pagarConta = async () => {
 
     // Atualiza o status da conta
     props.dados.status = 'pago';
-    
+
     emit('atualiza');
   } catch (error) {
     console.error('Erro ao pagar a conta:', error);

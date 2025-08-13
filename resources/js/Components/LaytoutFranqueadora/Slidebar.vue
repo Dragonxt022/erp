@@ -168,6 +168,12 @@ const menuCategories = [
                 ],
                 isActive: false,
             },
+            {
+                label: 'Menu',
+                icon: '/storage/images/bx-menuu.svg',
+                link: 'franqueadora.menu',
+                isLogout: false,
+            },
             //   {
             //     label: 'Taiksu IA',
             //     icon: '/storage/images/TAIKSU_IA_ICONE.svg',

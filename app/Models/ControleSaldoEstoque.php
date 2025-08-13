@@ -18,7 +18,7 @@ class ControleSaldoEstoque extends Model
         'unidade_id',
         'responsavel_id',
     ];
-
+ 
     protected $casts = [
         'data_ajuste' => 'datetime',
     ];

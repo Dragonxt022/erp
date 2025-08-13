@@ -5,7 +5,8 @@
       class="flex items-center justify-between p-3 rounded-md cursor-pointer"
       @click="toggleDropdown"
     >
-    
+
+
       <span>
         <span v-if="selectedStartDate && selectedEndDate">
           {{ selectedStartDate.format('DD/MM/YYYY') }} -
@@ -21,14 +22,14 @@
     >
       <!-- Navegação do mês e ano -->
       <div class="flex items-center justify-between mb-3">
-        <button @click="previousMonth" class="text-gray-600 hover:text-gray-800">
-          &lt;
+        <button @click="previousMonth" class="flex items-center justify-between mb-3">
+            <img src="/storage/images/arrow_drop_down_circle.svg" alt="icone drop" class="w-5 h-5" />
         </button>
         <span class="font-semibold">
           {{ currentDate.format('MMMM YYYY') }}
         </span>
-        <button @click="nextMonth" class="text-gray-600 hover:text-gray-800">
-          &gt;
+        <button @click="nextMonth" class="text-indigo-600 hover:underline">
+            <img src="/storage/images/arrow_drop_direita_circle.svg" alt="icone drop" class="w-5 h-5" />
         </button>
       </div>
 

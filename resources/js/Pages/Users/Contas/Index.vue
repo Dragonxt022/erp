@@ -34,6 +34,7 @@
         <DetalhesContasApagar
           :dados="dadosSelecionado"
           @voltar="atualizaConponetes"
+          @atualiza="atualizaConponetes"
         />
       </div>
     </div>

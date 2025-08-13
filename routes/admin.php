@@ -16,6 +16,10 @@ Route::middleware([
         return Inertia::render('Admin/Perfil/Index');
     })->name('franqueadora.perfil');
 
+    Route::get('/franqueadora/menu', function () {
+        return Inertia::render('Admin/Menu/Index');
+    })->name('franqueadora.menu');
+
     Route::get('/franqueadora/painel', function () {
         return Inertia::render('Admin/Painel/Index');
     })->name('franqueadora.painel');
