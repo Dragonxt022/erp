@@ -351,7 +351,7 @@ const fetchDataCMV = async (startDate = null, endDate = null) => {
       end_date.value = data.end_date || 'não informado';
       saldoEstoqueInicial.value = data.saldo_estoque_inicial || '0,00';
       entradasDurantePeriodo.value = data.entradas_durante_periodo || '0,00';
-      saldoEstoqueFinal.value = data.saldo_estoque_final || '0,00';
+      saldoEstoqueFinal.value = data.itensNoEstoque || '0,00';
       cmv.value = data.cmv || '0,00';
     } else {
       console.warn('Dados analíticos não encontrados.');
