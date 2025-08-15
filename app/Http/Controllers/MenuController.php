@@ -16,11 +16,32 @@ class MenuController extends Controller
             $query->whereNull('parent_id')->with(['children']);
         }])->orderBy('order')->get();
 
-        // Retorna json
+        // Converte is_logout em isLogout e aplica recursivamente aos filhos
+        $categories = $categories->map(function($category) {
+            $category->items = $category->items->map(function($item) {
+                // Converte para boolean e força logout se link == 'logout'
+                $item->isLogout = $item->link === 'logout' ? true : ($item->is_logout == 1);
+
+                // Se houver filhos, aplica recursivamente
+                if ($item->children && $item->children->count()) {
+                    $item->children = $item->children->map(function($child) {
+                        $child->isLogout = $child->link === 'logout' ? true : ($child->is_logout == 1);
+                        return $child;
+                    });
+                }
+
+                return $item;
+            });
+
+            return $category;
+        });
+
+        // Retorna JSON
         return response()->json([
             'data' => $categories
         ]);
     }
+
 
     public function store(Request $request)
     {
