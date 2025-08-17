@@ -40,14 +40,26 @@
         </p>
       </div>
 
-      <!-- Ícone de status -->
-      <div>
+      <!-- Ícone + Badge do status -->
+    <div class="flex items-center gap-2">
+        <!-- Badge com nome do status -->
+        <span
+            :class="[
+            'px-2 py-1 text-xs font-semibold rounded-full capitalize',
+            getStatusClass(conta.status)
+            ]"
+        >
+            {{ conta.status }}
+        </span>
+
+        <!-- Ícone -->
         <img
-          :src="getStatusIcon(conta.status)"
-          :alt="conta.status"
-          class="w-8 h-8"
+            :src="getStatusIcon(conta.status)"
+            :alt="conta.status"
+            class="w-8 h-8"
         />
-      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -96,11 +108,29 @@ const formatarData = (data) => {
 };
 
 // Retornar o ícone do status
-const getStatusIcon = (status) => {
-  return status === 'pendente'
-    ? '/storage/images/check_circle_laranja.svg'
-    : '/storage/images/check_circle_verde.svg';
+const statusIcons = {
+  pendente: '/storage/images/check_circle_laranja.svg',
+  concluida: '/storage/images/check_circle_verde.svg',
+  agendada: '/storage/images/agendada.svg',
+  atrasado: '/storage/images/atrasada.svg',
 };
+
+const getStatusIcon = (status) => {
+  return statusIcons[status] || '/storage/images/check_circle_laranja.svg';
+};
+
+// Cores do badge
+const statusColors = {
+  pendente: 'bg-orange-100 text-orange-700',
+  concluida: 'bg-green-100 text-green-700',
+  agendada: 'bg-blue-100 text-blue-700',
+  atrasada: 'bg-red-100 text-red-700',
+};
+
+const getStatusClass = (status) => {
+  return statusColors[status.toLowerCase()] || 'bg-gray-100 text-gray-700';
+};
+
 </script>
 
 <style scoped>

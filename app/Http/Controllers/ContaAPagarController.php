@@ -14,7 +14,7 @@ class ContaAPagarController extends Controller
 {
 
     // Pagina principal para Listagem das contas
-     public function index()
+    public function index()
     {
         // Identifica o usuário autenticado e sua unidade
         $user = Auth::user();
@@ -22,7 +22,8 @@ class ContaAPagarController extends Controller
 
         // 1. Obtém as contas PENDENTES da unidade, ordenadas por vencimento
         $contasPendentes = ContaAPagar::where('unidade_id', $unidade_id)
-            ->where('status', 'pendente')
+            ->whereIn('status', ['pendente', 'agendada', 'atrasado']) // Inclui contas pendentes, agendadas e atrasadas
+            ->where('vencimento', '>=', Carbon::now()) // Filtra contas que ainda não venceram
             ->orderBy('vencimento', 'asc')
             ->get();
 
@@ -103,7 +104,7 @@ class ContaAPagarController extends Controller
     public function atualizarStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:pendente,pago,atrasado',
+            'status' => 'required|in:pendente,pago,atrasado,agendada',
         ]);
 
         $conta = ContaAPagar::where('id', $id)
@@ -153,9 +154,7 @@ class ContaAPagarController extends Controller
         }
     }
 
-
-
-
+    // Método para cadastrar uma nova conta a pagar
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -234,13 +233,30 @@ class ContaAPagarController extends Controller
     // Controle de vencietno
     public function verificarContasAtrasadas()
     {
-        $contas = ContaAPagar::where('status', 'pendente')
+        ContaAPagar::where('status', 'pendente')
             ->whereDate('vencimento', '<', Carbon::today())
-            ->get();
+            ->update(['status' => 'atrasado']);
+    }
 
-        foreach ($contas as $conta) {
-            $conta->status = 'atrasado';
-            $conta->save();
+    public function statusOptions()
+    {
+        try {
+            // Pega a definição da coluna 'status' na tabela
+            $type = DB::select("SHOW COLUMNS FROM contas_a_pagares WHERE Field = 'status'")[0]->Type;
+
+            // Remove o "enum(...)" e os apóstrofos, deixando só os valores
+            $statusEnum = str_replace(["enum('", "')", "'"], '', $type);
+
+            // Separa em array
+            $statusOptions = explode(',', $statusEnum);
+
+            return response()->json(['data' => $statusOptions], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao buscar status.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
+
 }

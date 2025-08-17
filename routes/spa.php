@@ -253,6 +253,8 @@ Route::prefix('api')->middleware([
         Route::get('/listar-contas-a-pagar', [ContaAPagarController::class, 'index']);
         Route::get('/contas-a-pagar/historico', [ContaAPagarController::class, 'historicoPagas']);
         Route::put('/cursto/contas-a-pagar/{id}/status', [ContaAPagarController::class, 'atualizarStatus']);
+        Route::get('/contas-a-pagar/status-options', [ContaAPagarController::class, 'statusOptions']);
+
 
     });
 
