@@ -110,7 +110,7 @@ const formatarData = (data) => {
 // Retornar o ícone do status
 const statusIcons = {
   pendente: '/storage/images/check_circle_laranja.svg',
-  concluida: '/storage/images/check_circle_verde.svg',
+  pago: '/storage/images/check_circle_verde.svg',
   agendada: '/storage/images/agendada.svg',
   atrasado: '/storage/images/atrasada.svg',
 };
