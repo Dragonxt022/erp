@@ -65,7 +65,7 @@ class ContaAPagarController extends Controller
         // Obtém TODAS as contas PAGAS da unidade com paginação
         // Ordena por vencimento (do mais recente para o mais antigo, para histórico)
         $contasPagasHistorico = ContaAPagar::where('unidade_id', $unidade_id)
-            ->where('status', 'pago')
+            ->whereIn('status', ['pendente', 'agendada', 'atrasado']) // Inclui contas pendentes, agendadas e atrasadas
             ->orderBy('vencimento', 'desc') // Ordenar do mais recente para o mais antigo para histórico
             ->paginate($perPage); // Usamos paginate aqui!
 

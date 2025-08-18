@@ -122,9 +122,9 @@ const getStatusIcon = (status) => {
 // Cores do badge
 const statusColors = {
   pendente: 'bg-orange-100 text-orange-700',
-  concluida: 'bg-green-100 text-green-700',
+  pago: 'bg-green-100 text-green-700',
   agendada: 'bg-blue-100 text-blue-700',
-  atrasada: 'bg-red-100 text-red-700',
+  atrasado: 'bg-red-100 text-red-700',
 };
 
 const getStatusClass = (status) => {
