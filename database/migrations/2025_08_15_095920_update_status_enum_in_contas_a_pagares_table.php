@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('contas_a_pagares', function (Blueprint $table) {
             // Altera o enum para adicionar 'Agendada'
             $table->enum('status', ['agendada', 'pendente', 'pago', 'atrasado'])
-                  ->default('Agendada')
+                  ->default('agendada')
                   ->change();
         });
     }

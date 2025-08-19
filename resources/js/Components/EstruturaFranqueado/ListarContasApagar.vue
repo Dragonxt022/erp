@@ -118,7 +118,7 @@ const statusIcons = {
 const getStatusIcon = (status) => {
   return statusIcons[status] || '/storage/images/check_circle_laranja.svg';
 };
-
+ 
 // Cores do badge
 const statusColors = {
   pendente: 'bg-orange-100 text-orange-700',

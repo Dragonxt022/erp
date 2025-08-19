@@ -43,7 +43,7 @@
                     {{ conta.nome }}
                   </p>
                   <p class="text-sm text-gray-600">
-                    {{ conta.valor_formatado }} - Vencimento
+                    {{ conta.valor_formatado }} - Vence em
                     {{ formatarData(conta.vencimento) }}
                   </p>
                 </div>
@@ -221,7 +221,7 @@
 
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Inertia } from '@inertiajs/inertia';
 import { Chart, registerables } from 'chart.js';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
@@ -337,14 +337,66 @@ onMounted(() => {
 });
 
 // Buscar as contas da API
+// Buscar as contas da API
 const fetchDados = async () => {
-    try {
-        const response = await axios.get('/api/cursto/listar-contas-a-pagar');
-        dados.value = response.data.data;
-    } catch (error) {
-        console.error('Erro ao carregar os dados:', error);
-    }
+  try {
+    const response = await axios.get('/api/cursto/listar-contas-a-pagar');
+    dados.value = response.data.data;
+  } catch (error) {
+    console.error('Erro ao carregar os dados:', error);
+  }
 };
+
+// Chamada ao montar o componente
+onMounted(fetchDados);
+
+// Selecionar uma conta
+const selecionarDados = (conta) => {
+  emit('dado-selecionado', conta);
+};
+
+// Filtragem das contas por pesquisa
+const filteredDados = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+  return dados.value.filter(
+    (conta) =>
+      conta.nome.toLowerCase().includes(query) ||
+      String(conta.valor).includes(query)
+  );
+});
+
+// Formatar a data
+const formatarData = (data) => {
+  const partes = data.split('-'); // Divide "YYYY-MM-DD"
+  return `${partes[2]}/${partes[1]}/${partes[0]}`; // Retorna "DD/MM/YYYY"
+};
+
+
+
+// Retornar o ícone do status
+const statusIcons = {
+  pendente: '/storage/images/check_circle_laranja.svg',
+  pago: '/storage/images/check_circle_verde.svg',
+  agendada: '/storage/images/agendada.svg',
+  atrasado: '/storage/images/atrasada.svg',
+};
+
+const getStatusIcon = (status) => {
+  return statusIcons[status] || '/storage/images/check_circle_laranja.svg';
+};
+
+// Cores do badge
+const statusColors = {
+  pendente: 'bg-orange-100 text-orange-700',
+  pago: 'bg-green-100 text-green-700',
+  agendada: 'bg-blue-100 text-blue-700',
+  atrasado: 'bg-red-100 text-red-700',
+};
+
+const getStatusClass = (status) => {
+  return statusColors[status.toLowerCase()] || 'bg-gray-100 text-gray-700';
+};
+
 
 const fetchData = async () => {
     try {
@@ -429,18 +481,6 @@ const updateChart = () => {
     });
 };
 
-// Formatar a data
-const formatarData = (data) => {
-    const partes = data.split('-'); // Divide "YYYY-MM-DD"
-    return `${partes[2]}/${partes[1]}/${partes[0]}`; // Retorna "DD/MM/YYYY"
-};
-
-// Retornar o ícone do status
-const getStatusIcon = (status) => {
-    return status === 'pendente'
-        ? '/storage/images/check_circle_laranja.svg'
-        : '/storage/images/check_circle_verde.svg';
-};
 </script>
 
 <style lang="css" scoped>

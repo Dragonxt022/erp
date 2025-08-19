@@ -29,7 +29,6 @@ import { ref } from 'vue';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import ListarContasApagarHistorico from '@/Components/EstruturaFranqueado/ListarContasApagarHistorico.vue';
 import DetalhesContasApagarHistorico from '@/Components/EstruturaFranqueado/DetalhesContasApagarHistorico.vue';
-import ResumoGastos from '@/Components/EstruturaFranqueado/ResumoGastos.vue';
 
 const listaKey = ref(0);
 const dadosSelecionado = ref(null);

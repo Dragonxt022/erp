@@ -24,7 +24,6 @@ class ContaAPagarController extends Controller
         // 1. Obtém as contas PENDENTES da unidade, ordenadas por vencimento
         $contasPendentes = ContaAPagar::where('unidade_id', $unidade_id)
             ->whereIn('status', ['pendente', 'agendada', 'atrasado']) // Inclui contas pendentes, agendadas e atrasadas
-            ->where('vencimento', '>=', Carbon::now()) // Filtra contas que ainda não venceram
             ->orderBy('vencimento', 'asc')
             ->get();
 

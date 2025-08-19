@@ -47,10 +47,6 @@
                     </div>
 
                     <div class="flex space-x-4 mt-5">
-                        <ButtonClaroMedio text="Voltar" @click="$emit('voltar')"
-                            class="text-[#6db631] bg-[#f4faf4] hover:bg-[#c1fab6] transition duration-200 ease-in-out"
-                             />
-
                         <ButtonClaroMedio text="Baixar boleto"
                             class="text-[#6db631] bg-[#f4faf4] hover:bg-[#c1fab6] transition duration-200 ease-in-out"
                             @click="baixarArquivo" />
