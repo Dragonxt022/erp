@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ContaAPagarController extends Controller
@@ -53,33 +54,75 @@ class ContaAPagarController extends Controller
     }
 
     //Pagina para Listagem de contas a pagar para pagina de Historico
-    public function historicoPagas(Request $request) // Adicionamos Request para pegar o parametro da pagina
+    public function historicoPagas(Request $request)
     {
-        // Identifica o usuário autenticado e sua unidade
         $user = Auth::user();
         $unidade_id = $user->unidade_id;
 
-        // Número de itens por página
-        $perPage = 7; // Você pode tornar isso configurável ou passar via request também
+        try {
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+            $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
 
-        // Obtém TODAS as contas PAGAS da unidade com paginação
-        // Ordena por vencimento (do mais recente para o mais antigo, para histórico)
-        $contasPagasHistorico = ContaAPagar::where('unidade_id', $unidade_id)
-            ->whereIn('status', ['pendente', 'agendada', 'atrasado']) // Inclui contas pendentes, agendadas e atrasadas
-            ->orderBy('vencimento', 'desc') // Ordenar do mais recente para o mais antigo para histórico
-            ->paginate($perPage); // Usamos paginate aqui!
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
+            $endDateConverted   = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
 
-        // Mapear os itens para formatar o valor.
-        // É importante fazer isso APÓS a paginação, mas ANTES de retornar a resposta.
-        $contasPagasHistorico->getCollection()->transform(function ($conta) {
-            // Formatar o valor para o formato de moeda brasileira
+            // Garante que o intervalo seja apenas de meses anteriores
+            $ultimoDiaMesPassado = Carbon::now()->subMonth()->endOfMonth();
+
+            if ($endDateConverted->greaterThan($ultimoDiaMesPassado)) {
+                $endDateConverted = $ultimoDiaMesPassado;
+            }
+
+            if ($startDateConverted->greaterThan($endDateConverted)) {
+                return response()->json(['error' => 'A data de início não pode ser posterior à data de fim.'], 400);
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao converter datas: ' . $e->getMessage());
+            return response()->json(['error' => 'Formato de data inválido. Use DD-MM-YYYY.'], 400);
+        }
+
+        // Atualiza apenas contas 'pendente' ou 'agendada' vencidas para 'atrasado'
+        ContaAPagar::where('unidade_id', $unidade_id)
+            ->whereIn('status', ['pendente', 'agendada'])
+            ->where('vencimento', '<', Carbon::now())
+            ->update(['status' => 'atrasado']);
+
+        // Busca contas com status relevantes somente até o mês passado
+        $contas = ContaAPagar::where('unidade_id', $unidade_id)
+            ->whereIn('status', ['pago', 'atrasado', 'agendada', 'pendente'])
+            ->whereBetween('vencimento', [$startDateConverted, $endDateConverted])
+            ->orderBy('vencimento', 'desc')
+            ->get();
+
+        // Formata o valor
+        $contas = $contas->map(function ($conta) {
             $conta->valor_formatado = 'R$ ' . number_format($conta->valor, 2, ',', '.');
             return $conta;
         });
 
-        // Retorna a resposta com os dados paginados
-        return response()->json($contasPagasHistorico, 200);
+        // Agrupa contas
+        $grupos = [
+            [
+                'label' => 'Atrasadas',
+                'contas' => $contas->where('status', 'atrasado')->values(),
+            ],
+            [
+                'label' => 'Agendadas',
+                'contas' => $contas->where('status', 'agendada')->values(),
+            ],
+            [
+                'label' => 'Pendentes',
+                'contas' => $contas->where('status', 'pendente')->values(),
+            ],
+            [
+                'label' => 'Pagas',
+                'contas' => $contas->where('status', 'pago')->values(),
+            ],
+        ];
+
+        return response()->json(['data' => $grupos], 200);
     }
+
 
     public function marcarComoPago($id)
     {
