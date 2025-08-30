@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Route;
 // Rota Principal (GET) - Exibe a página de login
 Route::get('/', [AuthController::class, 'paginLogin'])->name('pagina.login');
 
+// Rota para o callback do IDP
+Route::get('/callback', [AuthController::class, 'handleCallback'])->name('idp.callback');
+
 // Rota para o login (POST) - Processa o login
 Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painel');
 

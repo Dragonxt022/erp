@@ -155,6 +155,7 @@ const isAnySubmenuActive = computed(() => {
 const handleLogout = () => {
   if (props.isLogout) {
     router.post(route('logout'));
+    window.location.href = "https://login.taiksu.com.br/";
   }
 };
 

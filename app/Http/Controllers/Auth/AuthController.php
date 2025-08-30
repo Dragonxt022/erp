@@ -8,6 +8,7 @@ use App\Models\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
@@ -73,7 +74,50 @@ class AuthController extends Controller
         }
 
         // Se não estiver autenticado, exibe a página de login
-        return Inertia::render('Auth/Entrar');
+        return redirect('https://login.taiksu.com.br/');
+    }
+
+    public function handleCallback(Request $request)
+    {
+        $token = $request->query('token');
+
+        if (!$token) {
+            return redirect('https://login.taiksu.com.br/');
+        }
+
+        // Chamada à API protegida do IdP
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ])->get('https://login.taiksu.com.br/api/user/me');
+
+        if ($response->failed()) {
+            // Token inválido, expirado ou não autorizado
+            return redirect('https://login.taiksu.com.br/');
+        }
+
+        $userData = $response->json();
+
+        // Busca o usuário existente pelo email
+        $user = \App\Models\User::where('email', $userData['email'])->first();
+
+        if (!$user) {
+            // Se o usuário não existe, redireciona para login do IDP
+            return redirect('https://login.taiksu.com.br/');
+        }
+
+        // Autentica o usuário no Laravel
+        Auth::login($user);
+
+        // Redireciona para o painel conforme o tipo
+        if ($user->franqueadora) {
+            return redirect()->route('franqueadora.painel');
+        } elseif ($user->franqueado) {
+            return redirect()->route('franqueado.painel');
+        }
+
+        // Redirecionamento padrão
+        return redirect()->route('pagina.login');
     }
 
 
@@ -134,9 +178,10 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Retornar a resposta para o frontend, indicando que o logout foi realizado
-        return redirect()->route('pagina.login');
+        // Redireciona diretamente para o login do IDP
+        return redirect('https://login.taiksu.com.br/');
     }
+
 
     public function getProfile()
     {
@@ -164,5 +209,4 @@ class AuthController extends Controller
             'data' => array_merge($user->toArray(), ['permissions' => $permissions]),
         ]);
     }
-
 }
