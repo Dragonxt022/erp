@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Arr;
 use App\Models\Caixa;
 use App\Models\CanalVenda;
 use App\Models\Categoria;
@@ -19,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
 class AnalyticService
 {
@@ -34,6 +37,64 @@ class AnalyticService
      * @return array
      */
     public function calculatePeriodData(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode = false, ?int $month = null, ?int $year = null): array
+    {
+        $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);
+
+        $totalCaixas = $this->calculateTotalCaixas($unidadeId, $startDateCarbon, $endDateCarbon);
+        $totalSalarios = $this->fetchSalaries($unidadeId);
+
+        $operationalExpenses = $this->calculateOperationalExpenses($unidadeId, $startDateCarbon, $endDateCarbon);
+        $totalFGTS = $operationalExpenses['fgts'];
+        $totalMotoboy = $operationalExpenses['motoboy'];
+
+        $totalLiquido = $totalCaixas - $totalMotoboy;
+        $totalRoyalties = $totalLiquido * 0.05;
+        $totalFundoPropaganda = $totalLiquido * 0.015;
+
+        $taxFees = $this->calculateTaxFees($unidadeId, $startDateCarbon, $endDateCarbon);
+
+        $context = [
+            'unidadeId' => $unidadeId,
+            'startDateCarbon' => $startDateCarbon,
+            'endDateCarbon' => $endDateCarbon,
+            'totalSalarios' => $totalSalarios,
+            'totalRoyalties' => $totalRoyalties,
+            'totalFundoPropaganda' => $totalFundoPropaganda,
+            'totalLiquido' => $totalLiquido,
+            'totalFGTS' => $totalFGTS,
+            'taxFees' => $taxFees,
+            'cmv' => $stockMetrics['cmv'],
+        ];
+
+        $categoryData = $this->calculateCategoryGroups($context);
+
+        $resultado_do_periodo_sem_folha = max($totalCaixas - $categoryData['totalDespesasCategoriasSemFolha'], 0);
+
+        return [
+            'estoqueInicialValor' => $stockMetrics['estoqueInicialValor'],
+            'comprasValor' => $stockMetrics['comprasValor'],
+            'estoqueFinalValor' => $stockMetrics['estoqueFinalValor'],
+            'cmv' => $stockMetrics['cmv'],
+
+            'total_caixas' => $totalCaixas,
+            'total_salarios' => $totalSalarios,
+            'total_motoboy' => $totalMotoboy,
+            'total_royalties' => $totalRoyalties,
+            'total_fundo_propaganda' => $totalFundoPropaganda,
+            "Total_Liquido" => $totalLiquido,
+            'total_fgts' => $totalFGTS,
+            'total_taxas_credito' => $taxFees['credito'],
+            'total_taxas_debito' => $taxFees['debito'],
+            'total_taxas_vr_alimentacao' => $taxFees['vr_alimentacao'],
+            "total_taxas_canais" => $taxFees['delivery'],
+            'total_despesas_categorias' => $categoryData['totalDespesasCategorias'],
+            'total_despesas_categorias_sem_folha' => $categoryData['totalDespesasCategoriasSemFolha'],
+            'resultado_do_periodo_sem_folha' => $resultado_do_periodo_sem_folha,
+            'dados_grupos' => $categoryData['dadosGrupos'],
+        ];
+    }
+
+    private function calculateStockMetrics(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month): array
     {
         // 1. Saldo Inicial de Estoque
         $saldoInicialData = ControleSaldoEstoque::where('unidade_id', $unidadeId)
@@ -68,17 +129,53 @@ class AnalyticService
         // Calcular o CMV
         $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
 
-        // --- CÁLCULO DE OUTRAS DESPESAS E RECEITAS ---
+        return [
+            'estoqueInicialValor' => $estoqueInicialValor,
+            'comprasValor' => $comprasValor,
+            'estoqueFinalValor' => $estoqueFinalValor,
+            'cmv' => $cmv,
+        ];
+    }
 
-        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
+    private function calculateTotalCaixas(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): float
+    {
+        return Caixa::where('unidade_id', $unidadeId)
             ->where('status', 0)
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
             ->sum('valor_final');
+    }
 
-        $totalSalarios = User::where('unidade_id', $unidadeId)
-            ->whereNotNull('salario')
-            ->where('colaborador', true)
-            ->sum('salario');
+    private function fetchSalaries(int $unidadeId): float
+    {
+        try {
+            // Token da API do RH
+            $token = auth()->user()->rh_token ?? Session::get('rh_token');
+            $url = "https://rh.taiksu.com.br/folha/{$unidadeId}";
+
+            $response = Http::withToken($token)->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return Arr::get($data, 'total_salarios', 0);
+            } else {
+                Log::error("Erro ao buscar salários da API RH: {$response->status()} - {$response->body()}");
+                return 0;
+            }
+        } catch (\Throwable $e) {
+            Log::error('Falha ao acessar API RH: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    private function calculateOperationalExpenses(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array
+    {
+        $totalFGTS = ContaAPagar::where('unidade_id', $unidadeId)
+            ->whereHas('categoria', function ($query) {
+                $query->where('nome', 'LIKE', '%FGTS%');
+            })
+            ->whereIn('status', ['pago', 'pendente', 'agendada'])
+            ->whereBetween('emitida_em', [$startDateCarbon, $endDateCarbon])
+            ->sum('valor');
 
         $totalMotoboy = ContaAPagar::where('unidade_id', $unidadeId)
             ->whereHas('categoria', function ($query) {
@@ -88,13 +185,14 @@ class AnalyticService
             ->whereBetween('emitida_em', [$startDateCarbon, $endDateCarbon])
             ->sum('valor');
 
-        $totalLiquido = $totalCaixas - $totalMotoboy;
-        $totalRoyalties = $totalLiquido * 0.05;
-        $totalFundoPropaganda = $totalLiquido * 0.015;
+        return [
+            'fgts' => $totalFGTS,
+            'motoboy' => $totalMotoboy,
+        ];
+    }
 
-        // CORREÇÃO APLICADA AQUI: FGTS é 8% do totalSalarios
-        $totalFGTS = $totalSalarios * 0.08;
-
+    private function calculateTaxFees(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array
+    {
         $creditoIds = DB::table('default_payment_methods')->where('tipo', 'credito')->pluck('id');
         $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->whereIn('metodo_pagamento_id', $creditoIds)
@@ -113,17 +211,22 @@ class AnalyticService
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
             ->sum('valor_taxa_metodo');
 
-        $totalTaxasCanais = CanalVenda::where('unidade_id', $unidadeId)
-            ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
-            ->sum('valor_taxa_canal');
-
+        // Note: In original code, totalTaxasCanais and totalTaxasDelivery were identical queries.
         $totalTaxasDelivery = CanalVenda::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
             ->sum('valor_taxa_canal');
 
+        return [
+            'credito' => $totalTaxasCredito,
+            'debito' => $totalTaxasDebito,
+            'vr_alimentacao' => $totalTaxasVrAlimentacao,
+            'delivery' => $totalTaxasDelivery,
+            'canais' => $totalTaxasDelivery, // Keeping both keys if needed, but they are same value
+        ];
+    }
 
-        // --- CÁLCULO DE CATEGORIAS DE DESPESA ---
-
+    private function calculateCategoryGroups(array $context): array
+    {
         $categoriasRemovidas = ["Fornecedores"];
         $categoriasIgnoradasNaSoma = ["Fornecedores"];
 
@@ -131,41 +234,29 @@ class AnalyticService
         $totalDespesasCategorias = 0;
         $totalDespesasCategoriasSemFolha = 0;
 
-        $dadosGrupos = $grupos->map(function ($grupo) use (
-            $unidadeId, $startDateCarbon, $endDateCarbon, $totalSalarios, $totalRoyalties,
-            $totalFundoPropaganda, $totalLiquido, $totalFGTS, $totalTaxasCredito, $totalTaxasDebito,
-            $totalTaxasVrAlimentacao, $totalTaxasCanais, $cmv, $totalTaxasDelivery,
-            &$totalDespesasCategorias, &$totalDespesasCategoriasSemFolha,
-            $categoriasRemovidas, $categoriasIgnoradasNaSoma,
-        ) {
+        $dadosGrupos = $grupos->map(function ($grupo) use ($context, $categoriasRemovidas, $categoriasIgnoradasNaSoma, &$totalDespesasCategorias, &$totalDespesasCategoriasSemFolha) {
             $categoriasFormatadas = $grupo->categorias
                 ->reject(fn($categoria) => in_array($categoria->nome, $categoriasRemovidas))
-                ->map(function ($categoria) use (
-                    $unidadeId, $startDateCarbon, $endDateCarbon, $totalSalarios, $totalRoyalties,
-                    $totalFundoPropaganda, $totalLiquido, $totalFGTS, $totalTaxasCredito, $totalTaxasDebito,
-                    $totalTaxasVrAlimentacao, $totalTaxasCanais, $cmv, $totalTaxasDelivery,
-                    &$totalDespesasCategorias, &$totalDespesasCategoriasSemFolha,
-                    $categoriasIgnoradasNaSoma,
-                ) {
+                ->map(function ($categoria) use ($context, $categoriasIgnoradasNaSoma, &$totalDespesasCategorias, &$totalDespesasCategoriasSemFolha) {
+
                     $valor = ContaAPagar::where('categoria_id', $categoria->id)
-                        ->where('unidade_id', $unidadeId)
-                        ->whereIn('status', ['pago', 'pendente'])
-                        ->whereBetween('emitida_em', [$startDateCarbon, $endDateCarbon])
+                        ->where('unidade_id', $context['unidadeId'])
+                        ->whereIn('status', ['pago', 'pendente', 'agendada'])
+                        ->whereBetween('emitida_em', [$context['startDateCarbon'], $context['endDateCarbon']])
                         ->sum('valor');
 
                     $valoresFixos = [
-                        "Mercadoria Vendida" => $cmv,
-                        "FGTS" => $totalFGTS,
-                        "Folha de pagamento" => $totalSalarios,
-                        "Royalties" => $totalRoyalties,
-                        "Fundo de propaganda" =>  $totalFundoPropaganda,
-                        "Taxa de Crédito" => $totalTaxasCredito,
-                        "Taxa de Débito" => $totalTaxasDebito,
-                        "Plataformas de Delivery" => $totalTaxasCanais,
-                        "Taxas de Delivery" => $totalTaxasDelivery,
-                        "Voucher Alimentação" => $totalTaxasVrAlimentacao
+                        "Mercadoria Vendida" => $context['cmv'],
+                        "FGTS" => $context['totalFGTS'],
+                        "Folha de pagamento" => $context['totalSalarios'],
+                        "Royalties" => $context['totalRoyalties'],
+                        "Fundo de Propaganda" =>  $context['totalFundoPropaganda'],
+                        "Taxa de Crédito" => $context['taxFees']['credito'],
+                        "Taxa de Débito" => $context['taxFees']['debito'],
+                        "Plataformas de Delivery" => $context['taxFees']['canais'],
+                        "Taxas de Delivery" => $context['taxFees']['delivery'],
+                        "Voucher Alimentação" => $context['taxFees']['vr_alimentacao']
                     ];
-
 
                     if (isset($valoresFixos[$categoria->nome])) {
                         $valor = $valoresFixos[$categoria->nome];
@@ -189,32 +280,10 @@ class AnalyticService
             ];
         });
 
-        $resultado_do_periodo_sem_folha = $totalCaixas - $totalDespesasCategoriasSemFolha;
-        $resultado_do_periodo_sem_folha = max($resultado_do_periodo_sem_folha, 0);
-
         return [
-            'estoqueInicialValor' => $estoqueInicialValor,
-            'comprasValor' => $comprasValor,
-            'estoqueFinalValor' => $estoqueFinalValor,
-            'cmv' => $cmv,
-
-            'total_caixas' => $totalCaixas,
-            'total_salarios' => $totalSalarios,
-            'total_motoboy' => $totalMotoboy,
-            'total_royalties' => $totalRoyalties,
-            'total_fundo_propaganda' => $totalFundoPropaganda,
-            "Total_Liquido" => $totalLiquido,
-            'total_fgts' => $totalFGTS,
-            'total_taxas_credito' => $totalTaxasCredito,
-            'total_taxas_debito' => $totalTaxasDebito,
-            'total_taxas_vr_alimentacao' => $totalTaxasVrAlimentacao,
-            "total_taxas_canais" => $totalTaxasDelivery,
-            'total_despesas_categorias' => $totalDespesasCategorias,
-            'total_despesas_categorias_sem_folha' => $totalDespesasCategoriasSemFolha,
-            'resultado_do_periodo_sem_folha' => $resultado_do_periodo_sem_folha,
-            'dados_grupos' => $dadosGrupos,
+            'dadosGrupos' => $dadosGrupos,
+            'totalDespesasCategorias' => $totalDespesasCategorias,
+            'totalDespesasCategoriasSemFolha' => $totalDespesasCategoriasSemFolha,
         ];
-
-
     }
 }

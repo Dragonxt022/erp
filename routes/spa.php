@@ -58,8 +58,8 @@ Route::prefix('api')->middleware([
     Route::put('/menu/items/{id}', [MenuController::class, 'update']);
     Route::delete('/menu/items/{id}', [MenuController::class, 'destroy']);
 
-
-
+    //
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout.sair');
 });
 
 // Rotas protegidas por autenticação Administrador
@@ -142,10 +142,6 @@ Route::prefix('api')->middleware([
     // Rotas de controle de pontos
     Route::get('/pontos', [PontoController::class, 'index']);
     Route::put('/pontos/{ponto}', [PontoController::class, 'update']);
-
-
-
-
 });
 
 // Rotas protegidas por autenticação Usuarios
@@ -254,8 +250,6 @@ Route::prefix('api')->middleware([
         Route::get('/contas-a-pagar/historico', [ContaAPagarController::class, 'historicoPagas']);
         Route::put('/cursto/contas-a-pagar/{id}/status', [ContaAPagarController::class, 'atualizarStatus']);
         Route::get('/contas-a-pagar/status-options', [ContaAPagarController::class, 'statusOptions']);
-
-
     });
 
     // Painel de Analitycos
@@ -270,7 +264,9 @@ Route::prefix('api')->middleware([
 
     Route::prefix('painel-dre')->group(function () {
         Route::get('/analitycs-dre', [PainelAnaliticos::class, 'analitycsDRE'])->name('analitycsDRE');
+        Route::get('/painel-analitycs', [PainelAnaliticos::class, 'analitycsBuscar']);
     });
+
 
     //** Gestão de residuos */
     Route::prefix('gestao-residuos')->group(function () {

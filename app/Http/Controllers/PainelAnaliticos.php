@@ -4,33 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use App\Models\CanalVenda;
-use App\Models\Categoria;
-use App\Models\ContaAPagar;
-use App\Models\ControleSaldoEstoque;
-use App\Models\FechamentoCaixa;
-use App\Models\FluxoCaixa;
-use App\Models\GrupoDeCategorias;
-use App\Models\MovimentacoesEstoque;
-use App\Models\UnidadeEstoque;
-use App\Models\UnidadePaymentMethod;
-use App\Models\User;
-use App\Services\AnalyticService; // Importe o AnalyticService
+use App\Services\AnalyticService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\PainelAnaliticosService;
 
 class PainelAnaliticos extends Controller
 {
     /**
      * Serviço próprio para lidar com CMV e DRE
      */
-    protected $analyticService;
+    protected $analyticService, $service;
 
     public function __construct(AnalyticService $analyticService)
     {
         $this->analyticService = $analyticService;
+        $this->service = new PainelAnaliticosService();
+    }
+
+    public function analitycsBuscar(Request $request)
+    {
+        $request->validate([
+            'unidade_id' => 'required|integer',
+            'data_inicio' => 'required|date',
+            'data_fim'    => 'required|date',
+            'categoria_id' => 'nullable|integer'
+        ]);
+
+        $resposta = $this->service->analitycsBuscar(
+            $request->unidade_id,
+            $request->categoria_id,
+            $request->data_inicio,
+            $request->data_fim,
+        );
+
+        return response()->json($resposta);
     }
 
     /**
@@ -55,7 +66,6 @@ class PainelAnaliticos extends Controller
             if ($startDateConverted->greaterThan($endDateConverted)) {
                 return response()->json(['error' => 'A data de início não pode ser posterior à data de fim.'], 400);
             }
-
         } catch (\Exception $e) {
             Log::error('Erro ao converter datas para CMV: ' . $e->getMessage());
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
@@ -76,15 +86,6 @@ class PainelAnaliticos extends Controller
             $estoqueFinalValor = $analysedData['estoqueFinalValor'] ?? 0;
             $cmv = $analysedData['cmv'] ?? 0;
 
-            Log::info('Calculando CMV para unidade', [
-                'unidade_id' => $unidadeId,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'estoque_inicial_valor' => $estoqueInicialValor,
-                'compras_valor' => $comprasValor,
-                'estoque_final_valor' => $estoqueFinalValor,
-                'cmv_calculado' => $cmv,
-            ]);
 
             // 4. Retornar os resultados formatados no JSON.
             return response()->json([
@@ -95,7 +96,6 @@ class PainelAnaliticos extends Controller
                 'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
                 'cmv' => number_format($cmv, 2, ',', '.'),
             ]);
-
         } catch (\Exception $e) {
             // Se houver qualquer erro no serviço, trate aqui.
             Log::error('Erro no AnalyticService ao calcular CMV: ' . $e->getMessage());
@@ -217,76 +217,17 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        // 1. Calcular o CMV (usando a mesma lógica da calculatePeriodData)
-        $saldoInicialRegistro = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-            ->whereDate('data_ajuste', $startDateConverted->toDateString())
-            ->orderBy('data_ajuste', 'desc')
-            ->first();
-
-        $estoqueInicialValor = 0;
-        if ($saldoInicialRegistro) {
-            $estoqueInicialValor = $saldoInicialRegistro->ajuste_saldo;
-        } else {
-            $saldoInicialRegistro = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                ->whereDate('data_ajuste', '<', $startDateConverted->toDateString())
-                ->orderBy('data_ajuste', 'desc')
-                ->first();
-
-            if ($saldoInicialRegistro) {
-                $estoqueInicialValor = $saldoInicialRegistro->ajuste_saldo;
-            } else {
-                $primeiroAjuste = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                    ->orderBy('data_ajuste', 'asc')
-                    ->first();
-
-                if ($primeiroAjuste) {
-                     if ($primeiroAjuste->data_ajuste->greaterThan($startDateConverted)) {
-                         $estoqueInicialValor = 0;
-                     } else {
-                         $estoqueInicialValor = $primeiroAjuste->ajuste_saldo;
-                     }
-                } else {
-                    $estoqueInicialValor = 0;
-                }
-            }
-        }
-
-        // Compras no período
-        $comprasValor = MovimentacoesEstoque::where('unidade_id', $unidadeId)
-            ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get()
-            ->sum(function ($item) {
-                $preco = is_numeric($item->preco_insumo) ? (float) $item->preco_insumo : 0;
-                $quantidade = is_numeric($item->quantidade) ? (float) $item->quantidade : 0;
-                return $preco * $quantidade;
-            });
-
-        // Estoque final
-        $saldoFinalControle = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-            ->where('data_ajuste', '<=', $endDateConverted)
-            ->orderBy('data_ajuste', 'desc')
-            ->first();
-        $estoqueFinalValor = $saldoFinalControle ? $saldoFinalControle->ajuste_saldo : 0;
-
-        // Calcular o CMV
-        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
-
-        // 2. Somar todos os caixas fechados no período
-        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
-            ->where('status', 0) // Apenas caixas fechados
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->sum('valor_final');
+        $data = $this->analyticService->calculatePeriodData($unidadeId, $startDateConverted, $endDateConverted);
 
         // Retornar os resultados em um único JSON
         return response()->json([
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
-            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
-            'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
-            'cmv' => number_format($cmv, 2, ',', '.'),
-            'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
+            'saldo_estoque_inicial' => number_format($data['estoqueInicialValor'], 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($data['comprasValor'], 2, ',', '.'),
+            'saldo_estoque_final' => number_format($data['estoqueFinalValor'], 2, ',', '.'),
+            'cmv' => number_format($data['cmv'], 2, ',', '.'),
+            'total_caixas' => number_format($data['total_caixas'], 2, ',', '.'),
         ]);
     }
 
@@ -308,71 +249,9 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
+        $data = $this->analyticService->calculatePeriodData($unidadeId, $startDateConverted, $endDateConverted);
 
-       // 1. Calcular o CMV (usando a mesma lógica da calculatePeriodData)
-        $saldoInicialRegistro = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-            ->whereDate('data_ajuste', $startDateConverted->toDateString())
-            ->orderBy('data_ajuste', 'desc')
-            ->first();
-
-        $estoqueInicialValor = 0;
-        if ($saldoInicialRegistro) {
-            $estoqueInicialValor = $saldoInicialRegistro->ajuste_saldo;
-        } else {
-            $saldoInicialRegistro = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                ->whereDate('data_ajuste', '<', $startDateConverted->toDateString())
-                ->orderBy('data_ajuste', 'desc')
-                ->first();
-
-            if ($saldoInicialRegistro) {
-                $estoqueInicialValor = $saldoInicialRegistro->ajuste_saldo;
-            } else {
-                $primeiroAjuste = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-                    ->orderBy('data_ajuste', 'asc')
-                    ->first();
-
-                if ($primeiroAjuste) {
-                     if ($primeiroAjuste->data_ajuste->greaterThan($startDateConverted)) {
-                         $estoqueInicialValor = 0;
-                     } else {
-                         $estoqueInicialValor = $primeiroAjuste->ajuste_saldo;
-                     }
-                } else {
-                    $estoqueInicialValor = 0;
-                }
-            }
-        }
-
-        // Compras no período
-        $comprasValor = MovimentacoesEstoque::where('unidade_id', $unidadeId)
-            ->where('operacao', 'Entrada')
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get()
-            ->sum(function ($item) {
-                $preco = is_numeric($item->preco_insumo) ? (float) $item->preco_insumo : 0;
-                $quantidade = is_numeric($item->quantidade) ? (float) $item->quantidade : 0;
-                return $preco * $quantidade;
-            });
-
-        // Estoque final
-        $saldoFinalControle = ControleSaldoEstoque::where('unidade_id', $unidadeId)
-            ->where('data_ajuste', '<=', $endDateConverted)
-            ->orderBy('data_ajuste', 'desc')
-            ->first();
-        $estoqueFinalValor = $saldoFinalControle ? $saldoFinalControle->ajuste_saldo : 0;
-
-        // Calcular o CMV
-        $cmv = $estoqueInicialValor + $comprasValor - $estoqueFinalValor;
-
-
-        // 2. Somar todos os caixas fechados no período
-        $totalCaixas = Caixa::where('unidade_id', $unidadeId)
-            ->where('status', 0) // Apenas caixas fechados
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->sum('valor_final');
-
-
-        // 3. Quantidade de pedidos e faturamento
+        // 3. Quantidade de pedidos e faturamento (CanalVenda logic kept here as it's specific to ticket calculation)
         $pedidos = CanalVenda::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->get();
@@ -387,11 +266,11 @@ class PainelAnaliticos extends Controller
         return response()->json([
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'saldo_estoque_inicial' => number_format($estoqueInicialValor, 2, ',', '.'),
-            'entradas_durante_periodo' => number_format($comprasValor, 2, ',', '.'),
-            'saldo_estoque_final' => number_format($estoqueFinalValor, 2, ',', '.'),
-            'cmv' => number_format($cmv, 2, ',', '.'),
-            'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
+            'saldo_estoque_inicial' => number_format($data['estoqueInicialValor'], 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($data['comprasValor'], 2, ',', '.'),
+            'saldo_estoque_final' => number_format($data['estoqueFinalValor'], 2, ',', '.'),
+            'cmv' => number_format($data['cmv'], 2, ',', '.'),
+            'total_caixas' => number_format($data['total_caixas'], 2, ',', '.'),
             'quantidade_pedidos' => $quantidadePedidos,
             'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
         ]);
@@ -455,7 +334,6 @@ class PainelAnaliticos extends Controller
 
             $startDateCarbon = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
             $endDateCarbon = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
-
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
@@ -470,18 +348,48 @@ class PainelAnaliticos extends Controller
             null
         );
 
-        $year = $startDateCarbon->year;
+        $calendario = $this->generateCalendarData($startDateCarbon->year, $unidadeId);
+        $dadosGruposFormatados = $this->formatGroupData($dreData);
+        $graficoData = $this->calculateChartData($dreData);
+        $explicacao = $this->generateExplanation($dreData, $graficoData);
+
+        $resultadoPeriodo = $dreData['total_caixas'] - $dreData['total_despesas_categorias'];
+
+        return response()->json([
+            'start_date' => $startDateCarbon->format('Y-m-d H:i:s'),
+            'end_date' => $endDateCarbon->format('Y-m-d H:i:s'),
+            'total_caixas' => number_format($dreData['total_caixas'], 2, ',', '.'),
+            'total_despesas_categorias' => number_format($dreData['total_despesas_categorias'], 2, ',', '.'),
+            'resultado_do_periodo' => number_format($resultadoPeriodo, 2, ',', '.'),
+            'total_salarios' => number_format($dreData['total_salarios'], 2, ',', '.'),
+            'grupos' => $dadosGruposFormatados,
+            'calendario' => $calendario,
+            'grafico_data' => $graficoData,
+            'explicacao_dre' => $explicacao,
+        ]);
+    }
+
+    private function generateCalendarData(int $year, int $unidadeId): array
+    {
         $meses = [
-            1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
-            5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
-            9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+            1 => 'Janeiro',
+            2 => 'Fevereiro',
+            3 => 'Março',
+            4 => 'Abril',
+            5 => 'Maio',
+            6 => 'Junho',
+            7 => 'Julho',
+            8 => 'Agosto',
+            9 => 'Setembro',
+            10 => 'Outubro',
+            11 => 'Novembro',
+            12 => 'Dezembro'
         ];
 
-        $calendario = collect(range(1, 12))->map(function ($month) use ($year, $unidadeId, $meses) {
+        return collect(range(1, 12))->map(function ($month) use ($year, $unidadeId, $meses) {
             $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
-            $endOfMonth = Carbon::create($year, $month, Carbon::create($year, $month, 1)->daysInMonth)->endOfDay();
+            $endOfMonth = Carbon::create($year, $month, $startOfMonth->daysInMonth)->endOfDay();
 
-            // Chame o serviço para obter os dados de cada mês
             $monthData = $this->analyticService->calculatePeriodData($unidadeId, $startOfMonth, $endOfMonth, true, $month, $year);
 
             $totalCaixasMes = $monthData['total_caixas'];
@@ -489,8 +397,6 @@ class PainelAnaliticos extends Controller
             $cmvMes = $monthData['cmv'];
             $resultadoDoPeriodoMes = $totalCaixasMes - $totalDespesasMes;
 
-            // Lógica para meses futuros no calendário: se não há faturamento, zera despesas e resultado
-            // Adicionado Carbon::today() para garantir que a comparação seja com o dia atual, não o final do mês atual.
             if ($startOfMonth->greaterThan(Carbon::today()->endOfDay()) && $totalCaixasMes == 0) {
                 $totalDespesasMes = 0;
                 $resultadoDoPeriodoMes = 0;
@@ -506,10 +412,12 @@ class PainelAnaliticos extends Controller
                 'resultado_do_periodo' => number_format($resultadoDoPeriodoMes, 2, ',', '.'),
                 'valor_cmv' => number_format($cmvMes, 2, ',', '.'),
             ];
-        });
+        })->toArray();
+    }
 
-        // Formatar os dados para o response da API principal (DRE do período selecionado)
-        $dadosGruposFormatados = $dreData['dados_grupos']->map(function ($grupo) use ($dreData) {
+    private function formatGroupData(array $dreData): array
+    {
+        return $dreData['dados_grupos']->map(function ($grupo) use ($dreData) {
             $grupo['categorias'] = $grupo['categorias']->map(function ($categoria) use ($dreData) {
                 $valor = $categoria['valor'];
                 $porcentagem = ($dreData['total_caixas'] > 0) ? ($valor / $dreData['total_caixas']) * 100 : 0;
@@ -521,70 +429,70 @@ class PainelAnaliticos extends Controller
                 ];
             });
             return $grupo;
-        });
+        })->toArray();
+    }
 
-        // --- INÍCIO DA CORREÇÃO PARA O GRAFICO_DATA ---
-        $valoresParaGrafico = []; // Array para armazenar os valores monetários reais
-        $porcentagensParaGrafico = []; // Array para armazenar as porcentagens
+    private function calculateChartData(array $dreData): array
+    {
+        $valoresParaGrafico = [];
+        $porcentagensParaGrafico = [];
 
         $totalCaixas = $dreData['total_caixas'];
         $totalLiquido = $dreData['Total_Liquido'];
-
 
         // 1. CMV
         $valoresParaGrafico['CMV'] = $dreData['cmv'];
         $porcentagensParaGrafico['CMV'] = ($totalLiquido > 0) ? ($dreData['cmv'] / $totalLiquido) * 100 : 0;
 
-        // 2. Custos Fixos (para o gráfico) - soma diretamente as categorias do grupo
+        // 2. Custos Fixos
         $grupoCustosFixos = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Custos Fixos');
-
-        $totalCustosFixosGrafico = 0;
-        if ($grupoCustosFixos && isset($grupoCustosFixos['categorias'])) {
-            // 'categorias' é uma Collection de arrays com a chave 'valor'
-            $totalCustosFixosGrafico = $grupoCustosFixos['categorias']->sum('valor');
-        }
+        $totalCustosFixosGrafico = ($grupoCustosFixos && isset($grupoCustosFixos['categorias'])) ? $grupoCustosFixos['categorias']->sum('valor') : 0;
 
         $valoresParaGrafico['Custos Fixos'] = $totalCustosFixosGrafico;
         $porcentagensParaGrafico['Custos Fixos'] = ($totalCaixas > 0) ? ($totalCustosFixosGrafico / $totalCaixas) * 100 : 0;
 
-        // 3. Impostos (para o gráfico) - soma o grupo 'Impostos' diretamente
+        // 3. Impostos
         $grupoImpostos = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Impostos');
         $totalImpostosGrafico = ($grupoImpostos && isset($grupoImpostos['categorias'])) ? $grupoImpostos['categorias']->sum('valor') : 0;
 
         $valoresParaGrafico['Impostos'] = $totalImpostosGrafico;
         $porcentagensParaGrafico['Impostos'] = ($totalCaixas > 0) ? ($totalImpostosGrafico / $totalCaixas) * 100 : 0;
 
-
-        // 4. Outras Despesas (total de despesas gerais menos os já categorizados para o gráfico)
+        // 4. Outras Despesas
         $outrasDespesasGrafico = $dreData['total_despesas_categorias'] - $dreData['cmv'] - $totalCustosFixosGrafico - $totalImpostosGrafico;
-        $outrasDespesasGrafico = max(0, $outrasDespesasGrafico); // Garante que não seja negativo
+        $outrasDespesasGrafico = max(0, $outrasDespesasGrafico);
         $valoresParaGrafico['Outras Despesas'] = $outrasDespesasGrafico;
         $porcentagensParaGrafico['Outras Despesas'] = ($totalCaixas > 0) ? ($outrasDespesasGrafico / $totalCaixas) * 100 : 0;
 
-        // 5. Resultado do Período (Lucro ou Prejuízo)
+        // 5. Resultado do Período
         $resultadoPeriodo = $totalCaixas - $dreData['total_despesas_categorias'];
         $valoresParaGrafico['Resultado do Período'] = $resultadoPeriodo;
         $porcentagensParaGrafico['Resultado do Período'] = ($totalCaixas > 0) ? ($resultadoPeriodo / $totalCaixas) * 100 : 0;
 
-        $graficoData = [
-            'labels' => array_keys($valoresParaGrafico), // Usar as chaves (nomes) dos valores
-            'data' => array_values($valoresParaGrafico), // Passar os valores monetários reais
-            'porcentagens' => array_map(fn($valor) => number_format($valor, 2, ',', '.') . '%', array_values($porcentagensParaGrafico)) // Passar as porcentagens formatadas
+        return [
+            'labels' => array_keys($valoresParaGrafico),
+            'data' => array_values($valoresParaGrafico),
+            'porcentagens' => array_map(fn($valor) => number_format($valor, 2, ',', '.') . '%', array_values($porcentagensParaGrafico))
         ];
-        // --- FIM DA CORREÇÃO PARA O GRAFICO_DATA ---
+    }
 
-        // Formatação dos valores para Real brasileiro com separadores
+    private function generateExplanation(array $dreData, array $graficoData): string
+    {
         $totalCaixasFormatado = number_format($dreData['total_caixas'], 2, ',', '.');
         $cmvFormatado = number_format($dreData['cmv'], 2, ',', '.');
-        $custosFixosFormatado = number_format($valoresParaGrafico['Custos Fixos'], 2, ',', '.');
-        $impostosFormatado = number_format($valoresParaGrafico['Impostos'], 2, ',', '.');
-        $outrasDespesasFormatado = number_format($valoresParaGrafico['Outras Despesas'], 2, ',', '.');
-        $resultadoPeriodoFormatado = number_format($resultadoPeriodo, 2, ',', '.');
 
-        $porcentagens = $graficoData['porcentagens']; // já formatadas com %
+        // We need to access the raw values again or store them. 
+        // Since $graficoData['data'] has raw values, we can use them by index.
+        // Order: CMV, Custos Fixos, Impostos, Outras Despesas, Resultado
 
-        // Explicação autoexplicativa, separada em parágrafos para facilitar leitura
-        $explicacao = <<<EOT
+        $custosFixosFormatado = number_format($graficoData['data'][1], 2, ',', '.');
+        $impostosFormatado = number_format($graficoData['data'][2], 2, ',', '.');
+        $outrasDespesasFormatado = number_format($graficoData['data'][3], 2, ',', '.');
+        $resultadoPeriodoFormatado = number_format($graficoData['data'][4], 2, ',', '.');
+
+        $porcentagens = $graficoData['porcentagens'];
+
+        return <<<EOT
         O Demonstrativo de Resultado do Exercício (DRE) apresenta o desempenho financeiro da sua empresa no período selecionado.
 
         - O faturamento total foi de R$ {$totalCaixasFormatado}, que representa toda a receita obtida com vendas.
@@ -597,20 +505,5 @@ class PainelAnaliticos extends Controller
 
         Esta análise ajuda a entender onde estão concentrados os principais custos e como eles impactam a rentabilidade do seu negócio.
         EOT;
-
-
-        return response()->json([
-            'start_date' => $startDateCarbon->format('Y-m-d H:i:s'),
-            'end_date' => $endDateCarbon->format('Y-m-d H:i:s'),
-            'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
-            'total_despesas_categorias' => number_format($dreData['total_despesas_categorias'], 2, ',', '.'),
-            'resultado_do_periodo' => number_format($resultadoPeriodo, 2, ',', '.'),
-            'total_salarios' => number_format($dreData['total_salarios'], 2, ',', '.'),
-            'grupos' => $dadosGruposFormatados,
-            'calendario' => $calendario,
-            'grafico_data' => $graficoData,
-            'explicacao_dre' => $explicacao,
-        ]);
     }
-
 }

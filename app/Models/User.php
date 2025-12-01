@@ -6,6 +6,7 @@ use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
@@ -28,14 +29,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'unidade_id', 
-        'pin', 
-        'cpf', 
+        'unidade_id',
+        'pin',
+        'cpf',
         'profile_photo_path',
-        'cargo_id',    
+        'cargo_id',
         'setor_id',
-        'salario',     
+        'salario',
         'franqueado',
+        'franqueadora',
         'colaborador'
     ];
 
@@ -59,6 +61,18 @@ class User extends Authenticatable
     protected $appends = [
         'profile_photo_url',
     ];
+
+    // public function getProfilePhotoUrlAttribute()
+    // {
+    //     if ($this->profile_photo_path && str_starts_with($this->profile_photo_path, 'http')) {
+    //         return $this->profile_photo_path;
+    //     }
+
+    //     return $this->profile_photo_path
+    //         ? Storage::url($this->profile_photo_path)
+    //         : $this->defaultProfilePhotoUrl();
+    // }
+
 
     /**
      * Get the attributes that should be cast.
@@ -125,7 +139,7 @@ class User extends Authenticatable
      * Sistema de permissões
      */
 
-     public function hasPermission(string $permission): bool
+    public function hasPermission(string $permission): bool
     {
         $permissions = $this->getPermissions();
         return isset($permissions[$permission]) && $permissions[$permission] === 1;
@@ -137,12 +151,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Notificações 
+     * Notificações
      */
 
     public function notificacoes()
     {
         return $this->hasMany(Notificacao::class);
     }
-     
 }

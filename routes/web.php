@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,9 @@ Route::get('/callback', [AuthController::class, 'handleCallback'])->name('idp.ca
 Route::post('/entrar', [AuthController::class, 'login'])->name('entrar.painel');
 
 Route::post('/resetar-password/{token}', [UserController::class, 'updateRecupePassword'])->name('updateRecupe.update');
+
+//  IA
+Route::get('/painel-analitycs', [PainelAnaliticos::class, 'analitycsBuscar']);
 
 // Defina a rota para buscar o token
 Route::get('/get-token', function () {

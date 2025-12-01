@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
+        <meta name="theme-color" content="#2c8516ff">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="shortcut icon" href="{{asset('storage/images/favicon.png')}}" type="image/x-icon">
         <meta name="robots" content="noindex">

@@ -92,7 +92,7 @@
           <div class="mt-4 flex flex-col gap-3">
             <!-- Valor Pago -->
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
-              <LabelModel text="Valor Pago" class="text-gray-800" />
+              <LabelModel text="Valor pago no KG" class="text-gray-800" />
               <div class="relative flex items-center w-full">
                 <input
                   v-model="form.valor_pago"
@@ -106,7 +106,7 @@
 
             <!-- Peso Bruto -->
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
-              <LabelModel text="Peso Líquido" class="text-gray-800" />
+              <LabelModel text="Peso líquido da caixa" class="text-gray-800" />
               <input
                 v-model="form.peso_bruto"
                 @input="formatarPeso('peso_bruto', $event.target.value)"
@@ -118,7 +118,7 @@
 
             <!-- Peso Limpo -->
             <div class="flex justify-between items-center px-4 py-2 rounded-lg">
-              <LabelModel text="Peso Limpo" class="text-gray-800" />
+              <LabelModel text="Peso limpo" class="text-gray-800" />
               <input
                 v-model="form.peso_limpo"
                 @input="formatarPeso('peso_limpo', $event.target.value)"

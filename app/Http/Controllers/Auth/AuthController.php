@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserPermission;
@@ -10,7 +11,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
+use App\Jobs\SyncUsuariosDaUnidade;
+use App\Services\UserSyncService;
 
 class AuthController extends Controller
 {
@@ -77,7 +81,7 @@ class AuthController extends Controller
         return redirect('https://login.taiksu.com.br/');
     }
 
-    public function handleCallback(Request $request)
+    public function handleCallback(Request $request, UserSyncService $userSyncService)
     {
         $token = $request->query('token');
 
@@ -85,41 +89,59 @@ class AuthController extends Controller
             return redirect('https://login.taiksu.com.br/');
         }
 
-        // Chamada à API protegida do IdP
+        Session::put('rh_token', $token);
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ])->get('https://login.taiksu.com.br/api/user/me');
 
         if ($response->failed()) {
-            // Token inválido, expirado ou não autorizado
             return redirect('https://login.taiksu.com.br/');
         }
 
         $userData = $response->json();
 
-        // Busca o usuário existente pelo email
-        $user = \App\Models\User::where('email', $userData['email'])->first();
 
-        if (!$user) {
-            // Se o usuário não existe, redireciona para login do IDP
-            return redirect('https://login.taiksu.com.br/');
+        $unidadeData = $userData['unidade'] ?? null;
+        $unidadeId   = $unidadeData['id'] ?? null;
+        $grupoNome   = $userData['grupo_nome'] ?? null;
+
+        // 🔎 Cria/atualiza unidade
+        if ($unidadeData) {
+            $userSyncService->syncUnidadeDetails($unidadeData);
         }
 
-        // Autentica o usuário no Laravel
-        Auth::login($user);
+        // Cria/atualiza usuário e permissões
+        $user = $userSyncService->syncUser($userData, $unidadeId);
 
-        // Redireciona para o painel conforme o tipo
+        // 🔎 Verifica se já tem sessão e se é outro usuário
+        if (Auth::check() && Auth::id() !== $user->id) {
+            Auth::logout(); // encerra sessão antiga
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        // ✅ Autentica sempre com os dados mais recentes
+        Auth::login($user, true);
+
+        if (in_array($grupoNome, ['Desenvolvedor', 'Franqueadora', 'Franqueado'])) {
+            try {
+                $userSyncService->syncUnidade($unidadeId, $token);
+            } catch (\Throwable $e) {
+                Log::error("Erro na sincronização de usuários da unidade {$unidadeId}: " . $e->getMessage());
+            }
+        }
+
+        // Redireciona conforme grupo
         if ($user->franqueadora) {
             return redirect()->route('franqueadora.painel');
         } elseif ($user->franqueado) {
             return redirect()->route('franqueado.painel');
         }
 
-        // Redirecionamento padrão
         return redirect()->route('pagina.login');
     }
-
 
 
     public function login(Request $request)
@@ -167,19 +189,15 @@ class AuthController extends Controller
 
 
 
-    /**
-     * Handle the logout request.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        // Redireciona diretamente para o login do IDP
-        return redirect('https://login.taiksu.com.br/');
+        // Informa ao Inertia que é para redirecionar o browser para uma URL externa
+        return Inertia::location('https://login.taiksu.com.br/');
     }
 
 
@@ -199,6 +217,7 @@ class AuthController extends Controller
 
         // Carrega os relacionamentos necessários, incluindo 'cargo'
         $user = $user->load('userDetails', 'unidade', 'cargo');
+
 
         // Obtém as permissões do usuário e converte 0/1 para booleanos
         $permissions = array_map('boolval', $user->getPermissions());
