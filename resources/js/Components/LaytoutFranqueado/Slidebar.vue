@@ -43,6 +43,7 @@ const userPermissions = ref({});
 const menuCategories = ref([]);
 const sidebarStore = useSidebarStore();
 const loading = ref(true);
+const openSubmenuLink = ref(null); // Controla qual submenu está aberto
 
 const toggleSidebar = () => {
   sidebarStore.toggle();
@@ -91,6 +92,7 @@ const fetchMenu = async () => {
 
 // Fornece userPermissions para componentes filhos via provide/inject
 provide('userPermissions', userPermissions);
+provide('openSubmenuLink', openSubmenuLink);
 
 // Computed que filtra categorias e itens com base nas permissões do usuário
 const filteredMenuCategories = computed(() => {

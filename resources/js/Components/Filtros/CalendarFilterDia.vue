@@ -99,8 +99,9 @@ const emit = defineEmits();
 const isDropdownOpen = ref(false);
 
 // Variáveis reativas para controlar as datas de início e fim
-const selectedStartDate = ref(dayjs()); // Define o dia atual como padrão para a data de início
-const selectedEndDate = ref(dayjs()); // Define o dia atual como padrão para a data de fim
+// Padrão: uma semana (7 dias atrás até hoje)
+const selectedStartDate = ref(dayjs().subtract(7, 'day').startOf('day'));
+const selectedEndDate = ref(dayjs().endOf('day'));
 
 const currentDate = ref(dayjs());
 
@@ -199,8 +200,8 @@ const applyFilters = () => {
 
 // Função para limpar os filtros
 const clearFilters = () => {
-    selectedStartDate.value = dayjs();
-    selectedEndDate.value = dayjs();
+    selectedStartDate.value = dayjs().subtract(7, 'day').startOf('day');
+    selectedEndDate.value = dayjs().endOf('day');
     selectedCategory.value = '';
 };
 </script>

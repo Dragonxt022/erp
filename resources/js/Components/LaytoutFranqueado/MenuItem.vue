@@ -55,8 +55,9 @@ const props = defineProps({
 });
 
 const userPermissions = inject('userPermissions', ref({}));
+const openSubmenuLink = inject('openSubmenuLink', ref(null)); // Injeta o estado compartilhado
 
-const showSubmenu = ref(false);
+const showSubmenu = computed(() => openSubmenuLink.value === props.link);
 const isIconRotated = computed(() => showSubmenu.value);
 
 // Verifica se o link é externo (começa com http:// ou https://)
@@ -97,22 +98,28 @@ const handleClick = (e) => {
 };
 
 const toggleSubmenu = () => {
-    showSubmenu.value = !showSubmenu.value;
+    // Se o submenu atual está aberto, fecha. Caso contrário, abre e fecha os outros
+    if (openSubmenuLink.value === props.link) {
+        openSubmenuLink.value = null;
+    } else {
+        openSubmenuLink.value = props.link;
+    }
     saveSubmenuState();
 };
 
 const loadSubmenuState = () => {
-    const storedState = localStorage.getItem(`submenu-${props.link}`);
+    const storedState = localStorage.getItem('openSubmenuLink');
     if (storedState !== null) {
-        showSubmenu.value = JSON.parse(storedState);
+        openSubmenuLink.value = storedState;
     }
 }; 
 
 const saveSubmenuState = () => {
-    localStorage.setItem(
-        `submenu-${props.link}`,
-        JSON.stringify(showSubmenu.value)
-    );
+    if (openSubmenuLink.value) {
+        localStorage.setItem('openSubmenuLink', openSubmenuLink.value);
+    } else {
+        localStorage.removeItem('openSubmenuLink');
+    }
 };
 
 const menuItemClass = computed(() => {
@@ -140,16 +147,16 @@ const handleLogout = () => {
 loadSubmenuState();
 
 const checkSubmenuStatus = () => {
-    if (!isAnySubmenuActive.value) {
+    if (!isAnySubmenuActive.value && openSubmenuLink.value === props.link) {
         nextTick(() => {
-            showSubmenu.value = false;
+            openSubmenuLink.value = null;
             saveSubmenuState();
         });
     }
 };
 
 watch(isAnySubmenuActive, checkSubmenuStatus);
-watch(showSubmenu, () => {
+watch(openSubmenuLink, () => {
     nextTick(() => saveSubmenuState());
 });
 </script>

@@ -96,8 +96,9 @@ import dayjs from 'dayjs';
 const isDropdownOpen = ref(false);
 
 // Variáveis reativas para controlar as datas de início e fim
-const selectedStartDate = ref(dayjs().startOf('month'));
-const selectedEndDate = ref(dayjs().endOf('month'));
+// Padrão: uma semana (7 dias atrás até hoje)
+const selectedStartDate = ref(dayjs().subtract(7, 'day').startOf('day'));
+const selectedEndDate = ref(dayjs().endOf('day'));
 
 const currentDate = ref(dayjs());
 
