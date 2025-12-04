@@ -126,29 +126,15 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        // Soma apenas os caixas fechados (status = 0) no período selecionado
-        $totalCaixas = Caixa::where('unidade_id', $unidade_id)
-            ->where('status', 0) // Apenas caixas fechados
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtro por data
-            ->sum('valor_final');
-
-        // 3. Quantidade de pedidos e faturamento
-        $pedidos = CanalVenda::where('unidade_id', $unidade_id)
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get();
-
-        $quantidadePedidos = $pedidos->sum('quantidade_vendas_feitas'); // Total de pedidos realizados
-        $faturamentoTotal = $pedidos->sum('valor_total_vendas'); // Faturamento total durante o período
-
-        // 4. Calcular o Ticket Médio
-        $ticketMedio = $quantidadePedidos > 0 ? $faturamentoTotal / $quantidadePedidos : 0;
+        // Usar o serviço para obter todos os dados, incluindo métricas de pedidos
+        $data = $this->analyticService->calculatePeriodData($unidade_id, $startDateConverted, $endDateConverted, false, null, null, true);
 
         return response()->json([
             'start_date' => $startDateConverted->format('d-m-Y'),
             'end_date' => $endDateConverted->format('d-m-Y'),
-            'total_caixas' => number_format($totalCaixas, 2, ',', '.'),
-            'quantidade_pedidos' => $quantidadePedidos,
-            'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
+            'total_caixas' => number_format($data['total_caixas'], 2, ',', '.'),
+            'quantidade_pedidos' => $data['quantidade_pedidos'],
+            'ticket_medio' => number_format($data['ticket_medio'], 2, ',', '.'),
         ]);
     }
 
@@ -249,18 +235,8 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        $data = $this->analyticService->calculatePeriodData($unidadeId, $startDateConverted, $endDateConverted);
-
-        // 3. Quantidade de pedidos e faturamento (CanalVenda logic kept here as it's specific to ticket calculation)
-        $pedidos = CanalVenda::where('unidade_id', $unidadeId)
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get();
-
-        $quantidadePedidos = $pedidos->sum('quantidade_vendas_feitas'); // Total de pedidos realizados
-        $faturamentoTotal = $pedidos->sum('valor_total_vendas'); // Faturamento total durante o período
-
-        // 4. Calcular o Ticket Médio
-        $ticketMedio = $quantidadePedidos > 0 ? $faturamentoTotal / $quantidadePedidos : 0;
+        // Usar o serviço para obter todos os dados, incluindo métricas de pedidos
+        $data = $this->analyticService->calculatePeriodData($unidadeId, $startDateConverted, $endDateConverted, false, null, null, true);
 
         // Retornar os resultados em um único JSON
         return response()->json([
@@ -271,8 +247,8 @@ class PainelAnaliticos extends Controller
             'saldo_estoque_final' => number_format($data['estoqueFinalValor'], 2, ',', '.'),
             'cmv' => number_format($data['cmv'], 2, ',', '.'),
             'total_caixas' => number_format($data['total_caixas'], 2, ',', '.'),
-            'quantidade_pedidos' => $quantidadePedidos,
-            'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
+            'quantidade_pedidos' => $data['quantidade_pedidos'],
+            'ticket_medio' => number_format($data['ticket_medio'], 2, ',', '.'),
         ]);
     }
 
@@ -298,23 +274,15 @@ class PainelAnaliticos extends Controller
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
         }
 
-        // 1. Quantidade de pedidos e faturamento
-        $pedidos = CanalVenda::where('unidade_id', $unidade_id)
-            ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->get();
-
-        $quantidadePedidos = $pedidos->sum('quantidade_vendas_feitas'); // Total de pedidos realizados
-        $faturamentoTotal = $pedidos->sum('valor_total_vendas'); // Faturamento total durante o período
-
-        // 2. Calcular o Ticket Médio
-        $ticketMedio = $quantidadePedidos > 0 ? $faturamentoTotal / $quantidadePedidos : 0;
+        // Usar o serviço para obter métricas de pedidos
+        $data = $this->analyticService->calculatePeriodData($unidade_id, $startDateConverted, $endDateConverted, false, null, null, true);
 
         // Retornar as informações em formato JSON
         return response()->json([
             'start_date' => $startDate,
             'end_date' => $endDate,
-            'quantidade_pedidos' => $quantidadePedidos,
-            'ticket_medio' => number_format($ticketMedio, 2, ',', '.'),
+            'quantidade_pedidos' => $data['quantidade_pedidos'],
+            'ticket_medio' => number_format($data['ticket_medio'], 2, ',', '.'),
         ]);
     }
 

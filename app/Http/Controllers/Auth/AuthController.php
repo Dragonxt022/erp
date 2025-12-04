@@ -125,7 +125,7 @@ class AuthController extends Controller
         // ✅ Autentica sempre com os dados mais recentes
         Auth::login($user, true);
 
-        if (in_array($grupoNome, ['Desenvolvedor', 'Franqueadora', 'Franqueado'])) {
+        if (in_array($grupoNome, ['Desenvolvedor', 'Franqueadora', 'Franqueado', 'Gerente'])) {
             try {
                 $userSyncService->syncUnidade($unidadeId, $token);
             } catch (\Throwable $e) {
@@ -135,8 +135,10 @@ class AuthController extends Controller
 
         // Redireciona conforme grupo
         if ($user->franqueadora) {
-            return redirect()->route('franqueadora.painel');
+            return redirect()->route('franqueado.painel');
         } elseif ($user->franqueado) {
+            return redirect()->route('franqueado.painel');
+        } elseif ($user->gerente) {
             return redirect()->route('franqueado.painel');
         }
 
@@ -172,7 +174,7 @@ class AuthController extends Controller
             ])->withInput($request->only('cpf'));
         }
 
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         if ($user->franqueadora) {

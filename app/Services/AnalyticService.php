@@ -36,7 +36,7 @@ class AnalyticService
      * @param int|null $year Usado apenas no modo calendário para o primeiro mês.
      * @return array
      */
-    public function calculatePeriodData(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode = false, ?int $month = null, ?int $year = null): array
+    public function calculatePeriodData(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode = false, ?int $month = null, ?int $year = null, bool $includeOrderMetrics = false): array
     {
         $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);
 
@@ -70,7 +70,7 @@ class AnalyticService
 
         $resultado_do_periodo_sem_folha = max($totalCaixas - $categoryData['totalDespesasCategoriasSemFolha'], 0);
 
-        return [
+        $result = [
             'estoqueInicialValor' => $stockMetrics['estoqueInicialValor'],
             'comprasValor' => $stockMetrics['comprasValor'],
             'estoqueFinalValor' => $stockMetrics['estoqueFinalValor'],
@@ -92,6 +92,13 @@ class AnalyticService
             'resultado_do_periodo_sem_folha' => $resultado_do_periodo_sem_folha,
             'dados_grupos' => $categoryData['dadosGrupos'],
         ];
+
+        if ($includeOrderMetrics) {
+            $orderMetrics = $this->calculateOrderMetrics($unidadeId, $startDateCarbon, $endDateCarbon);
+            $result = array_merge($result, $orderMetrics);
+        }
+
+        return $result;
     }
 
     private function calculateStockMetrics(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month): array
@@ -173,7 +180,7 @@ class AnalyticService
             ->whereHas('categoria', function ($query) {
                 $query->where('nome', 'LIKE', '%FGTS%');
             })
-            ->whereIn('status', ['pago', 'pendente', 'agendada'])
+            ->whereIn('status', ['pago', 'pendente', 'agendada', 'atrasado'])
             ->whereBetween('emitida_em', [$startDateCarbon, $endDateCarbon])
             ->sum('valor');
 
@@ -181,7 +188,7 @@ class AnalyticService
             ->whereHas('categoria', function ($query) {
                 $query->where('nome', 'Motoboy');
             })
-            ->whereIn('status', ['pago', 'pendente'])
+            ->whereIn('status', ['pago', 'pendente', 'agendada', 'atrasado'])
             ->whereBetween('emitida_em', [$startDateCarbon, $endDateCarbon])
             ->sum('valor');
 
@@ -284,6 +291,31 @@ class AnalyticService
             'dadosGrupos' => $dadosGrupos,
             'totalDespesasCategorias' => $totalDespesasCategorias,
             'totalDespesasCategoriasSemFolha' => $totalDespesasCategoriasSemFolha,
+        ];
+    }
+
+    /**
+     * Calcula métricas relacionadas a pedidos (quantidade, faturamento e ticket médio).
+     *
+     * @param int $unidadeId
+     * @param Carbon $startDateCarbon
+     * @param Carbon $endDateCarbon
+     * @return array
+     */
+    private function calculateOrderMetrics(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array
+    {
+        $pedidos = CanalVenda::where('unidade_id', $unidadeId)
+            ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
+            ->get();
+
+        $quantidadePedidos = $pedidos->sum('quantidade_vendas_feitas');
+        $faturamentoTotal = $pedidos->sum('valor_total_vendas');
+        $ticketMedio = $quantidadePedidos > 0 ? $faturamentoTotal / $quantidadePedidos : 0;
+
+        return [
+            'quantidade_pedidos' => $quantidadePedidos,
+            'faturamento_total' => $faturamentoTotal,
+            'ticket_medio' => $ticketMedio,
         ];
     }
 }

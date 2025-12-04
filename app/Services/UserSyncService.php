@@ -63,11 +63,16 @@ class UserSyncService
                 'unidade_id'         => $unidadeId,
                 'grupo_id'           => $userData['grupo_id'] ?? null,
                 'profile_photo_path' => isset($userData['foto']) ? "https://login.taiksu.com.br/frontend/profiles/" . $userData['foto'] : null,
-                'password'           => bcrypt(Str::random(16)),
                 'franqueado'         => $franqueado,
                 'franqueadora'       => $franqueadora,
             ]
         );
+
+        // Se o usuário foi recém-criado (ou não tem senha), define uma senha aleatória
+        if ($user->wasRecentlyCreated || empty($user->password)) {
+            $user->password = bcrypt(Str::random(16));
+            $user->save();
+        }
 
         // ⚡ Permissões default
         if (!UserPermission::where('user_id', $user->id)->exists()) {

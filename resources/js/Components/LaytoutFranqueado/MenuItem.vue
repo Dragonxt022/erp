@@ -106,7 +106,7 @@ const loadSubmenuState = () => {
     if (storedState !== null) {
         showSubmenu.value = JSON.parse(storedState);
     }
-};
+}; 
 
 const saveSubmenuState = () => {
     localStorage.setItem(
