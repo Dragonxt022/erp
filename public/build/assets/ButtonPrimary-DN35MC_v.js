@@ -1,1 +1,0 @@
-import{_ as o}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{e,o as r,r as n}from"./app-C52zFhyA.js";const s={},c={class:"login-btn-text"};function a(t,_){return r(),e("button",c,[n(t.$slots,"default")])}const i=o(s,[["render",a]]);export{i as B};

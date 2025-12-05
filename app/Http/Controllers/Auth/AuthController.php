@@ -135,7 +135,7 @@ class AuthController extends Controller
 
         // Redireciona conforme grupo
         if ($user->franqueadora) {
-            return redirect()->route('franqueado.painel');
+            return redirect()->route('franqueadora.painel');
         } elseif ($user->franqueado) {
             return redirect()->route('franqueado.painel');
         } elseif ($user->gerente) {
@@ -224,10 +224,16 @@ class AuthController extends Controller
         // Obtém as permissões do usuário e converte 0/1 para booleanos
         $permissions = array_map('boolval', $user->getPermissions());
 
+        // Obtém o token RH da sessão para o sistema de notificações
+        $rhToken = Session::get('rh_token');
+
         // Retorna os dados do usuário com os relacionamentos e permissões
         return response()->json([
             'status' => 'success',
-            'data' => array_merge($user->toArray(), ['permissions' => $permissions]),
+            'data' => array_merge($user->toArray(), [
+                'permissions' => $permissions,
+                'rh_token' => $rhToken,
+            ]),
         ]);
     }
 }

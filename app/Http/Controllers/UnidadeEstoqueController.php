@@ -516,12 +516,11 @@ class UnidadeEstoqueController extends Controller
             'historicoMovimentacoes' => $historicoMovimentacoes->values(),
             'start_date' => $startDate,
             'end_date' => $endDate,
-            // Use the CMV from the AnalyticService
+            // Dados de estoque do AnalyticService
             'cmv' => number_format($cmv, 2, ',', '.'),
-            // You can also include other relevant data from $analysedData if needed
-            'saldo_estoque_inicial' => number_format($analysedData['total_caixas'] - $analysedData['total_despesas_categorias_sem_folha'] , 2, ',', '.'), // Example, replace with actual field from analysedData
-            'entradas_durante_periodo' => number_format($analysedData['total_caixas'], 2, ',', '.'), // Example
-            'saldo_estoque_final' => number_format($analysedData['cmv'], 2, ',', '.'), // Example, replace with actual field from analysedData
+            'saldo_estoque_inicial' => number_format($analysedData['estoqueInicialValor'], 2, ',', '.'),
+            'entradas_durante_periodo' => number_format($analysedData['comprasValor'], 2, ',', '.'),
+            'saldo_estoque_final' => number_format($analysedData['estoqueFinalValor'], 2, ',', '.'),
         ]);
     }
 
