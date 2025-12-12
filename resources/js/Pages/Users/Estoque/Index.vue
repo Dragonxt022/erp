@@ -24,6 +24,7 @@
             alt="Filtro"
             class="w-5 h-5"
           />
+          
           <!-- Ajuste o tamanho do ícone conforme necessário -->
           <span class="text-gray-900 text-[17px] font-semibold">
             <CalendarSimples2 @update-filters="handleFilterUpdate" />
@@ -265,9 +266,25 @@ const statusMap = {
     icon: '/storage/images/arrow_back_red.svg',
     label: 'Retirada',
   },
+  Saida: {
+    icon: '/storage/images/arrow_back_red.svg',
+    label: 'Saída',
+  },
   Ajuste: {
-    icon: '/storage/images/icon_ajustes.svg', // Adicione um ícone para 'Ajuste'
+    icon: '/storage/images/icon_ajustes.svg',
     label: 'Ajuste',
+  },
+  'Ajuste - Exclusão': {
+    icon: '/storage/images/arrow_back_red.svg',
+    label: 'Ajuste - Exclusão',
+  },
+  'Ajuste - Adição': {
+    icon: '/storage/images/arrow_back_verde.svg',
+    label: 'Ajuste - Adição',
+  },
+  'Ajuste - Redução': {
+    icon: '/storage/images/arrow_back_red.svg',
+    label: 'Ajuste - Redução',
   },
 };
 

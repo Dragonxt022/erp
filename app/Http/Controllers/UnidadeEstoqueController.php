@@ -650,61 +650,135 @@ class UnidadeEstoqueController extends Controller
             // Busca o lote pelo ID
             $lote = UnidadeEstoque::findOrFail($loteId);
 
+            // Armazena dados originais para registro
+            $quantidadeOriginal = $lote->quantidade;
+            $valorOriginal = $lote->preco_insumo * $lote->quantidade;
+
             // Obtém a nova quantidade informada
             $novaQuantidade = floatval($request->input('quantidade'));
 
             // Calcula a diferença (quantidade adicionada ou removida)
-            $diferencaQuantidade = $novaQuantidade - $lote->quantidade;
+            $diferencaQuantidade = $novaQuantidade - $quantidadeOriginal;
+            $valorDiferenca = $diferencaQuantidade * $lote->preco_insumo;
 
-            // Atualiza a quantidade e o timestamp
-            $lote->quantidade = $novaQuantidade;
-            $lote->updated_at = now();
-            $lote->save();
-
-            // Registrar a movimentação com a diferença
-            MovimentacoesEstoque::create([
-                'insumo_id' => $lote->insumo_id,
-                'fornecedor_id' => $lote->fornecedor_id,
-                'usuario_id' => Auth::id(),
-                'quantidade' => $diferencaQuantidade, // Armazena a diferença da quantidade
-                'preco_insumo' => $lote->preco_insumo, // Mantém o preço por unidade já salvo
-                'operacao' => 'Ajuste',
-                'unidade' => $lote->unidade,
-                'unidade_id' => Auth::user()->unidade_id,
-            ]);
-
-            // Atualiza o saldo do estoque
             $unidade_id = Auth::user()->unidade_id;
+            $loteExcluido = false;
 
-            // Calcular o valor total do estoque
+            // Se a nova quantidade for 0, excluir o lote
+            if ($novaQuantidade == 0) {
+                // Registrar a movimentação de saída total (negativa)
+                MovimentacoesEstoque::create([
+                    'insumo_id' => $lote->insumo_id,
+                    'fornecedor_id' => $lote->fornecedor_id,
+                    'usuario_id' => Auth::id(),
+                    'quantidade' => -$quantidadeOriginal, // Quantidade negativa (saída total)
+                    'preco_insumo' => $lote->preco_insumo,
+                    'operacao' => 'Ajuste - Exclusão',
+                    'unidade' => $lote->unidade,
+                    'unidade_id' => $unidade_id,
+                ]);
+
+                // Excluir o lote
+                $lote->delete();
+                $loteExcluido = true;
+
+                Log::info('Lote excluído', [
+                    'lote_id' => $loteId,
+                    'insumo_id' => $lote->insumo_id,
+                    'quantidade_removida' => $quantidadeOriginal,
+                    'valor_removido' => $valorOriginal,
+                    'unidade_id' => $unidade_id,
+                ]);
+            } else {
+                // Atualiza a quantidade e o timestamp
+                $lote->quantidade = $novaQuantidade;
+                $lote->updated_at = now();
+                $lote->save();
+
+                // Registrar a movimentação com a diferença
+                $tipoOperacao = $diferencaQuantidade > 0 ? 'Ajuste - Adição' : 'Ajuste - Redução';
+
+                MovimentacoesEstoque::create([
+                    'insumo_id' => $lote->insumo_id,
+                    'fornecedor_id' => $lote->fornecedor_id,
+                    'usuario_id' => Auth::id(),
+                    'quantidade' => $diferencaQuantidade, // Armazena a diferença (positiva ou negativa)
+                    'preco_insumo' => $lote->preco_insumo,
+                    'operacao' => $tipoOperacao,
+                    'unidade' => $lote->unidade,
+                    'unidade_id' => $unidade_id,
+                ]);
+
+                Log::info('Lote atualizado', [
+                    'lote_id' => $loteId,
+                    'insumo_id' => $lote->insumo_id,
+                    'quantidade_original' => $quantidadeOriginal,
+                    'quantidade_nova' => $novaQuantidade,
+                    'diferenca' => $diferencaQuantidade,
+                    'valor_diferenca' => $valorDiferenca,
+                    'unidade_id' => $unidade_id,
+                ]);
+            }
+
+            // Recalcular o saldo total do estoque (após exclusão ou atualização)
             $valorInsumos = UnidadeEstoque::where('unidade_id', $unidade_id)
                 ->where('quantidade', '>', 0)
                 ->sum(DB::raw('preco_insumo * quantidade'));
 
             $saldoAtual = $valorInsumos;
 
+            // Criar registro de controle de saldo
+            $motivoAjuste = $loteExcluido
+                ? 'Atualização após Exclusão de Lote (Quantidade = 0)'
+                : 'Atualização após Ajuste de Quantidade';
+
             DB::table('controle_saldo_estoques')->insert([
                 'ajuste_saldo' => $saldoAtual,
                 'data_ajuste' => now(),
-                'motivo_ajuste' => 'Atualização após Reajuste',
+                'motivo_ajuste' => $motivoAjuste,
                 'unidade_id' => $unidade_id,
                 'responsavel_id' => Auth::id(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
+            Log::info('Saldo de estoque recalculado', [
+                'unidade_id' => $unidade_id,
+                'saldo_atual' => $saldoAtual,
+                'motivo' => $motivoAjuste,
+            ]);
+
             DB::commit();
 
-            return response()->json([
-                'message' => 'Quantidade atualizada com sucesso!',
-                'lote' => [
-                    'id' => $lote->id,
-                    'quantidade' => $lote->quantidade,
-                ],
-            ], 201);
+            // Resposta diferenciada baseada na operação
+            if ($loteExcluido) {
+                return response()->json([
+                    'message' => 'Lote excluído com sucesso! O estoque foi recalculado.',
+                    'operacao' => 'exclusao',
+                    'lote_excluido' => true,
+                    'valor_removido' => $valorOriginal,
+                    'saldo_estoque_atual' => $saldoAtual,
+                ], 200);
+            } else {
+                return response()->json([
+                    'message' => 'Quantidade atualizada com sucesso! O estoque foi recalculado.',
+                    'operacao' => $diferencaQuantidade > 0 ? 'adicao' : 'reducao',
+                    'lote' => [
+                        'id' => $lote->id,
+                        'quantidade_anterior' => $quantidadeOriginal,
+                        'quantidade_atual' => $lote->quantidade,
+                        'diferenca' => $diferencaQuantidade,
+                        'valor_diferenca' => $valorDiferenca,
+                    ],
+                    'saldo_estoque_atual' => $saldoAtual,
+                ], 200);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Erro ao atualizar lote: ' . $e->getMessage());
+            Log::error('Erro ao atualizar lote: ' . $e->getMessage(), [
+                'lote_id' => $loteId,
+                'exception' => $e,
+            ]);
             return response()->json(['error' => 'Erro ao atualizar quantidade. Tente novamente mais tarde.'], 500);
         }
     }
