@@ -3,7 +3,6 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Controllers
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CaixaAnaliticoController;
 use App\Http\Controllers\CaixaController;
@@ -26,8 +25,10 @@ use App\Http\Controllers\SalmaoHistoricoController;
 use App\Http\Controllers\UnidadeEstoqueController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminPainelController;
 use App\Http\Middleware\CheckFranqueado;
 use App\Http\Middleware\CheckFranqueadora;
+
 
 
 
@@ -69,6 +70,14 @@ Route::prefix('api')->middleware([
     'verified',
     CheckFranqueadora::class
 ])->group(function () {
+    // Painel Administrativo da Franqueadora
+    Route::prefix('admin/painel')->group(function () {
+        Route::get('/unidades', [AdminPainelController::class, 'getUnidades']);
+        Route::get('/indicadores', [AdminPainelController::class, 'getIndicadores']);
+        Route::get('/faturamento-diario', [AdminPainelController::class, 'getFaturamentoDiario']);
+        Route::get('/compromissos', [AdminPainelController::class, 'getCompromissos']);
+    });
+
     // Unidades
     Route::prefix('unidades')->group(function () {
         Route::get('/', [UnitController::class, 'getUnidades'])->name('unidades.get');
@@ -143,6 +152,7 @@ Route::prefix('api')->middleware([
     Route::get('/pontos', [PontoController::class, 'index']);
     Route::put('/pontos/{ponto}', [PontoController::class, 'update']);
 });
+
 
 // Rotas protegidas por autenticação Usuarios
 Route::prefix('api')->middleware([
