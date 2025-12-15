@@ -99,7 +99,7 @@
       <div class="bg-white rounded-lg shadow">
         <!-- Cabeçalho da lista -->
         <div
-          class="bg-[#164110] grid grid-cols-5 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
+          class="bg-[#164110] grid grid-cols-7 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
         >
           <span
             @click="sortBy('operacao')"
@@ -126,6 +126,20 @@
             />
           </span>
           <span
+            @click="sortBy('preco_unitario')"
+            class="cursor-pointer flex items-center gap-2"
+          >
+            Valor Unit.
+            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
+          </span>
+          <span
+            @click="sortBy('valor_total')"
+            class="cursor-pointer flex items-center gap-2"
+          >
+            Valor Total
+            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
+          </span>
+          <span
             @click="sortBy('quanto')"
             class="cursor-pointer flex items-center gap-2"
           >
@@ -144,7 +158,7 @@
         <!-- Filtros (apenas exibidos se ativados) -->
         <div
           v-if="showFilters"
-          class="grid grid-cols-5 gap-4 py-2 px-6 bg-gray-50"
+          class="grid grid-cols-7 gap-4 py-2 px-6 bg-gray-50"
         >
           <input
             v-model="filters.operacao"
@@ -162,6 +176,18 @@
             v-model="filters.item"
             type="text"
             placeholder="Filtrar por item"
+            class="p-2 border border-gray-300 rounded"
+          />
+          <input
+            v-model="filters.preco_unitario"
+            type="text"
+            placeholder="Filtrar por valor unit."
+            class="p-2 border border-gray-300 rounded"
+          />
+          <input
+            v-model="filters.valor_total"
+            type="text"
+            placeholder="Filtrar por valor total"
             class="p-2 border border-gray-300 rounded"
           />
           <input
@@ -187,7 +213,7 @@
             <li
               v-for="(movimentacao, index) in filteredHistoricoMovimentacoes"
               :key="index"
-              class="hover:bg-gray-200 grid grid-cols-5 gap-1 px-6 py-2 text-[16px]"
+              class="hover:bg-gray-200 grid grid-cols-7 gap-1 px-6 py-2 text-[16px]"
             >
               <span class="flex items-center text-gray-900 font-semibold">
                 <img
@@ -204,6 +230,12 @@
               </span>
               <span class="text-gray-900 font-medium">
                 {{ movimentacao.item }}
+              </span>
+              <span class="text-gray-900 font-semibold">
+                R$ {{ formatCurrency(movimentacao.preco_unitario) }}
+              </span>
+              <span class="text-gray-900 font-semibold">
+                R$ {{ formatCurrency(movimentacao.valor_total) }}
               </span>
               <span class="text-gray-600 font-semibold">
                 {{ movimentacao.data }}
@@ -254,6 +286,8 @@ const filters = ref({
   quantidade: '',
   quando: '',
   item: '',
+  preco_unitario: '',
+  valor_total: '',
   responsavel: '',
 });
 
@@ -301,6 +335,10 @@ const filteredHistoricoMovimentacoes = computed(() => {
           String(mov.quantidade).includes(filters.value.quantidade)) &&
         (filters.value.item === '' ||
           mov.item.toLowerCase().includes(filters.value.item.toLowerCase())) &&
+        (filters.value.preco_unitario === '' ||
+          String(mov.preco_unitario).includes(filters.value.preco_unitario)) &&
+        (filters.value.valor_total === '' ||
+          String(mov.valor_total).includes(filters.value.valor_total)) &&
         (filters.value.responsavel === '' ||
           mov.responsavel
             .toLowerCase()
@@ -376,6 +414,12 @@ const fetchDataCMV = async (startDate = null, endDate = null) => {
   } catch (error) {
     console.error('Erro ao buscar dados analíticos:', error);
   }
+};
+
+// Função para formatar valores monetários
+const formatCurrency = (value) => {
+  if (value === null || value === undefined) return '0,00';
+  return Number(value).toFixed(2).replace('.', ',');
 };
 
 // Carrega os dados iniciais

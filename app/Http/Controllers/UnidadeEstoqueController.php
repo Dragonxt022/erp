@@ -491,6 +491,8 @@ class UnidadeEstoqueController extends Controller
                     'operacao' => $estoque->operacao,
                     'unidade' => $estoque->unidade,
                     'quantidade' => $quantidade,
+                    'preco_unitario' => $estoque->preco_insumo,
+                    'valor_total' => abs($quantidade) * $estoque->preco_insumo,
                     'item' => $estoque->insumo->nome ?? 'N/A',
                     'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
                     'responsavel' => $estoque->usuario->name ?? 'Desconhecido',
