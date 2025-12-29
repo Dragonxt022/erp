@@ -105,6 +105,10 @@ Route::middleware([
         return Inertia::render('Users/Dre/Index');
     })->name('franqueado.dreGerencial')->middleware('check.permission:dre');
 
+    Route::get('/relatorios/faturamento-anual', [\App\Http\Controllers\CaixaAnaliticoController::class, 'relatorioFaturamentoAnual'])
+        ->name('relatorios.faturamentoAnual')
+        ->middleware('check.permission:dre');
+
     Route::get('/franqueado/contas', function () {
         return Inertia::render('Users/Contas/Index');
     })->name('franqueado.contasApagar')->middleware('check.permission:contas_pagar');

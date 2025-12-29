@@ -20,6 +20,9 @@
                 ></path>
               </svg>
             </button>
+            <button @click="imprimirRelatorio" class="mr-3 bg-[#174111] hover:bg-[#12330d] text-white font-bold py-1 px-3 rounded text-sm transition duration-300">
+                Imprimir Relatório Anual
+            </button>
             <div class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight">
                 <div class="flex items-center space-x-2 justify-end">
                     <span class="text-gray-900 text-[17px] font-semibold">
@@ -202,6 +205,10 @@ const handleFilterUpdate = (filters) => {
     console.log('Filtros atualizados:', filters);
     // Trigger data fetching with the new filters
     fetchData(filters.startDate, filters.endDate);
+};
+
+const imprimirRelatorio = () => {
+    window.open('/relatorios/faturamento-anual', '_blank');
 };
 
 const fetchData = async (startDate, endDate) => {

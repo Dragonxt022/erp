@@ -150,4 +150,89 @@ class CaixaAnaliticoController extends Controller
             return response()->json(['error' => 'Erro interno ao processar os dados: ' . $e->getMessage()], 500);
         }
     }
+    public function relatorioFaturamentoAnual()
+    {
+        $unidadeId = Auth::user()->unidade_id;
+        $anoAtual = Carbon::now()->year;
+
+        $startDate = "{$anoAtual}-01-01 00:00:00";
+        $endDate = "{$anoAtual}-12-31 23:59:59";
+
+        $faturamentoMensal = DB::select("
+            SELECT 
+                MONTH(created_at) AS mes_numero,
+                CASE MONTH(created_at) 
+                    WHEN 1 THEN 'Janeiro' WHEN 2 THEN 'Fevereiro' WHEN 3 THEN 'Março'
+                    WHEN 4 THEN 'Abril' WHEN 5 THEN 'Maio' WHEN 6 THEN 'Junho'
+                    WHEN 7 THEN 'Julho' WHEN 8 THEN 'Agosto' WHEN 9 THEN 'Setembro'
+                    WHEN 10 THEN 'Outubro' WHEN 11 THEN 'Novembro' WHEN 12 THEN 'Dezembro'
+                END AS mes_nome,
+                SUM(COALESCE(valor_final, 0)) AS faturamento_raw,
+                CONCAT('R$ ', FORMAT(SUM(COALESCE(valor_final, 0)), 2, 'de_DE')) AS faturamento
+            FROM caixas 
+            WHERE unidade_id = ? 
+              AND created_at BETWEEN ? AND ?
+            GROUP BY mes_numero, mes_nome
+            ORDER BY mes_numero
+        ", [$unidadeId, $startDate, $endDate]);
+
+        // Process data for charts and analysis
+        $labels = [];
+        $dataFaturamento = [];
+        $dataDiferenca = [];
+        $previousValue = 0;
+
+        $totalAno = 0;
+        $melhorMes = null;
+        $melhorValor = 0;
+
+        foreach ($faturamentoMensal as $index => $registro) {
+            $valorAtual = floatval($registro->faturamento_raw);
+            $totalAno += $valorAtual;
+
+            if ($valorAtual > $melhorValor) {
+                $melhorValor = $valorAtual;
+                $melhorMes = $registro->mes_nome;
+            }
+
+            $diferenca = ($index === 0) ? 0 : ($valorAtual - $previousValue);
+
+            $labels[] = $registro->mes_nome;
+            $dataFaturamento[] = $valorAtual;
+            $dataDiferenca[] = $diferenca;
+
+            $previousValue = $valorAtual;
+        }
+
+        // Generate Analysis Text
+        $analiseTexto = "O faturamento anual totalizou " . 'R$ ' . number_format($totalAno, 2, ',', '.') . ". ";
+        if ($melhorMes) {
+            $analiseTexto .= "O melhor mês foi {$melhorMes} com " . 'R$ ' . number_format($melhorValor, 2, ',', '.') . ". ";
+        }
+
+        // Add trend analysis
+        $mesesCount = count($dataFaturamento);
+        if ($mesesCount > 1) {
+            $primeiroValor = $dataFaturamento[0];
+            $ultimoValor = $dataFaturamento[$mesesCount - 1];
+            if ($ultimoValor > $primeiroValor) {
+                $crescimento = (($ultimoValor - $primeiroValor) / $primeiroValor) * 100;
+                $analiseTexto .= "Houve um crescimento de " . number_format($crescimento, 1, ',', '.') . "% entre o primeiro e o último mês registrado.";
+            } elseif ($ultimoValor < $primeiroValor) {
+                $queda = (($primeiroValor - $ultimoValor) / $primeiroValor) * 100;
+                $analiseTexto .= "Houve uma redução de " . number_format($queda, 1, ',', '.') . "% entre o primeiro e o último mês registrado.";
+            } else {
+                $analiseTexto .= "O faturamento se manteve estável entre o início e o fim do período.";
+            }
+        }
+
+        return view('relatorios.faturamento_anual', [
+            'faturamentoMensal' => $faturamentoMensal,
+            'ano' => $anoAtual,
+            'chartLabels' => $labels,
+            'chartDataFaturamento' => $dataFaturamento,
+            'chartDataDiferenca' => $dataDiferenca,
+            'analiseTexto' => $analiseTexto
+        ]);
+    }
 }
