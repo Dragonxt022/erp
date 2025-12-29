@@ -470,7 +470,7 @@ class UnidadeEstoqueController extends Controller
 
         $cmv = $analysedData['cmv']; // Get the CMV value from the returned array
 
-        // Histórico de movimentações filtrado por data (keep existing logic)
+        // Histórico de movimentações filtrado por data
         $historicoMovimentacoes = MovimentacoesEstoque::with(['insumo', 'usuario'])
             ->where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
@@ -487,12 +487,25 @@ class UnidadeEstoqueController extends Controller
                     return null;
                 }
 
+                // IMPORTANTE: Como preco_insumo é armazenado de forma diferente:
+                // - "Retirada": preco_insumo = valor total (bug antigo da função consumirEstoque)
+                // - "Entrada", "Ajuste - *": preco_insumo = preço unitário (correto)
+                if ($estoque->operacao === 'Retirada') {
+                    // Para Retirada: preco_insumo já é o valor total
+                    $valorTotal = $estoque->preco_insumo;
+                    $precoUnitario = abs($quantidade) > 0 ? $estoque->preco_insumo / abs($quantidade) : 0;
+                } else {
+                    // Para Entrada e Ajustes: preco_insumo é o preço unitário
+                    $precoUnitario = $estoque->preco_insumo;
+                    $valorTotal = abs($quantidade) * $estoque->preco_insumo;
+                }
+
                 return [
                     'operacao' => $estoque->operacao,
                     'unidade' => $estoque->unidade,
                     'quantidade' => $quantidade,
-                    'preco_unitario' => $estoque->preco_insumo,
-                    'valor_total' => abs($quantidade) * $estoque->preco_insumo,
+                    'preco_unitario' => $precoUnitario,
+                    'valor_total' => $valorTotal,
                     'item' => $estoque->insumo->nome ?? 'N/A',
                     'data' => $estoque->created_at->format('d/m/Y - H:i:s'),
                     'responsavel' => $estoque->usuario->name ?? 'Desconhecido',

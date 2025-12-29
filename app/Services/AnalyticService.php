@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Arr;
 use App\Models\Caixa;
 use App\Models\CanalVenda;
@@ -37,6 +38,53 @@ class AnalyticService
      * @return array
      */
     public function calculatePeriodData(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode = false, ?int $month = null, ?int $year = null, bool $includeOrderMetrics = false): array
+    {
+        // Gerar chave de cache única baseada nos parâmetros
+        $cacheKey = $this->generateCacheKey($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month, $year, $includeOrderMetrics);
+
+        // Determinar TTL baseado se o período é passado ou atual
+        $cacheTTL = $this->determineCacheTTL($endDateCarbon);
+
+        return Cache::remember($cacheKey, $cacheTTL, function () use ($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month, $includeOrderMetrics) {
+            return $this->performCalculations($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month, $includeOrderMetrics);
+        });
+    }
+
+    /**
+     * Gera uma chave de cache única para os parâmetros fornecidos.
+     */
+    private function generateCacheKey(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, ?int $year, bool $includeOrderMetrics): string
+    {
+        $startDate = $startDateCarbon->format('Y-m-d');
+        $endDate = $endDateCarbon->format('Y-m-d');
+        $calendarFlag = $isCalendarMode ? '1' : '0';
+        $orderMetricsFlag = $includeOrderMetrics ? '1' : '0';
+
+        return "analytics_{$unidadeId}_{$startDate}_{$endDate}_{$calendarFlag}_{$month}_{$year}_{$orderMetricsFlag}";
+    }
+
+    /**
+     * Determina o TTL do cache baseado se o período é passado ou atual.
+     * Períodos passados: 1 hora (3600s)
+     * Período atual (inclui hoje): 5 minutos (300s)
+     */
+    private function determineCacheTTL(Carbon $endDateCarbon): int
+    {
+        $now = Carbon::now();
+
+        // Se o período termina antes de hoje, é um período passado (cache mais longo)
+        if ($endDateCarbon->endOfDay()->lt($now->startOfDay())) {
+            return 3600; // 1 hora
+        }
+
+        // Se o período inclui hoje, cache mais curto
+        return 300; // 5 minutos
+    }
+
+    /**
+     * Executa os cálculos analíticos (lógica original extraída).
+     */
+    private function performCalculations(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, bool $includeOrderMetrics): array
     {
         $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);
 
@@ -154,24 +202,29 @@ class AnalyticService
 
     private function fetchSalaries(int $unidadeId): float
     {
-        try {
-            // Token da API do RH
-            $token = auth()->user()->rh_token ?? Session::get('rh_token');
-            $url = "https://rh.taiksu.com.br/folha/{$unidadeId}";
+        // Cache de salários por 24 horas (muda raramente)
+        $cacheKey = "salaries_unit_{$unidadeId}";
 
-            $response = Http::withToken($token)->get($url);
+        return Cache::remember($cacheKey, 86400, function () use ($unidadeId) {
+            try {
+                // Token da API do RH
+                $token = auth()->user()->rh_token ?? Session::get('rh_token');
+                $url = "https://rh.taiksu.com.br/folha/{$unidadeId}";
 
-            if ($response->successful()) {
-                $data = $response->json();
-                return Arr::get($data, 'total_salarios', 0);
-            } else {
-                Log::error("Erro ao buscar salários da API RH: {$response->status()} - {$response->body()}");
+                $response = Http::withToken($token)->get($url);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return Arr::get($data, 'total_salarios', 0);
+                } else {
+                    Log::error("Erro ao buscar salários da API RH: {$response->status()} - {$response->body()}");
+                    return 0;
+                }
+            } catch (\Throwable $e) {
+                Log::error('Falha ao acessar API RH: ' . $e->getMessage());
                 return 0;
             }
-        } catch (\Throwable $e) {
-            Log::error('Falha ao acessar API RH: ' . $e->getMessage());
-            return 0;
-        }
+        });
     }
 
     private function calculateOperationalExpenses(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array
@@ -200,19 +253,21 @@ class AnalyticService
 
     private function calculateTaxFees(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array
     {
-        $creditoIds = DB::table('default_payment_methods')->where('tipo', 'credito')->pluck('id');
+        // Cache de IDs de métodos de pagamento (dados estáticos)
+        $creditoIds = $this->getCachedPaymentMethodIds('credito');
+        $debitoIds = $this->getCachedPaymentMethodIds('debito');
+        $vrAlimentacaoIds = $this->getCachedPaymentMethodIds('vr_alimentacao');
+
         $totalTaxasCredito = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->whereIn('metodo_pagamento_id', $creditoIds)
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
             ->sum('valor_taxa_metodo');
 
-        $debitoIds = DB::table('default_payment_methods')->where('tipo', 'debito')->pluck('id');
         $totalTaxasDebito = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->whereIn('metodo_pagamento_id', $debitoIds)
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
             ->sum('valor_taxa_metodo');
 
-        $vrAlimentacaoIds = DB::table('default_payment_methods')->where('tipo', 'vr_alimentacao')->pluck('id');
         $totalTaxasVrAlimentacao = FechamentoCaixa::where('unidade_id', $unidadeId)
             ->whereIn('metodo_pagamento_id', $vrAlimentacaoIds)
             ->whereBetween('created_at', [$startDateCarbon, $endDateCarbon])
@@ -232,12 +287,30 @@ class AnalyticService
         ];
     }
 
+    /**
+     * Retorna IDs de métodos de pagamento com cache permanente.
+     */
+    private function getCachedPaymentMethodIds(string $tipo): array
+    {
+        $cacheKey = "payment_method_ids_{$tipo}";
+
+        return Cache::rememberForever($cacheKey, function () use ($tipo) {
+            return DB::table('default_payment_methods')
+                ->where('tipo', $tipo)
+                ->pluck('id')
+                ->toArray();
+        });
+    }
+
     private function calculateCategoryGroups(array $context): array
     {
         $categoriasRemovidas = ["Fornecedores"];
         $categoriasIgnoradasNaSoma = ["Fornecedores"];
 
-        $grupos = GrupoDeCategorias::with('categorias')->get();
+        // Cache de grupos de categorias por 1 hora (estrutura muda raramente)
+        $grupos = Cache::remember('category_groups_with_categories', 3600, function () {
+            return GrupoDeCategorias::with('categorias')->get();
+        });
         $totalDespesasCategorias = 0;
         $totalDespesasCategoriasSemFolha = 0;
 
