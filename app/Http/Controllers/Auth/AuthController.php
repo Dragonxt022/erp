@@ -69,12 +69,8 @@ class AuthController extends Controller
             // Obtém o usuário autenticado
             $user = Auth::user();
 
-            // Verifica o tipo de usuário e redireciona para o painel correspondente
-            if ($user->franqueadora) {
-                return redirect()->route('franqueadora.painel'); // Painel da franqueadora
-            } elseif ($user->franqueado) {
-                return redirect()->route('franqueado.painel'); // Painel do franqueado
-            }
+            // Redireciona para a última URL visitada se disponível
+            return $this->redirectUser($user);
         }
 
         // Se não estiver autenticado, exibe a página de login
@@ -133,16 +129,8 @@ class AuthController extends Controller
             }
         }
 
-        // Redireciona conforme grupo
-        if ($user->franqueadora) {
-            return redirect()->route('franqueadora.painel');
-        } elseif ($user->franqueado) {
-            return redirect()->route('franqueado.painel');
-        } elseif ($user->gerente) {
-            return redirect()->route('franqueado.painel');
-        }
-
-        return redirect()->route('pagina.login');
+        // Redireciona conforme grupo ou última URL
+        return $this->redirectUser($user);
     }
 
 
@@ -177,16 +165,7 @@ class AuthController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
 
-        if ($user->franqueadora) {
-            return redirect()->route('franqueadora.painel');
-        } elseif ($user->franqueado) {
-            return redirect()->route('franqueado.painel');
-        }
-
-        Auth::logout();
-        return back()->withErrors([
-            'general' => 'Não foi possível determinar o acesso do usuário. Entre em contato com o suporte.',
-        ]);
+        return $this->redirectUser($user);
     }
 
 
@@ -235,5 +214,21 @@ class AuthController extends Controller
                 'rh_token' => $rhToken,
             ]),
         ]);
+    }
+
+    /**
+     * Redireciona o usuário para sua última página visitada ou para o painel padrão.
+     */
+    private function redirectUser($user)
+    {
+        if ($user->last_visited_url) {
+            return redirect($user->last_visited_url);
+        }
+
+        if ($user->franqueadora) {
+            return redirect()->route('franqueadora.painel');
+        }
+
+        return redirect()->route('franqueado.painel');
     }
 }
