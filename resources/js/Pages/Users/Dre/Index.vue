@@ -182,6 +182,7 @@ import {
 import CalendarFilterDre from '@/Components/Filtros/CalendarFilterDre.vue';
 
 const totalCaixas = ref('0,00');
+const totalSalarios = ref('0,00');
 const resultadoPeriodo = ref('0,00');
 const grupos = ref([]);
 const historico = ref([]); // This will now directly hold the calendar data
@@ -222,9 +223,14 @@ const fetchData = async (startDate, endDate) => {
         });
 
         const data = response.data;
+        
+        // Debug: Log the complete response to check if total_salarios is present
+        console.log('DRE API Response:', data);
+        console.log('Total Salarios from API:', data.total_salarios);
 
         // Update main DRE period data
         totalCaixas.value = data.total_caixas || '0,00';
+        totalSalarios.value = data.total_salarios || '0,00';
         resultadoPeriodo.value = data.resultado_do_periodo || '0,00';
         grupos.value = data.grupos || [];
         historico.value = data.calendario || []; // Directly assign the calendar data
@@ -241,6 +247,7 @@ const fetchData = async (startDate, endDate) => {
         console.error('Erro ao buscar os dados do DRE:', error);
         // Optionally, set default empty values or show an error message
         totalCaixas.value = '0,00';
+        totalSalarios.value = '0,00';
         resultadoPeriodo.value = '0,00';
         grupos.value = [];
         historico.value = [];

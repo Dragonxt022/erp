@@ -202,29 +202,44 @@ class AnalyticService
 
     private function fetchSalaries(int $unidadeId): float
     {
-        // Cache de salários por 24 horas (muda raramente)
         $cacheKey = "salaries_unit_{$unidadeId}";
 
-        return Cache::remember($cacheKey, 86400, function () use ($unidadeId) {
-            try {
-                // Token da API do RH
-                $token = auth()->user()->rh_token ?? Session::get('rh_token');
-                $url = "https://rh.taiksu.com.br/folha/{$unidadeId}";
+        // Tenta obter do cache primeiro
+        $cachedValue = Cache::get($cacheKey);
+        if ($cachedValue !== null && $cachedValue > 0) {
+            return $cachedValue;
+        }
 
-                $response = Http::withToken($token)->get($url);
+        try {
+            // Token da API do RH
+            $token = auth()->user()->rh_token ?? Session::get('rh_token');
 
-                if ($response->successful()) {
-                    $data = $response->json();
-                    return Arr::get($data, 'total_salarios', 0);
-                } else {
-                    Log::error("Erro ao buscar salários da API RH: {$response->status()} - {$response->body()}");
-                    return 0;
-                }
-            } catch (\Throwable $e) {
-                Log::error('Falha ao acessar API RH: ' . $e->getMessage());
+            if (!$token) {
+                // Se não tiver token, não podemos buscar, mas não cacheamos o erro "0" por muito tempo
                 return 0;
             }
-        });
+
+            $url = "https://rh.taiksu.com.br/folha/{$unidadeId}";
+            $response = Http::withToken($token)->get($url);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $totalSalarios = (float) Arr::get($data, 'total_salarios', 0);
+
+                // Só cacheamos se o valor for maior que 0 (evita cachear falhas silenciosas ou unidades sem dados temporários)
+                if ($totalSalarios > 0) {
+                    Cache::put($cacheKey, $totalSalarios, 86400);
+                }
+
+                return $totalSalarios;
+            } else {
+                Log::error("Erro ao buscar salários da API RH: {$response->status()} - {$response->body()}");
+                return 0;
+            }
+        } catch (\Throwable $e) {
+            Log::error('Falha ao acessar API RH: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     private function calculateOperationalExpenses(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): array

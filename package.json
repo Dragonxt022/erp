@@ -3,7 +3,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "backup": "git add . && git commit -m \"Backup $(date '+%d/%m/%Y %H:%M')\""
   },
   "devDependencies": {
     "@inertiajs/vue3": "^1.0.14",
