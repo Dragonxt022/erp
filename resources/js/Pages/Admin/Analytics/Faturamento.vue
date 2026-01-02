@@ -59,9 +59,14 @@
                 <!-- Gráfico de Projeção -->
                 <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-8">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800">Projeção para os Próximos 12 Meses</h3>
-                            <p class="text-sm text-gray-500">Estimativa baseada na média de crescimento histórico ({{ mediaCrescimento }}%)</p>
+                        <div class="flex items-center gap-3">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Projeção para os Próximos 12 Meses</h3>
+                                <p class="text-sm text-gray-500">Estimativa baseada na média de crescimento histórico ({{ mediaCrescimento }}%)</p>
+                            </div>
+                            <button @click="showHelpModal = true" class="p-1.5 hover:bg-blue-50 rounded-full transition-colors group">
+                                <img src="/storage/images/info_iconverde.svg" alt="Informação" class="w-5 h-5 opacity-40 group-hover:opacity-100 transition-opacity" />
+                            </button>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-1 bg-[#164110] border-t-2 border-dashed border-[#164110]"></div>
@@ -132,6 +137,79 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Explicação da Projeção -->
+        <Teleport to="body">
+            <div v-if="showHelpModal" class="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6">
+                <!-- Backdrop -->
+                <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showHelpModal = false"></div>
+                
+                <!-- Conteúdo do Modal -->
+                <div class="relative bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden transform transition-all animate-fade-in-up">
+                    <div class="p-6 sm:p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                    <img src="/storage/images/info_iconverde.svg" class="w-6 h-6" alt="Info" />
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-gray-900 font-figtree">Como funciona a Projeção?</h4>
+                                    <p class="text-sm text-gray-500">Entenda a inteligência por trás dos dados</p>
+                                </div>
+                            </div>
+                            <button @click="showHelpModal = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                <span class="text-2xl">×</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="flex gap-4">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm">1</div>
+                                <div>
+                                    <h5 class="font-bold text-gray-800 mb-1">DNA da Unidade</h5>
+                                    <p class="text-sm text-gray-600 leading-relaxed">Analisamos o comportamento real dos últimos 12 meses da unidade selecionada para extrair sua variação percentual média.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">2</div>
+                                <div>
+                                    <h5 class="font-bold text-gray-800 mb-1">Filtro de Ruídos</h5>
+                                    <p class="text-sm text-gray-600 leading-relaxed">Crescimentos ou quedas atípicas (ex: inaugurações ou reformas) são ignorados para que a projeção seja baseada em um ritmo sustentável.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">3</div>
+                                <div>
+                                    <h5 class="font-bold text-gray-800 mb-1">Média de Tendência</h5>
+                                    <p class="text-sm text-gray-600 leading-relaxed">Calculamos uma média móvel de crescimento, limitada entre -2% e +5% ao mês, garantindo uma estimativa conservadora e segura.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-4">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">4</div>
+                                <div>
+                                    <h5 class="font-bold text-gray-800 mb-1">Cálculo Composto</h5>
+                                    <p class="text-sm text-gray-600 leading-relaxed">A projeção usa a lógica de juros compostos: o crescimento de cada mês futuro é aplicado sobre o valor projetado do mês anterior.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-100 italic text-xs text-gray-500 leading-relaxed">
+                            * Nota: A projeção é uma estimativa matemática baseada em dados passados e não garante resultados futuros. O sistema ignora meses incompletos para manter a precisão.
+                        </div>
+
+                        <div class="mt-8 flex justify-end">
+                            <button @click="showHelpModal = false" 
+                                class="bg-[#164110] text-white px-8 py-2.5 rounded-xl font-bold hover:bg-[#1a4d13] transition-colors shadow-lg shadow-green-900/10">
+                                Entendi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </LayoutFranqueadora>
 </template>
 
@@ -161,6 +239,7 @@ Chart.register(BarController, BarElement, LineController, LineElement, PointElem
 const page = usePage();
 const selectedUnitId = ref(page.props.auth.user.unidade_id);
 const loading = ref(true);
+const showHelpModal = ref(false);
 const dados = ref([]);
 const projecao = ref([]);
 const mediaCrescimento = ref(0);
@@ -428,5 +507,20 @@ onMounted(() => {
 }
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
     background: #d1d5db;
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-fade-in-up {
+    animation: fade-in-up 0.3s ease-out forwards;
 }
 </style>
