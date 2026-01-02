@@ -5,7 +5,7 @@
       class="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-left flex items-center justify-between hover:border-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
     >
       <div class="flex items-center gap-2">
-        <img src="/storage/images/store.svg" alt="Unidade" class="w-5 h-5" />
+        <img src="/storage/images/storefrontb.svg" alt="Unidade" class="w-5 h-5" />
         <span class="text-gray-900 text-[15px] font-semibold">
           {{ selectedUnitName }}
         </span>
@@ -113,11 +113,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
 
+const props = defineProps({
+  defaultUnitId: {
+    type: [Number, String],
+    default: null
+  }
+});
+
 const emit = defineEmits(['unit-selected']);
 
 const isOpen = ref(false);
 const units = ref([]);
-const selectedUnitId = ref(null);
+const selectedUnitId = ref(props.defaultUnitId);
 const loading = ref(false);
 
 const selectedUnitName = computed(() => {

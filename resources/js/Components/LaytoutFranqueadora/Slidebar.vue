@@ -1,7 +1,13 @@
 <template>
     <div class="sidebar" ref="sidebar" @scroll="saveScrollPosition">
         <div v-for="category in menuCategories" :key="category.name" class="menu-category">
-            <div class="category-title">{{ category.name }}</div>
+            <div class="category-title flex items-center gap-2">
+                {{ category.name }}
+                <span v-if="category.name === 'Analíticos'" 
+                    class="bg-green-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ml-1">
+                    NOVA!
+                </span>
+            </div>
             <MenuItem v-for="item in category.items" :key="item.link || 'no-link'" :label="item.label" :icon="item.icon"
                 :link="item.link ? route(item.link) : null" :submenuItems="item.submenuItems"
                 :isActive="item.link ? isActive(route(item.link)) : false" :isLogout="item.isLogout" />
@@ -49,6 +55,28 @@ const menuCategories = [
                 icon: '/storage/images/insert_chart.svg',
                 link: 'franqueadora.painel',
                 isLogout: false,
+            },
+        ],
+    },
+    {
+        name: 'Analíticos',
+        items: [
+            {
+                label: 'Métricas',
+                icon: '/storage/images/insert_chart.svg',
+                link: 'franqueadora.analytics.dre',
+                isLogout: false,
+                submenuItems: [
+                    {
+                        label: 'DRE Gerencial',
+                        link: 'franqueadora.analytics.dre',
+                    },
+                    {
+                        label: 'Caixas',
+                        link: 'franqueadora.analytics.faturamento',
+                    },
+                ],
+                isActive: false,
             },
         ],
     },

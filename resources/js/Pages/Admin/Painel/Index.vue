@@ -14,7 +14,7 @@
       <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
         <!-- Seletor de Unidade -->
         <div class="w-full sm:w-64">
-          <UnidadeSelectorDropdown @unit-selected="handleUnitChange" />
+          <UnidadeSelectorDropdown :default-unit-id="selectedUnitId" @unit-selected="handleUnitChange" />
         </div>
         
         <!-- Filtro de Calendário -->
@@ -22,7 +22,7 @@
           <div class="flex items-center space-x-2">
             <img src="/storage/images/calendar_month.svg" alt="Filtro" class="w-5 h-5" />
             <span class="text-gray-900 text-[17px] font-semibold">
-              <CalendarSimples2 @date-range-selected="handleDateChange" />
+              <CalendarSimples2 :default-to-previous-month="true" @date-range-selected="handleDateChange" />
             </span>
           </div>
         </div>
@@ -201,7 +201,7 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import LayoutFranqueadora from '@/Layouts/LayoutFranqueadora.vue';
@@ -217,8 +217,10 @@ const barChart = ref(null);
 const chartInstance = ref(null);
 const loading = ref(false);
 
+const page = usePage();
+
 // Filtros
-const selectedUnitId = ref(null); // null = todas as unidades
+const selectedUnitId = ref(page.props.auth.user.unidade_id); // Inicia com a unidade do logado
 const startDate = ref(null);
 const endDate = ref(null);
 

@@ -76,6 +76,7 @@ Route::prefix('api')->middleware([
         Route::get('/indicadores', [AdminPainelController::class, 'getIndicadores']);
         Route::get('/faturamento-diario', [AdminPainelController::class, 'getFaturamentoDiario']);
         Route::get('/compromissos', [AdminPainelController::class, 'getCompromissos']);
+        Route::get('/faturamento-analitico', [PainelAnaliticos::class, 'faturamentoAnalitico']);
     });
 
     // Unidades

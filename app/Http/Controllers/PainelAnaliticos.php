@@ -297,13 +297,22 @@ class PainelAnaliticos extends Controller
         $unidadeId = $usuario->unidade_id;
 
         try {
-            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
-            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+            // Default to previous month if not provided
+            $defaultStartDate = Carbon::now()->subMonth()->startOfMonth()->format('d-m-Y');
+            $defaultEndDate = Carbon::now()->subMonth()->endOfMonth()->format('d-m-Y');
+
+            $startDate = $request->input('start_date', $defaultStartDate);
+            $endDate = $request->input('end_date', $defaultEndDate);
 
             $startDateCarbon = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay();
             $endDateCarbon = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay();
         } catch (\Exception $e) {
             return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+        }
+
+        // Allow unit selection for franqueadora users
+        if ($request->has('unidade_id') && $usuario->franqueadora) {
+            $unidadeId = $request->unidade_id;
         }
 
         // Chame o serviço para obter todos os dados necessários para o período.
@@ -334,6 +343,56 @@ class PainelAnaliticos extends Controller
             'calendario' => $calendario,
             'grafico_data' => $graficoData,
             'explicacao_dre' => $explicacao,
+        ]);
+    }
+
+    public function faturamentoAnalitico(Request $request)
+    {
+        $usuario = Auth::user();
+        $unidadeId = $usuario->unidade_id;
+
+        if ($request->has('unidade_id') && ($usuario->franqueadora || $usuario->is_admin)) {
+            $unidadeId = $request->unidade_id;
+        }
+
+        $meses = [];
+        $currentMonth = Carbon::now()->startOfMonth();
+
+        for ($i = 0; $i < 12; $i++) {
+            $monthStart = $currentMonth->copy()->subMonths($i)->startOfMonth();
+            $monthEnd = $monthStart->copy()->endOfMonth();
+
+            $faturamento = $this->analyticService->calculateTotalCaixas((int)$unidadeId, $monthStart, $monthEnd);
+
+            $meses[] = [
+                'mes' => $monthStart->format('m'),
+                'ano' => $monthStart->format('Y'),
+                'nome_mes' => $monthStart->translatedFormat('F'),
+                'faturamento' => $faturamento,
+                'faturamento_formatado' => number_format($faturamento, 2, ',', '.'),
+            ];
+        }
+
+        // Inverter para ficar em ordem cronológica
+        $meses = array_reverse($meses);
+
+        // Calcular diferenças
+        foreach ($meses as $index => &$mes) {
+            if ($index > 0) {
+                $prevFaturamento = $meses[$index - 1]['faturamento'];
+                $diferenca = $mes['faturamento'] - $prevFaturamento;
+                $mes['diferenca'] = $diferenca;
+                $mes['diferenca_formatada'] = number_format($diferenca, 2, ',', '.');
+                $mes['percentual'] = $prevFaturamento > 0 ? round(($diferenca / $prevFaturamento) * 100, 2) : 0;
+            } else {
+                $mes['diferenca'] = 0;
+                $mes['diferenca_formatada'] = '0,00';
+                $mes['percentual'] = 0;
+            }
+        }
+
+        return response()->json([
+            'dados' => $meses
         ]);
     }
 

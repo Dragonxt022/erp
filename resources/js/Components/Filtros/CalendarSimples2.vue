@@ -91,20 +91,40 @@
 </template>
 
 <script setup>
-import { ref, computed, defineEmits } from 'vue';
+import { ref, computed, defineEmits, onMounted } from 'vue';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
 
-const emit = defineEmits(['update-filters']);
+const props = defineProps({
+  defaultToPreviousMonth: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const emit = defineEmits(['update-filters', 'date-range-selected']);
 
 // Estado para o dropdown
 const isDropdownOpen = ref(false);
 
+const calculateInitialDates = () => {
+  if (props.defaultToPreviousMonth) {
+    const startOfPrevMonth = dayjs().subtract(1, 'month').startOf('month');
+    const endOfPrevMonth = dayjs().subtract(1, 'month').endOf('month');
+    return { start: startOfPrevMonth, end: endOfPrevMonth };
+  }
+  return { 
+    start: dayjs().subtract(7, 'day').startOf('day'),
+    end: dayjs().endOf('day')
+  };
+};
+
+const initialDates = calculateInitialDates();
+
 // Variáveis reativas para controlar as datas de início e fim
-// Padrão: uma semana (7 dias atrás até hoje)
-const selectedStartDate = ref(dayjs().subtract(7, 'day').startOf('day'));
-const selectedEndDate = ref(dayjs().endOf('day'));
+const selectedStartDate = ref(initialDates.start);
+const selectedEndDate = ref(initialDates.end);
 const currentDate = ref(dayjs()); // Data atual para navegação no calendário
 
 // Controle de seleção de datas (início e fim)
@@ -112,6 +132,19 @@ const selectingStart = ref(true); // Controla se estamos escolhendo a data de in
 
 // Dados para o calendário
 const daysOfWeek = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+onMounted(() => {
+  if (props.defaultToPreviousMonth) {
+    emit('date-range-selected', {
+      start_date: selectedStartDate.value.format('DD-MM-YYYY'),
+      end_date: selectedEndDate.value.format('DD-MM-YYYY'),
+    });
+    emit('update-filters', {
+      startDate: selectedStartDate.value.format('DD-MM-YYYY'),
+      endDate: selectedEndDate.value.format('DD-MM-YYYY'),
+    });
+  }
+});
 
 const daysInMonth = computed(() => {
   const days = [];
@@ -199,6 +232,11 @@ const applyFilters = () => {
   emit('update-filters', {
     startDate,
     endDate,
+  });
+
+  emit('date-range-selected', {
+    start_date: startDate,
+    end_date: endDate,
   });
 
   isDropdownOpen.value = false; // Fecha o dropdown após aplicar os filtros

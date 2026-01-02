@@ -24,6 +24,14 @@ Route::middleware([
         return Inertia::render('Admin/Painel/Index');
     })->name('franqueadora.painel');
 
+    Route::get('/franqueadora/analytics/dre', function () {
+        return Inertia::render('Admin/Analytics/Dre');
+    })->name('franqueadora.analytics.dre');
+
+    Route::get('/franqueadora/analytics/faturamento', function () {
+        return Inertia::render('Admin/Analytics/Faturamento');
+    })->name('franqueadora.analytics.faturamento');
+
     Route::get('/franqueadora/email', function () {
         return Inertia::render('Admin/Email/Index');
     })->name('franqueadora.email');

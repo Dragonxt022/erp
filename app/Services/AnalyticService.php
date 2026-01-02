@@ -215,7 +215,7 @@ class AnalyticService
         ];
     }
 
-    private function calculateTotalCaixas(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): float
+    public function calculateTotalCaixas(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon): float
     {
         return Caixa::where('unidade_id', $unidadeId)
             ->where('status', 0)
@@ -235,7 +235,7 @@ class AnalyticService
 
         try {
             // Token da API do RH
-            $token = auth()->user()->rh_token ?? Session::get('rh_token');
+            $token = Auth::user()->rh_token ?? Session::get('rh_token');
 
             if (!$token) {
                 // Se não tiver token, não podemos buscar, mas não cacheamos o erro "0" por muito tempo

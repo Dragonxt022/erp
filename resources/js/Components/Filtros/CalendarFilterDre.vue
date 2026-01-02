@@ -82,15 +82,22 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
 
+const props = defineProps({
+    defaultToPreviousMonth: {
+        type: Boolean,
+        default: false
+    }
+});
+
 const emit = defineEmits(['update-filters']);
 
-// Data atual para navegação (começa no mês corrente)
-const currentDate = ref(dayjs());
+// Data atual para navegação
+const currentDate = ref(props.defaultToPreviousMonth ? dayjs().subtract(1, 'month') : dayjs());
 
 // Estado do picker
 const showPicker = ref(false);
-const selectedMonth = ref(dayjs().month());
-const selectedYear = ref(dayjs().year());
+const selectedMonth = ref(currentDate.value.month());
+const selectedYear = ref(currentDate.value.year());
 
 // Lista de meses em português
 const months = [
