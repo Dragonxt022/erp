@@ -18,6 +18,7 @@ Este documento descreve as alterações realizadas para criar a nova seção de 
 - **Página Dedicada**: Localizada em `resources/js/Pages/Admin/Analytics/Faturamento.vue`.
 - **Análise de 12 Meses**: Exibe um gráfico de barras comparativo dos últimos 12 meses.
 - **Indicadores de Variação**: O gráfico mostra o faturamento mensal e a diferença nominal em relação ao mês anterior (barra de variação).
+- **Projeção de Crescimento**: NOVO gráfico de linha que projeta os próximos 12 meses com base na média de crescimento histórico, permitindo uma visão preditiva do faturamento.
 - **Detalhamento**: Tabela com valores exatos de faturamento, variação nominal (R$) e variação percentual (%) mês a mês.
 
 ## 2. Alterações Técnicas

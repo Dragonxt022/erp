@@ -376,14 +376,29 @@ class PainelAnaliticos extends Controller
         // Inverter para ficar em ordem cronológica
         $meses = array_reverse($meses);
 
-        // Calcular diferenças
+        $somaPercentual = 0;
+        $contagemCrescimento = 0;
+
+        // Calcular diferenças e coletar taxas de crescimento
         foreach ($meses as $index => &$mes) {
             if ($index > 0) {
                 $prevFaturamento = $meses[$index - 1]['faturamento'];
                 $diferenca = $mes['faturamento'] - $prevFaturamento;
                 $mes['diferenca'] = $diferenca;
                 $mes['diferenca_formatada'] = number_format($diferenca, 2, ',', '.');
-                $mes['percentual'] = $prevFaturamento > 0 ? round(($diferenca / $prevFaturamento) * 100, 2) : 0;
+
+                if ($prevFaturamento > 0) {
+                    $percentual = round(($diferenca / $prevFaturamento) * 100, 2);
+                    $mes['percentual'] = $percentual;
+
+                    // Limitar extremos para a média da projeção não ficar irreal
+                    if ($percentual > -50 && $percentual < 50) {
+                        $somaPercentual += $percentual;
+                        $contagemCrescimento++;
+                    }
+                } else {
+                    $mes['percentual'] = 0;
+                }
             } else {
                 $mes['diferenca'] = 0;
                 $mes['diferenca_formatada'] = '0,00';
@@ -391,8 +406,64 @@ class PainelAnaliticos extends Controller
             }
         }
 
+        // Calcular média de crescimento para projeção
+        // Se o mês atual (último do array) for zero ou incompleto, ignoramos para não enviesar a média
+        $historicoParaMedia = $meses;
+        if (count($meses) > 1) {
+            $ultimoMesArr = end($meses);
+            $penultimoMesArr = $meses[count($meses) - 2];
+            // Se o último mês for < 50% do penúltimo, assumimos que é um mês incompleto
+            if ($ultimoMesArr['faturamento'] < ($penultimoMesArr['faturamento'] * 0.5)) {
+                array_pop($historicoParaMedia);
+            }
+        }
+
+        $somaPercentMedia = 0;
+        $contagemCrescMedia = 0;
+        foreach ($historicoParaMedia as $index => $mes) {
+            if ($index > 0 && isset($mes['percentual'])) {
+                if ($mes['percentual'] > -50 && $mes['percentual'] < 50) {
+                    $somaPercentMedia += $mes['percentual'];
+                    $contagemCrescMedia++;
+                }
+            }
+        }
+
+        $mediaCrescimento = $contagemCrescMedia > 0 ? ($somaPercentMedia / $contagemCrescMedia) : 0;
+        $mediaCrescimento = max(-2, min(5, $mediaCrescimento));
+
+        // Encontrar o último mês com faturamento real para ser a base da projeção
+        $baseParaProjecao = null;
+        for ($i = count($meses) - 1; $i >= 0; $i--) {
+            if ($meses[$i]['faturamento'] > 0) {
+                $baseParaProjecao = $meses[$i];
+                break;
+            }
+        }
+
+        $projecao = [];
+        if ($baseParaProjecao) {
+            $ultimoVal = $baseParaProjecao['faturamento'];
+            $ultimaBaseData = Carbon::createFromDate($baseParaProjecao['ano'], $baseParaProjecao['mes'], 1);
+
+            for ($i = 1; $i <= 12; $i++) {
+                $dataP = $ultimaBaseData->copy()->addMonths($i);
+                $valorP = $ultimoVal * pow(1 + ($mediaCrescimento / 100), $i);
+
+                $projecao[] = [
+                    'mes' => $dataP->format('m'),
+                    'ano' => $dataP->format('Y'),
+                    'nome_mes' => $dataP->translatedFormat('F'),
+                    'faturamento' => round($valorP, 2),
+                    'faturamento_formatado' => number_format($valorP, 2, ',', '.'),
+                ];
+            }
+        }
+
         return response()->json([
-            'dados' => $meses
+            'dados' => $meses,
+            'projecao' => $projecao,
+            'media_crescimento' => round($mediaCrescimento, 2)
         ]);
     }
 

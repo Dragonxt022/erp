@@ -56,6 +56,27 @@
                     </div>
                 </div>
 
+                <!-- Gráfico de Projeção -->
+                <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800">Projeção para os Próximos 12 Meses</h3>
+                            <p class="text-sm text-gray-500">Estimativa baseada na média de crescimento histórico ({{ mediaCrescimento }}%)</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-1 bg-[#164110] border-t-2 border-dashed border-[#164110]"></div>
+                            <span class="text-xs font-bold text-gray-700">Tendência Projetada</span>
+                        </div>
+                    </div>
+                    
+                    <div class="h-[400px] relative">
+                        <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-10">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#164110]"></div>
+                        </div>
+                        <canvas id="projectionChart"></canvas>
+                    </div>
+                </div>
+
                 <!-- Tabela de Dados -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-50">
@@ -124,6 +145,9 @@ import {
     Chart,
     BarController,
     BarElement,
+    LineController,
+    LineElement,
+    PointElement,
     CategoryScale,
     LinearScale,
     Tooltip,
@@ -132,13 +156,16 @@ import {
 } from 'chart.js';
 import UnidadeSelectorDropdown from '@/Components/Filtros/UnidadeSelectorDropdown.vue';
 
-Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, Filler, ChartDataLabels);
+Chart.register(BarController, BarElement, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler, ChartDataLabels);
 
 const page = usePage();
 const selectedUnitId = ref(page.props.auth.user.unidade_id);
 const loading = ref(true);
 const dados = ref([]);
+const projecao = ref([]);
+const mediaCrescimento = ref(0);
 let myChart = null;
+let projectionChart = null;
 
 const reversedDados = computed(() => [...dados.value].reverse());
 
@@ -154,7 +181,11 @@ const fetchData = async () => {
             params: { unidade_id: selectedUnitId.value }
         });
         dados.value = response.data.dados || [];
+        projecao.value = response.data.projecao || [];
+        mediaCrescimento.value = response.data.media_crescimento || 0;
+        
         renderChart();
+        renderProjectionChart();
     } catch (error) {
         console.error('Erro ao buscar faturamento analítico:', error);
     } finally {
@@ -271,6 +302,94 @@ const renderChart = () => {
                             }
                             return label;
                         }
+                    }
+                }
+            }
+        }
+    });
+};
+
+const renderProjectionChart = () => {
+    const ctx = document.getElementById('projectionChart');
+    if (!ctx) return;
+
+    if (projectionChart) projectionChart.destroy();
+
+    const historicalLabels = dados.value.map(d => `${d.nome_mes.substring(0,3)}/${d.ano.substring(2)}`);
+    const projectionLabels = projecao.value.map(d => `${d.nome_mes.substring(0,3)}/${d.ano.substring(2)}`);
+    
+    // Encontrar o último mês com faturamento real para conectar a projeção corretamente
+    let lastRealIndex = -1;
+    for (let i = dados.value.length - 1; i >= 0; i--) {
+        if (dados.value[i].faturamento > 0) {
+            lastRealIndex = i;
+            break;
+        }
+    }
+
+    if (lastRealIndex === -1) return;
+
+    const baseMonth = dados.value[lastRealIndex];
+    const baseLabel = `${baseMonth.nome_mes.substring(0,3)}/${baseMonth.ano.substring(2)}`;
+    
+    const combinedLabels = [baseLabel, ...projectionLabels];
+    const combinedData = [baseMonth.faturamento, ...projecao.value.map(d => d.faturamento)];
+
+    projectionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: combinedLabels,
+            datasets: [
+                {
+                    label: 'Projeção de Faturamento',
+                    data: combinedData,
+                    borderColor: '#164110',
+                    backgroundColor: 'rgba(22, 65, 16, 0.1)',
+                    borderWidth: 3,
+                    borderDash: [5, 5],
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#164110',
+                    datalabels: {
+                        color: '#164110',
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 8,
+                        font: { weight: 'bold', size: 10, family: 'Figtree' },
+                        formatter: (value) => {
+                            return new Intl.NumberFormat('pt-BR', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+                        }
+                    }
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    padding: 12,
+                    backgroundColor: '#164110',
+                    callbacks: {
+                        label: function(context) {
+                            return 'Estimativa: ' + new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: 'Figtree', weight: '600' } }
+                },
+                y: {
+                    beginAtZero: false,
+                    grid: { color: '#f3f4f6' },
+                    ticks: {
+                        font: { family: 'Figtree' },
+                        callback: (value) => new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(value)
                     }
                 }
             }
