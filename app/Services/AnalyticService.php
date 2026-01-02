@@ -51,6 +51,28 @@ class AnalyticService
     }
 
     /**
+     * Invalida o cache de analytics para uma unidade específica.
+     * Atualiza o timestamp da "versão" do cache para essa unidade.
+     */
+    public static function invalidateCache(int $unidadeId): void
+    {
+        $versionKey = "analytics_version_{$unidadeId}";
+        Cache::forever($versionKey, now()->timestamp);
+        Log::info("Cache de analytics invalidado para unidade {$unidadeId}");
+    }
+
+    /**
+     * Obtém a versão atual do cache para uma unidade.
+     */
+    private function getCacheVersion(int $unidadeId): int
+    {
+        $versionKey = "analytics_version_{$unidadeId}";
+        return Cache::rememberForever($versionKey, function () {
+            return now()->timestamp;
+        });
+    }
+
+    /**
      * Gera uma chave de cache única para os parâmetros fornecidos.
      */
     private function generateCacheKey(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, ?int $year, bool $includeOrderMetrics): string
@@ -59,8 +81,9 @@ class AnalyticService
         $endDate = $endDateCarbon->format('Y-m-d');
         $calendarFlag = $isCalendarMode ? '1' : '0';
         $orderMetricsFlag = $includeOrderMetrics ? '1' : '0';
+        $version = $this->getCacheVersion($unidadeId);
 
-        return "analytics_{$unidadeId}_{$startDate}_{$endDate}_{$calendarFlag}_{$month}_{$year}_{$orderMetricsFlag}";
+        return "analytics_{$unidadeId}_{$startDate}_{$endDate}_{$calendarFlag}_{$month}_{$year}_{$orderMetricsFlag}_v{$version}";
     }
 
     /**

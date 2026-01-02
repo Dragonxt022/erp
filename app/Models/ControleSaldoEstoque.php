@@ -5,9 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Services\AnalyticService;
+
 class ControleSaldoEstoque extends Model
 {
     use HasFactory;
+
+    protected static function booted()
+    {
+        static::saved(function ($model) {
+            AnalyticService::invalidateCache($model->unidade_id);
+        });
+
+        static::deleted(function ($model) {
+            AnalyticService::invalidateCache($model->unidade_id);
+        });
+    }
 
     protected $table = 'controle_saldo_estoques';
 
@@ -18,7 +31,7 @@ class ControleSaldoEstoque extends Model
         'unidade_id',
         'responsavel_id',
     ];
- 
+
     protected $casts = [
         'data_ajuste' => 'datetime',
     ];
