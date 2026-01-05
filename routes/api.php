@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ContaAPagarApiController;
 // use App\Http\Controllers\Api\ApiAuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,3 +15,6 @@ Route::get('/user', function (Request $request) {
 // Route::post('login', [ApiAuthController::class, 'login']);
 // Route::post('logout', [ApiAuthController::class, 'logout']);
 // Route::get('profile', [ApiAuthController::class, 'getProfile'])->middleware('auth:sanctum');
+
+// API Externa - Contas a Pagar
+Route::post('contas-a-pagar', [ContaAPagarApiController::class, 'store']);
