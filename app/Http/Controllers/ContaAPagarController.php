@@ -136,7 +136,9 @@ class ContaAPagarController extends Controller
         }
 
         // Atualiza o status para "pago"
+        $statusAnterior = $conta->status;
         $conta->status = 'pago';
+        $conta->registrarLog('alteracao_status', 'pago', $statusAnterior);
         $conta->save();
 
         return response()->json(['message' => 'Conta marcada como paga com sucesso!', 'data' => $conta], 200);
@@ -157,7 +159,9 @@ class ContaAPagarController extends Controller
             return response()->json(['message' => 'Conta não encontrada'], 404);
         }
 
+        $statusAnterior = $conta->status;
         $conta->status = $request->status;
+        $conta->registrarLog('alteracao_status', $request->status, $statusAnterior);
         $conta->save();
 
         return response()->json(['message' => 'Status atualizado com sucesso', 'data' => $conta]);
@@ -261,6 +265,8 @@ class ContaAPagarController extends Controller
                 'categoria_id' => $validated['categoria_id'],
             ]);
 
+            $conta->registrarLog('criacao', 'pendente');
+
             // Commit da transação
             DB::commit();
 
@@ -300,5 +306,4 @@ class ContaAPagarController extends Controller
             ], 500);
         }
     }
-
 }

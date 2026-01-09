@@ -135,6 +135,9 @@ class ContaAPagarApiController extends Controller
                 'categoria_id' => $request->categoria_id
             ]);
 
+            $nomeUsuario = $userData['name'] ?? 'API';
+            $contaAPagar->registrarLog('criacao', $contaAPagar->status, null, $nomeUsuario);
+
             Log::info('Conta a pagar criada via API', [
                 'conta_id' => $contaAPagar->id,
                 'user_id' => $userData['id'] ?? null,

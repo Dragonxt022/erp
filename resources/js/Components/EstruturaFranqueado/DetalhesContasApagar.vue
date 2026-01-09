@@ -5,9 +5,15 @@
             <div class="mt-8">
                 <div class="w-full h-[555px] bg-white rounded-[20px] p-7 relative">
                     <div class="flex justify-between items-center">
-                        <p class="text-[25px] font-bold font-['Figtree'] leading-8 tracking-tight">
-                            {{ dados.nome }}
-                        </p>
+                        <div class="flex items-center gap-3">
+                            <p class="text-[25px] font-bold font-['Figtree'] leading-8 tracking-tight">
+                                {{ dados.nome }}
+                            </p>
+                            <!-- Botão de Histórico -->
+                            <button @click="isHistoryModalVisible = true" title="Ver Histórico" class="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                <img src="/storage/images/history.svg" alt="Histórico" class="w-5 h-5 opacity-60 hover:opacity-100" />
+                            </button>
+                        </div>
                         <button class="text-gray-500 hover:text-red-600"
                             @click="isConfirmExluirDialogVisible('Excluir essa conta?')">
                             <img src="/storage/images/delete.svg" alt="Excluir" class="w-6 h-6" />
@@ -72,10 +78,75 @@
 
     <ConfirmDialog :isVisible="isConfirmExlusaoDialogVisible" :motivo="motivo" @confirm="handleConfirmExlucao"
         @cancel="handleCancelExlusao" />
+
+    <!-- Modal de Histórico -->
+    <div v-if="isHistoryModalVisible" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <img src="/storage/images/history.svg" class="w-6 h-6 opacity-70" />
+                    Histórico da Conta
+                </h3>
+                <button @click="isHistoryModalVisible = false" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 bg-white">
+                <div v-if="!dados.historico || dados.historico.length === 0" class="text-center py-10 text-gray-500">
+                    Nenhum histórico registrado para esta conta.
+                </div>
+                <div v-else class="relative border-l-2 border-green-100 ml-3 space-y-8">
+                    <div v-for="(log, index) in reversedHistorico" :key="index" class="relative pl-8">
+                        <!-- Dot on Timeline -->
+                        <div class="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-white" 
+                             :class="log.acao === 'criacao' ? 'bg-blue-500' : 'bg-green-500'"></div>
+                        
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                {{ formatarDataHora(log.data) }}
+                            </span>
+                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 shadow-sm">
+                                <p class="text-sm font-semibold text-gray-800 mb-2">
+                                    {{ getAcaoDescricao(log) }}
+                                </p>
+                                <div class="flex items-center gap-2 text-xs text-gray-600">
+                                    <span class="bg-white px-2 py-1 rounded border border-gray-100 flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        </svg>
+                                        {{ log.usuario }}
+                                    </span>
+                                </div>
+                                <div v-if="log.status_novo" class="mt-3 flex items-center gap-2">
+                                    <span v-if="log.status_anterior" class="text-xs text-gray-400 line-through">{{ log.status_anterior }}</span>
+                                    <svg v-if="log.status_anterior" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                    <span :class="['px-2 py-1 text-[10px] font-bold rounded-lg uppercase tracking-tight', getStatusClassBadge(log.status_novo)]">
+                                        {{ log.status_novo }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6 bg-gray-50 border-t border-gray-100 text-right">
+                <button @click="isHistoryModalVisible = false" 
+                        class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl transition-all active:scale-95">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script setup>
-import { defineProps, ref, watch, onMounted } from 'vue';
+import { defineProps, ref, watch, onMounted, computed } from 'vue';
 import { defineEmits } from 'vue';
 import LabelModel from '../Label/LabelModel.vue';
 import ButtonClaroMedio from '../Button/ButtonClaroMedio.vue';
@@ -99,6 +170,7 @@ const isEditMode = ref(false);
 const indexEditavel = ref(null);
 const isConfirmDialogVisible = ref(false);
 const isConfirmExlusaoDialogVisible = ref(false);
+const isHistoryModalVisible = ref(false);
 const motivo = ref('');
 
 // Configuração do diálogo de confirmação
@@ -115,6 +187,33 @@ const isConfirmExluirDialogVisible = (motivoParam) => {
 watch(() => props.dados.status, (novoStatus) => {
     statusSelecionado.value = novoStatus;
 });
+
+const reversedHistorico = computed(() => {
+    if (!props.dados.historico) return [];
+    return [...props.dados.historico].reverse();
+});
+
+const formatarDataHora = (dataString) => {
+    if (!dataString) return '';
+    const data = new Date(dataString);
+    return data.toLocaleString('pt-BR');
+};
+
+const getAcaoDescricao = (log) => {
+    if (log.acao === 'criacao') return 'Conta criada no sistema';
+    if (log.acao === 'alteracao_status') return 'Status da conta alterado';
+    return log.acao;
+};
+
+const getStatusClassBadge = (status) => {
+    const colors = {
+        pendente: 'bg-orange-100 text-orange-700',
+        pago: 'bg-green-100 text-green-700',
+        agendada: 'bg-blue-100 text-blue-700',
+        atrasado: 'bg-red-100 text-red-700',
+    };
+    return colors[status.toLowerCase()] || 'bg-gray-100 text-gray-700';
+};
 
 
 const statusIcons = {
@@ -165,6 +264,12 @@ const atualizarStatus = async () => {
             status: statusSelecionado.value,
         });
         toast.success(response.data.message);
+        
+        // Atualiza o histórico localmente após a resposta bem sucedida
+        if (response.data.data && response.data.data.historico) {
+            props.dados.historico = response.data.data.historico;
+        }
+        
         emit('atualiza');
     } catch (error) {
         console.error(error);
@@ -187,6 +292,11 @@ const pagarConta = async () => {
 
         // Atualiza o status da conta
         props.dados.status = 'pago';
+        
+        // Atualiza o histórico localmente se retornado
+        if (response.data.data && response.data.data.historico) {
+            props.dados.historico = response.data.data.historico;
+        }
 
         emit('atualiza');
     } catch (error) {
