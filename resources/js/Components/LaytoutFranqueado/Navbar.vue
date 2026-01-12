@@ -92,7 +92,7 @@ const unidade = computed(() => user.value?.unidade);
 
 const profilePhoto = computed(() => {
   return (
-    user.value?.profile_photo_path ||
+    user.value?.profile_photo_url ||
     `https://ui-avatars.com/api/?name=${getInitials(
       user.value?.name
     )}&color=7F9CF5&background=EBF4FF`

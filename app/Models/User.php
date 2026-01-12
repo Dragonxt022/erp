@@ -63,16 +63,16 @@ class User extends Authenticatable
         'profile_photo_url',
     ];
 
-    // public function getProfilePhotoUrlAttribute()
-    // {
-    //     if ($this->profile_photo_path && str_starts_with($this->profile_photo_path, 'http')) {
-    //         return $this->profile_photo_path;
-    //     }
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path && (str_starts_with($this->profile_photo_path, 'http://') || str_starts_with($this->profile_photo_path, 'https://'))) {
+            return $this->profile_photo_path;
+        }
 
-    //     return $this->profile_photo_path
-    //         ? Storage::url($this->profile_photo_path)
-    //         : $this->defaultProfilePhotoUrl();
-    // }
+        return $this->profile_photo_path
+            ? Storage::url($this->profile_photo_path)
+            : $this->defaultProfilePhotoUrl();
+    }
 
 
     /**

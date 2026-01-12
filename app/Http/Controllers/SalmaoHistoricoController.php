@@ -37,32 +37,51 @@ class SalmaoHistoricoController extends Controller
         }
 
         // Aproveitamento médio
-        $aproveitamentoMedio = SalmaoHistorico::where('unidade_id', $unidadeId)
+        $dadosAproveitamento = SalmaoHistorico::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
-            ->avg('aproveitamento');
+            ->selectRaw('SUM(peso_limpo) as total_limpo, SUM(peso_bruto) as total_bruto')
+            ->first();
+
+        $aproveitamentoMedio = 0;
+
+        if ($dadosAproveitamento && $dadosAproveitamento->total_bruto > 0) {
+            $aproveitamentoMedio = ($dadosAproveitamento->total_limpo / $dadosAproveitamento->total_bruto) * 100;
+        }
+
 
         // Colaboradores mais eficientes
-        $colaboradoresEficientes = SalmaoHistorico::select('responsavel_id', DB::raw('AVG(aproveitamento) as media_aproveitamento'))
+        $colaboradoresEficientes = SalmaoHistorico::select(
+            'responsavel_id',
+            DB::raw('SUM(peso_limpo) as total_limpo'),
+            DB::raw('SUM(peso_bruto) as total_bruto')
+        )
             ->where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$startDateConverted, $endDateConverted])
             ->groupBy('responsavel_id')
-            ->orderBy('media_aproveitamento', 'desc')
             ->with('responsavel')
             ->get()
             ->map(function ($item) {
 
+                $mediaAproveitamento = 0;
+
+                if ($item->total_bruto > 0) {
+                    $mediaAproveitamento = ($item->total_limpo / $item->total_bruto) * 100;
+                }
+
                 return [
                     'responsavel_id' => $item->responsavel_id,
-                    'media_aproveitamento' => number_format($item->media_aproveitamento, 2, ',', '.'),
+                    'media_aproveitamento' => round($mediaAproveitamento, 2), // número, não string
                     'responsavel' => [
                         'id' => $item->responsavel->id,
                         'name' => $item->responsavel->name,
-                        'profile_photo_path' => $item->responsavel->profile_photo_path ? '/storage/' . $item->responsavel->profile_photo_path : null,
+                        'profile_photo_url' => $item->responsavel->profile_photo_url,
                         'email' => $item->responsavel->email,
                         'cpf' => $item->responsavel->cpf,
                     ],
                 ];
-            });
+            })
+            ->sortByDesc('media_aproveitamento')
+            ->values();
 
         // Histórico de movimentações
         $historico = SalmaoHistorico::where('unidade_id', $unidadeId)

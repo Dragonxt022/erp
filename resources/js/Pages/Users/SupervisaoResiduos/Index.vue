@@ -99,7 +99,7 @@
                 </p>
                 <img
                   :src="
-                    colaborador.responsavel.profile_photo_path ||
+                    colaborador.responsavel.profile_photo_url ||
                     '/storage/images/default-profile.png'
                   "
                   alt="Foto de perfil"

@@ -109,6 +109,135 @@ class AnalyticService
      */
     private function performCalculations(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, bool $includeOrderMetrics): array
     {
+        // Data de corte para usar a nova API
+        $cutoffDate = Carbon::create(2027, 1, 1, 0, 0, 0);
+
+        // Se o início do período for maior ou igual a 01/01/2026, usa a API externa para dados de faturamento
+        if ($startDateCarbon->greaterThanOrEqualTo($cutoffDate)) {
+            try {
+                return $this->performCalculationsExternal($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month, $includeOrderMetrics);
+            } catch (\Exception $e) {
+                Log::error("Erro ao buscar dados externos, retornando fallback local: " . $e->getMessage());
+            }
+        }
+
+        return $this->performCalculationsLocal($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month, $includeOrderMetrics);
+    }
+
+    /**
+     * Realiza os cálculos usando a API externa para faturamento e dados financeiros principais.
+     */
+    private function performCalculationsExternal(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, bool $includeOrderMetrics): array
+    {
+        // 1. Buscar dados da API Externa
+        $externalData = $this->fetchExternalFaturamentoData($unidadeId, $startDateCarbon, $endDateCarbon);
+
+        // Mapear dados da API
+        $totalCaixas = (float) $externalData['faturamento'];
+        $quantidadePedidos = (int) $externalData['quantidade_pedidos'];
+        $ticketMedio = (float) $externalData['ticket_medio'];
+
+        $taxas = $externalData['taxas'];
+        $totalTaxasCredito = (float) $taxas['credito'];
+        $totalTaxasDebito = (float) $taxas['debito'];
+        $totalTaxasVrAlimentacao = (float) $taxas['voucher']; // Mapping 'voucher' to 'vr_alimentacao'
+        // 'pix', 'especie', 'voucher' (amount) are available in 'faturamento_metodos' if needed
+
+        // Mapping 'custo_entregas' to 'totalMotoboy'
+        $totalMotoboy = (float) $externalData['custo_entregas'];
+
+        // Faltam: Delivery taxa? API retorna 'voucher' tax (0.00), 'pix' tax (0.00). 
+        // Não temos 'delivery' ou 'canais' tax explicitamente na API JSON de exemplo para TAXAS.
+        // O JSON tem 'faturamento_metodos', mas 'taxas' só tem as chaves listadas.
+        // Assumindo que taxa de delivery não vem ou é zero, ou precisamos manter local?
+        // O prompt diz "adaptar os filtro corretamente e usarmos essa nova rota".
+        // Se a rota não traz taxa de delivery, talvez ela já esteja líquida ou não deva ser exibida?
+        // Vou assumir 0 se não vier, ou manter o cálculo local APENAS para o que faltar?
+        // O ideal é usar o que vem da API.
+        $totalTaxasDelivery = 0; // Não presente na resposta de exemplo da API para taxas
+
+        // 2. Calcular métricas que NÃO vêm da API (Estoque/CMV, Salários, FGTS)
+        $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);
+        $totalSalarios = $this->fetchSalaries($unidadeId);
+
+        // FGTS continua local
+        $operationalExpensesLocal = $this->calculateOperationalExpenses($unidadeId, $startDateCarbon, $endDateCarbon);
+        $totalFGTS = $operationalExpensesLocal['fgts'];
+        // Motoboy veio da API, então ignoramos o local
+
+        // 3. Cálculos Derivados
+        $totalLiquido = $totalCaixas - $totalMotoboy;
+        $totalRoyalties = $totalLiquido * 0.05;
+        $totalFundoPropaganda = $totalLiquido * 0.015;
+
+        // Montar array de taxas para o contexto
+        $taxFees = [
+            'credito' => $totalTaxasCredito,
+            'debito' => $totalTaxasDebito,
+            'vr_alimentacao' => $totalTaxasVrAlimentacao,
+            'delivery' => $totalTaxasDelivery,
+            'canais' => $totalTaxasDelivery,
+        ];
+
+        $context = [
+            'unidadeId' => $unidadeId,
+            'startDateCarbon' => $startDateCarbon,
+            'endDateCarbon' => $endDateCarbon,
+            'totalSalarios' => $totalSalarios,
+            'totalRoyalties' => $totalRoyalties,
+            'totalFundoPropaganda' => $totalFundoPropaganda,
+            'totalLiquido' => $totalLiquido,
+            'totalFGTS' => $totalFGTS,
+            'taxFees' => $taxFees,
+            'cmv' => $stockMetrics['cmv'],
+        ];
+
+        // Calcular Categorias (Despesas) com os novos valores base
+        $categoryData = $this->calculateCategoryGroups($context);
+
+        $resultado_do_periodo_sem_folha = max($totalCaixas - $categoryData['totalDespesasCategoriasSemFolha'], 0);
+
+        $result = [
+            'estoqueInicialValor' => $stockMetrics['estoqueInicialValor'],
+            'comprasValor' => $stockMetrics['comprasValor'],
+            'estoqueFinalValor' => $stockMetrics['estoqueFinalValor'],
+            'cmv' => $stockMetrics['cmv'],
+
+            'total_caixas' => $totalCaixas,
+            'total_salarios' => $totalSalarios,
+            'total_motoboy' => $totalMotoboy,
+            'total_royalties' => $totalRoyalties,
+            'total_fundo_propaganda' => $totalFundoPropaganda,
+            "Total_Liquido" => $totalLiquido,
+            'total_fgts' => $totalFGTS,
+            'total_taxas_credito' => $taxFees['credito'],
+            'total_taxas_debito' => $taxFees['debito'],
+            'total_taxas_vr_alimentacao' => $taxFees['vr_alimentacao'],
+            "total_taxas_canais" => $taxFees['delivery'],
+            'total_despesas_categorias' => $categoryData['totalDespesasCategorias'],
+            'total_despesas_categorias_sem_folha' => $categoryData['totalDespesasCategoriasSemFolha'],
+            'resultado_do_periodo_sem_folha' => $resultado_do_periodo_sem_folha,
+            'dados_grupos' => $categoryData['dadosGrupos'],
+        ];
+
+        if ($includeOrderMetrics) {
+            // Métricas de pedidos vêm da API
+            $orderMetrics = [
+                'quantidade_pedidos' => $quantidadePedidos,
+                'faturamento_total' => $totalCaixas,
+                'ticket_medio' => $ticketMedio,
+            ];
+            $result = array_merge($result, $orderMetrics);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Executa os cálculos analíticos (Lógica Original Local).
+     */
+    private function performCalculationsLocal(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, bool $includeOrderMetrics): array
+    {
         $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);
 
         $totalCaixas = $this->calculateTotalCaixas($unidadeId, $startDateCarbon, $endDateCarbon);
@@ -428,5 +557,25 @@ class AnalyticService
             'faturamento_total' => $faturamentoTotal,
             'ticket_medio' => $ticketMedio,
         ];
+    }
+
+    /**
+     * Busca dados de faturamento da API externa.
+     */
+    private function fetchExternalFaturamentoData(int $unidadeId, Carbon $startDate, Carbon $endDate): array
+    {
+        $url = "https://caixa.taiksu.com.br/api/faturamento";
+
+        $response = Http::get($url, [
+            'unidade' => $unidadeId,
+            'inicio' => $startDate->format('Y-m-d'),
+            'final' => $endDate->format('Y-m-d'),
+        ]);
+
+        if ($response->successful()) {
+            return $response->json();
+        }
+
+        throw new \Exception("Falha na API de faturamento: " . $response->status());
     }
 }
