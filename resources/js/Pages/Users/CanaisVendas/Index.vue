@@ -24,6 +24,7 @@
         </template>
       </div>
     </div>
+    <AvisoSistemaNovo />
   </LayoutFranqueado>
 </template>
 
@@ -32,6 +33,7 @@ import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { ref } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import ListarCanaisVendas from '@/Components/EstruturaFranqueado/ListarCanaisVendas.vue';
+import AvisoSistemaNovo from '@/Components/Modals/AvisoSistemaNovo.vue';
 import DetalhesCanaisVendas from '@/Components/EstruturaFranqueado/DetalhesCanaisVendas.vue';
 
 // Dados do usuário selecionado

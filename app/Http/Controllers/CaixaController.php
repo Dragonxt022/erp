@@ -13,6 +13,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use App\Mail\ComprovanteContaAPagarMail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class CaixaController extends Controller
 {
@@ -309,101 +313,125 @@ class CaixaController extends Controller
     }
 
     public function removeSuprimento(Request $request)
-        {
-            // Validação dos dados de entrada
-            $request->validate([
-                'valor' => 'required|numeric|min:0.01',
-                'motivo' => 'required|string|max:255',
-                'categoria_id' => 'required|exists:categorias,id',
-            ]);
+    {
+        // Validação dos dados de entrada
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01',
+            'motivo' => 'required|string|max:255',
+            'categoria_id' => 'required|exists:categorias,id',
+        ]);
 
-            try {
-                // Obtém o ID da unidade do usuário autenticado
-                $unidadeId = Auth::user()->unidade_id;
+        try {
+            // Obtém o ID da unidade do usuário autenticado
+            $unidadeId = Auth::user()->unidade_id;
 
-                // Obtém o primeiro caixa aberto da unidade do usuário logado
-                $caixa = Caixa::where('unidade_id', $unidadeId)
-                    ->where('status', 1)
-                    ->first();
+            // Obtém o primeiro caixa aberto da unidade do usuário logado
+            $caixa = Caixa::where('unidade_id', $unidadeId)
+                ->where('status', 1)
+                ->first();
 
-                if (!$caixa) {
-                    return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
-                }
-
-                if ($request->valor > $caixa->valor_inicial) {
-                    return response()->json(['error' => 'Valor de retirada superior ao disponível no caixa.'], 400);
-                }
-
-                $responsavelId = Auth::user() ? Auth::user()->id : null;
-
-                if (!$responsavelId) {
-                    return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
-                }
-
-                // Verificar se já existe uma conta a pagar com mesmo valor, categoria e data
-                $dataAtual = Carbon::today();
-                $contaExistente = ContaAPagar::where('categoria_id', $request->categoria_id)
-                    ->where('valor', $request->valor)
-                    ->whereDate('emitida_em', $dataAtual)
-                    ->where('status', 'pago')
-                    ->first();
-
-                if ($contaExistente) {
-                    // Retornar uma mensagem de confirmação com detalhes da transação existente
-                    return response()->json([
-                        'confirmation_required' => true,
-                        'message' => 'Já existe uma transação com o mesmo valor e categoria hoje. Deseja prosseguir?',
-                        'existing_transaction' => [
-                            'id' => $contaExistente->id,
-                            'valor' => $contaExistente->valor,
-                            'categoria' => $contaExistente->nome,
-                            'motivo' => $contaExistente->descricao,
-
-                        ]
-                    ], 200);
-                }
-
-                // Se não houver duplicata, prosseguir com a transação
-                DB::transaction(function () use ($caixa, $responsavelId, $request) {
-                    // Atualiza o valor inicial do caixa
-                    $caixa->valor_inicial -= $request->valor;
-                    $caixa->save();
-
-                    // Criação do fluxo de caixa
-                    FluxoCaixa::create([
-                        'unidade_id' => $caixa->unidade_id,
-                        'responsavel_id' => $responsavelId,
-                        'caixa_id' => $caixa->id,
-                        'operacao' => 'sangria',
-                        'valor' => $request->valor,
-                        'hora' => now(),
-                        'motivo' => $request->motivo,
-                    ]);
-
-                    // Obter o nome da categoria selecionada
-                    $categoria = DB::table('categorias')->where('id', $request->categoria_id)->first();
-                    $nomeCategoria = $categoria->nome;
-
-                    // Criação da conta a pagar com status "pago"
-                    ContaAPagar::create([
-                        'nome' => $nomeCategoria,
-                        'valor' => $request->valor,
-                        'emitida_em' => Carbon::today(),
-                        'vencimento' => Carbon::today(),
-                        'descricao' => $request->motivo,
-                        'arquivo' => null,
-                        'dias_lembrete' => 0,
-                        'status' => 'pago',
-                        'unidade_id' => $caixa->unidade_id,
-                        'categoria_id' => $request->categoria_id,
-                    ]);
-                });
-
-                return response()->json(['success' => 'Valor retirado e conta registrada como paga com sucesso.']);
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
+            if (!$caixa) {
+                return response()->json(['error' => 'Nenhum caixa aberto encontrado.'], 404);
             }
+
+            if ($request->valor > $caixa->valor_inicial) {
+                return response()->json(['error' => 'Valor de retirada superior ao disponível no caixa.'], 400);
+            }
+
+            $responsavelId = Auth::user() ? Auth::user()->id : null;
+
+            if (!$responsavelId) {
+                return response()->json(['error' => 'Responsável não encontrado ou usuário não autenticado.'], 400);
+            }
+
+            // Verificar se já existe uma conta a pagar com mesmo valor, categoria e data
+            $dataAtual = Carbon::today();
+            $contaExistente = ContaAPagar::where('categoria_id', $request->categoria_id)
+                ->where('valor', $request->valor)
+                ->whereDate('emitida_em', $dataAtual)
+                ->where('status', 'pago')
+                ->first();
+
+            if ($contaExistente) {
+                // Retornar uma mensagem de confirmação com detalhes da transação existente
+                return response()->json([
+                    'confirmation_required' => true,
+                    'message' => 'Já existe uma transação com o mesmo valor e categoria hoje. Deseja prosseguir?',
+                    'existing_transaction' => [
+                        'id' => $contaExistente->id,
+                        'valor' => $contaExistente->valor,
+                        'categoria' => $contaExistente->nome,
+                        'motivo' => $contaExistente->descricao,
+
+                    ]
+                ], 200);
+            }
+
+            // Se não houver duplicata, prosseguir com a transação
+            DB::transaction(function () use ($caixa, $responsavelId, $request) {
+                // Atualiza o valor inicial do caixa
+                $caixa->valor_inicial -= $request->valor;
+                $caixa->save();
+
+                // Criação do fluxo de caixa
+                FluxoCaixa::create([
+                    'unidade_id' => $caixa->unidade_id,
+                    'responsavel_id' => $responsavelId,
+                    'caixa_id' => $caixa->id,
+                    'operacao' => 'sangria',
+                    'valor' => $request->valor,
+                    'hora' => now(),
+                    'motivo' => $request->motivo,
+                ]);
+
+                // Obter o nome da categoria selecionada
+                $categoria = DB::table('categorias')->where('id', $request->categoria_id)->first();
+                $nomeCategoria = $categoria->nome;
+
+                // Criação da conta a pagar com status "pago"
+                $conta = ContaAPagar::create([
+                    'nome' => $nomeCategoria,
+                    'valor' => $request->valor,
+                    'emitida_em' => Carbon::today(),
+                    'vencimento' => Carbon::today(),
+                    'descricao' => $request->motivo,
+                    'arquivo' => null,
+                    'dias_lembrete' => 0,
+                    'status' => 'pago',
+                    'unidade_id' => $caixa->unidade_id,
+                    'categoria_id' => $request->categoria_id,
+                ]);
+
+                $nomeUsuario = Auth::user()->name;
+                $conta->registrarLog('criacao_via_sangria', 'pago', null, $nomeUsuario);
+
+                // Notificações por E-mail
+                try {
+                    $nomeUnidade = Auth::user()->unidade ? Auth::user()->unidade->cidade . ' - ' . Auth::user()->unidade->bairro : 'Unidade ' . $caixa->unidade_id;
+
+                    $destinatarios = [Auth::user()->email];
+
+                    // Usuarios da Franqueadora da mesma Unidade
+                    $usuariosFranqueadora = User::where('unidade_id', $caixa->unidade_id)
+                        ->where('franqueadora', 1)
+                        ->pluck('email')
+                        ->toArray();
+
+                    $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
+
+                    foreach ($destinatarios as $email) {
+                        Mail::to($email)->send(new ComprovanteContaAPagarMail($conta, Auth::user(), $nomeUnidade));
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::error('Erro ao enviar e-mail de comprovante (Sangria): ' . $mailEx->getMessage());
+                }
+            });
+
+            return response()->json(['success' => 'Valor retirado e conta registrada como paga com sucesso.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erro ao processar a transação: ' . $e->getMessage()], 500);
         }
+    }
     // Retorna o valor disponível no caixa aberto
     public function valorDisponivel()
     {
@@ -439,78 +467,78 @@ class CaixaController extends Controller
     }
 
     public function getCaixas(Request $request)
-        {
-            // Obtém o ID da unidade do usuário autenticado
-            $unidadeId = Auth::user()->unidade_id;
+    {
+        // Obtém o ID da unidade do usuário autenticado
+        $unidadeId = Auth::user()->unidade_id;
 
-            if (!$unidadeId) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Usuário não pertence a nenhuma unidade.',
-                ], 403);
-            }
-
-            try {
-                // Define o início e fim do mês corrente como padrão
-                $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
-                $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
-
-                // Converte para Carbon e garante que as datas incluam todo o período do dia
-                $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
-                $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
-            }
-
-            // Busca os caixas do mês corrente, filtrados por unidade_id e ordenados do mais recente para o mais antigo
-            $caixas = Caixa::where('unidade_id', $unidadeId)
-                ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtra pelo mês corrente
-                ->with('responsavel') // Carrega o relacionamento com o usuário responsável
-                ->orderBy('id', 'desc') // Ordena pelo ID de forma decrescente (mais recente primeiro)
-                ->get();
-
-            // Mapeia os dados para o formato desejado
-            $response = $caixas->map(function ($caixa) {
-                // Formata o valor total de fechamento como Real Brasileiro
-                $valorFormatado = number_format($caixa->valor_final ?? 0, 2, ',', '.');
-
-                // Define o texto do status com base no valor numérico
-                $statusTexto = $caixa->status == 0 ? 'Fechado' : ($caixa->status == 1 ? 'Aberto' : $caixa->status);
-
-                // Calcula a diferença em segundos entre abertura e fechamento
-                $horaAbertura = Carbon::parse($caixa->created_at);
-                $horaFechamento = Carbon::parse($caixa->updated_at);
-                $diferencaSegundos = $horaAbertura->diffInSeconds($horaFechamento);
-
-                // Converte segundos totais em horas, minutos e segundos
-                $horas = floor($diferencaSegundos / 3600); // Horas inteiras
-                $minutos = floor(($diferencaSegundos % 3600) / 60); // Minutos restantes
-                $segundos = $diferencaSegundos % 60; // Segundos restantes
-
-                // Define o formato e sufixo com base no maior componente de tempo
-                if ($horas > 0) {
-                    $horasFormatadas = sprintf('%02d:%02d:%02dh', $horas, $minutos, $segundos);
-                } elseif ($minutos > 0) {
-                    $horasFormatadas = sprintf('00:%02d:%02dm', $minutos, $segundos);
-                } else {
-                    $horasFormatadas = sprintf('00:00:%02ds', $segundos);
-                }
-
-                return [
-                    'id' => $caixa->id,
-                    'status' => $statusTexto,
-                    'valor_total_fechamento' => "R$ {$valorFormatado}",
-                    'hora_abertura' => $caixa->created_at->toDateTimeString(),
-                    'hora_fechamento' => $caixa->updated_at->toDateTimeString(),
-                    'usuario_fechou' => $caixa->responsavel ? $caixa->responsavel->name : 'N/A',
-                    'horas_aberto' => $horasFormatadas,
-                ];
-            });
-
-            // Retorna os dados em formato JSON
+        if (!$unidadeId) {
             return response()->json([
-                'success' => true,
-                'data' => $response,
-            ], 200);
+                'status' => 'error',
+                'message' => 'Usuário não pertence a nenhuma unidade.',
+            ], 403);
         }
+
+        try {
+            // Define o início e fim do mês corrente como padrão
+            $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('d-m-Y'));
+            $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('d-m-Y'));
+
+            // Converte para Carbon e garante que as datas incluam todo o período do dia
+            $startDateConverted = Carbon::createFromFormat('d-m-Y', $startDate)->startOfDay(); // 00:00:00
+            $endDateConverted = Carbon::createFromFormat('d-m-Y', $endDate)->endOfDay(); // 23:59:59
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Formato de data inválido. Use o formato DD-MM-YYYY.'], 400);
+        }
+
+        // Busca os caixas do mês corrente, filtrados por unidade_id e ordenados do mais recente para o mais antigo
+        $caixas = Caixa::where('unidade_id', $unidadeId)
+            ->whereBetween('created_at', [$startDateConverted, $endDateConverted]) // Filtra pelo mês corrente
+            ->with('responsavel') // Carrega o relacionamento com o usuário responsável
+            ->orderBy('id', 'desc') // Ordena pelo ID de forma decrescente (mais recente primeiro)
+            ->get();
+
+        // Mapeia os dados para o formato desejado
+        $response = $caixas->map(function ($caixa) {
+            // Formata o valor total de fechamento como Real Brasileiro
+            $valorFormatado = number_format($caixa->valor_final ?? 0, 2, ',', '.');
+
+            // Define o texto do status com base no valor numérico
+            $statusTexto = $caixa->status == 0 ? 'Fechado' : ($caixa->status == 1 ? 'Aberto' : $caixa->status);
+
+            // Calcula a diferença em segundos entre abertura e fechamento
+            $horaAbertura = Carbon::parse($caixa->created_at);
+            $horaFechamento = Carbon::parse($caixa->updated_at);
+            $diferencaSegundos = $horaAbertura->diffInSeconds($horaFechamento);
+
+            // Converte segundos totais em horas, minutos e segundos
+            $horas = floor($diferencaSegundos / 3600); // Horas inteiras
+            $minutos = floor(($diferencaSegundos % 3600) / 60); // Minutos restantes
+            $segundos = $diferencaSegundos % 60; // Segundos restantes
+
+            // Define o formato e sufixo com base no maior componente de tempo
+            if ($horas > 0) {
+                $horasFormatadas = sprintf('%02d:%02d:%02dh', $horas, $minutos, $segundos);
+            } elseif ($minutos > 0) {
+                $horasFormatadas = sprintf('00:%02d:%02dm', $minutos, $segundos);
+            } else {
+                $horasFormatadas = sprintf('00:00:%02ds', $segundos);
+            }
+
+            return [
+                'id' => $caixa->id,
+                'status' => $statusTexto,
+                'valor_total_fechamento' => "R$ {$valorFormatado}",
+                'hora_abertura' => $caixa->created_at->toDateTimeString(),
+                'hora_fechamento' => $caixa->updated_at->toDateTimeString(),
+                'usuario_fechou' => $caixa->responsavel ? $caixa->responsavel->name : 'N/A',
+                'horas_aberto' => $horasFormatadas,
+            ];
+        });
+
+        // Retorna os dados em formato JSON
+        return response()->json([
+            'success' => true,
+            'data' => $response,
+        ], 200);
+    }
 }

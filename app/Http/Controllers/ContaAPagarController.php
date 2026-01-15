@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\File;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Mail\ComprovanteContaAPagarMail;
+use Illuminate\Support\Facades\Mail;
+use App\Models\User;
 
 class ContaAPagarController extends Controller
 {
@@ -265,10 +268,34 @@ class ContaAPagarController extends Controller
                 'categoria_id' => $validated['categoria_id'],
             ]);
 
-            $conta->registrarLog('criacao', 'pendente');
+            $conta->registrarLog('criacao', 'pendente', null, $user->name);
 
-            // Commit da transação
+            // Commit da transação para garantir que a conta existe no banco antes do e-mail
             DB::commit();
+
+            // Notificações por E-mail
+            try {
+                $nomeUnidade = $user->unidade ? $user->unidade->cidade . ' - ' . $user->unidade->bairro : 'Unidade ' . $unidade_id;
+
+                // 1. Destinatário: Usuário Logado
+                $destinatarios = [$user->email];
+
+                // 2. Destinatários: Usuários Franqueadora da mesma Unidade
+                $usuariosFranqueadora = User::where('unidade_id', $unidade_id)
+                    ->where('franqueadora', 1)
+                    ->pluck('email')
+                    ->toArray();
+
+                $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
+
+                // Enviar e-mail para todos os destinatários
+                foreach ($destinatarios as $email) {
+                    Mail::to($email)->send(new ComprovanteContaAPagarMail($conta, $user, $nomeUnidade));
+                }
+            } catch (\Exception $mailEx) {
+                // Log do erro de e-mail, mas não impede o sucesso da criação
+                Log::error('Erro ao enviar e-mail de comprovante de conta a pagar: ' . $mailEx->getMessage());
+            }
 
             return response()->json(['message' => 'Conta cadastrada com sucesso!', 'data' => $conta], 201);
         } catch (\Exception $e) {

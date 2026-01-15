@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class CheckFranqueado
 {
@@ -21,8 +22,8 @@ class CheckFranqueado
 
         // Verifica se o usuário é da franqueadora
         if (!$user || !$user->franqueado) {
-            // Redireciona de volta para a página anterior com mensagem de erro
-            return back()->with('error', 'Você não tem permissão para acessar esta área.');
+            Log::error("Acesso negado ao painel do franqueado para o usuário: " . ($user ? $user->email : 'não autenticado'));
+            return redirect('/')->with('error', 'Você não tem permissão para acessar esta área.');
         }
 
         return $next($request);

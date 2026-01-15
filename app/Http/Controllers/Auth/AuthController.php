@@ -129,6 +129,8 @@ class AuthController extends Controller
             }
         }
 
+        Log::info("Usuário autenticado: {$user->email}, Grupo: {$grupoNome}, Redirecionando...");
+
         // Redireciona conforme grupo ou última URL
         return $this->redirectUser($user);
     }
@@ -221,6 +223,8 @@ class AuthController extends Controller
      */
     private function redirectUser($user)
     {
+        Log::info("Redirecionando usuário {$user->email}: franqueadora={$user->franqueadora}, franqueado={$user->franqueado}, last_visited_url={$user->last_visited_url}");
+
         if ($user->last_visited_url) {
             return redirect($user->last_visited_url);
         }
@@ -229,6 +233,11 @@ class AuthController extends Controller
             return redirect()->route('franqueadora.painel');
         }
 
-        return redirect()->route('franqueado.painel');
+        if ($user->franqueado) {
+            return redirect()->route('franqueado.painel');
+        }
+
+        Log::warning("Usuário {$user->email} sem permissões de acesso (franqueador/franqueado = 0).");
+        return redirect('https://login.taiksu.com.br/')->with('error', 'Você não tem permissão para acessar este sistema.');
     }
 }

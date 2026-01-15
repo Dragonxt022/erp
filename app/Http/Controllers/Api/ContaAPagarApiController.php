@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\ComprovanteContaAPagarMail;
+use Illuminate\Support\Facades\Mail;
+use App\Models\User;
+use App\Models\InforUnidade;
 
 class ContaAPagarApiController extends Controller
 {
@@ -137,6 +141,38 @@ class ContaAPagarApiController extends Controller
 
             $nomeUsuario = $userData['name'] ?? 'API';
             $contaAPagar->registrarLog('criacao', $contaAPagar->status, null, $nomeUsuario);
+
+
+            // Notificações por E-mail
+            try {
+                $unidade = InforUnidade::find($request->unidade_id);
+                $nomeUnidade = $unidade ? $unidade->cidade . ' - ' . $unidade->bairro : 'Unidade ' . $request->unidade_id;
+
+                // Criar um objeto de usuário genérico para o e-mail (já que o usuário vem de SSO)
+                $usuarioFake = (object)[
+                    'name' => $userData['name'] ?? 'Usuário API',
+                    'email' => $userData['email'] ?? null
+                ];
+
+                $destinatarios = [];
+                if ($usuarioFake->email) {
+                    $destinatarios[] = $usuarioFake->email;
+                }
+
+                // Usuarios da Franqueadora da mesma Unidade
+                $usuariosFranqueadora = User::where('unidade_id', $request->unidade_id)
+                    ->where('franqueadora', 1)
+                    ->pluck('email')
+                    ->toArray();
+
+                $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
+
+                foreach ($destinatarios as $email) {
+                    Mail::to($email)->send(new ComprovanteContaAPagarMail($contaAPagar, $usuarioFake, $nomeUnidade));
+                }
+            } catch (\Exception $mailEx) {
+                Log::error('Erro ao enviar e-mail de comprovante (API): ' . $mailEx->getMessage());
+            }
 
             Log::info('Conta a pagar criada via API', [
                 'conta_id' => $contaAPagar->id,

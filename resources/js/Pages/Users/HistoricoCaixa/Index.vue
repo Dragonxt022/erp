@@ -177,6 +177,7 @@
         </div>
       </div>
     </div>
+    <AvisoSistemaNovo />
   </LayoutFranqueado>
 </template>
 
@@ -184,6 +185,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
+import AvisoSistemaNovo from '@/Components/Modals/AvisoSistemaNovo.vue';
 import { Head } from '@inertiajs/vue3';
 import {
   Chart,

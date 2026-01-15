@@ -108,6 +108,7 @@
         />
       </div>
     </div>
+    <AvisoSistemaNovo />
   </LayoutFranqueado>
 </template>
 
@@ -117,6 +118,7 @@ import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import AvisoSistemaNovo from '@/Components/Modals/AvisoSistemaNovo.vue';
 import { usePage } from '@inertiajs/vue3';
 import { Inertia } from '@inertiajs/inertia';
 import { useToast } from 'vue-toastification';

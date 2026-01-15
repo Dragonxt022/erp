@@ -33,46 +33,76 @@ class UserSyncService
     public static function syncUser(array $userData, ?int $unidadeId)
     {
         // 🔎 Flags de grupo
-        $franqueado = 0;
+        $franqueado   = 0;
         $franqueadora = 0;
-        $grupoNome = $userData['grupo_nome'] ?? '';
+        $colaborador  = 0;
+        $grupoNome    = $userData['grupo_nome'] ?? $userData['grupo'] ?? '';
 
         switch ($grupoNome) {
             case 'Desenvolvedor':
-                $franqueado = 1;
+                $franqueado   = 1;
                 $franqueadora = 1;
+                $colaborador  = 1;
                 break;
             case 'Franqueado':
-            case 'Colaborador':
             case 'Gerente':
             case 'Recepcionista':
+            case 'Operador de Caixa':
                 $franqueado = 1;
+                break;
+            case 'Colaborador':
+                $franqueado  = 1;
+                $colaborador = 1;
                 break;
             case 'Franqueadora':
                 $franqueadora = 1;
                 break;
         }
 
-        // 🔎 Cria/atualiza usuário
-        $user = User::updateOrCreate(
-            ['email' => $userData['email']],
-            [
-                'id'                 => $userData['id'],
-                'name'               => $userData['name'],
-                'cpf'                => $userData['cpf'],
-                'unidade_id'         => $unidadeId,
-                'grupo_id'           => $userData['grupo_id'] ?? null,
-                'profile_photo_path' => isset($userData['foto']) ? "https://login.taiksu.com.br/frontend/profiles/" . $userData['foto'] : null,
-                'franqueado'         => $franqueado,
-                'franqueadora'       => $franqueadora,
-            ]
-        );
-
-        // Se o usuário foi recém-criado (ou não tem senha), define uma senha aleatória
-        if ($user->wasRecentlyCreated || empty($user->password)) {
-            $user->password = bcrypt(Str::random(16));
-            $user->save();
+        // ✅ REGRA: usuário SEMPRE identificado pelo e-mail
+        if (empty($userData['email'])) {
+            return null;
         }
+
+        $user = User::where('email', $userData['email'])->first();
+
+        // 🔎 Dados básicos
+        $name = $userData['name'] ?? $userData['nome'] ?? 'Usuário SSO';
+        $cpf  = $userData['cpf'] ?? null;
+
+        // 🔎 Foto (corrige duplicação de URL)
+        $foto = $userData['foto'] ?? null;
+        $profilePhoto = $foto
+            ? (str_starts_with($foto, 'http')
+                ? $foto
+                : "https://login.taiksu.com.br/frontend/profiles/{$foto}")
+            : null;
+
+        // 🆕 Criação
+        if (!$user) {
+            $user = new User();
+
+            // id externo SOMENTE no create
+            if (!empty($userData['id'])) {
+                $user->id = $userData['id'];
+            }
+
+            $user->email    = $userData['email'];
+            $user->password = bcrypt(Str::random(16));
+        }
+
+        // ✏ Atualização segura (sem alterar email)
+        $user->fill([
+            'name'               => $name,
+            'cpf'                => $cpf,
+            'unidade_id'         => $unidadeId,
+            'profile_photo_path' => $profilePhoto,
+            'franqueado'         => $franqueado,
+            'franqueadora'       => $franqueadora,
+            'colaborador'        => $colaborador,
+        ]);
+
+        $user->save();
 
         // ⚡ Permissões default
         if (!UserPermission::where('user_id', $user->id)->exists()) {
@@ -86,7 +116,14 @@ class UserSyncService
                 'gestao_salmao'          => false,
             ];
 
-            if (in_array($grupoNome, ['Franqueado', 'Franqueadora', 'Desenvolvedor'])) {
+            if (in_array($grupoNome, [
+                'Franqueado',
+                'Franqueadora',
+                'Desenvolvedor',
+                'Gerente',
+                'Recepcionista',
+                'Operador de Caixa',
+            ])) {
                 $permissoesDefault = array_map(fn() => true, $permissoesDefault);
             }
 
@@ -98,6 +135,7 @@ class UserSyncService
 
         return $user;
     }
+
     public static function syncUnidade(int $unidadeId, string $token)
     {
         try {

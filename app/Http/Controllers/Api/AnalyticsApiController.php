@@ -35,9 +35,48 @@ class AnalyticsApiController extends Controller
         return $this->cmvGlobal($request, $service);
     }
 
+    // public function cmvGlobal(Request $request, AnalyticService $service)
+    // {
+    //     // Datas em formato ISO obrigatório
+    //     try {
+    //         $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
+    //         $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
+    //     }
+
+    //     // Caso global: todas as unidades
+    //     $units = \App\Models\InforUnidade::all();
+    //     $detalhes = [];
+    //     $globalCmv = 0;
+    //     $globalFaturamento = 0;
+
+    //     foreach ($units as $unit) {
+    //         $data = $this->processUnitData($service, $unit->id, $inicio, $final);
+
+    //         $detalhes[] = [
+    //             'unidade_id' => $unit->id,
+    //             'nome_unidade' => $unit->cidade,
+    //             'valor_cmv' => $data['cmv'],
+    //             'porcentagem_cmv' => $data['porcentagem_cmv'],
+    //         ];
+
+    //         $globalCmv += $data['cmv'];
+    //         $globalFaturamento += $data['faturamento'];
+    //     }
+
+    //     $porcentagemCmvGlobal = $globalFaturamento > 0
+    //         ? round(($globalCmv / $globalFaturamento) * 100, 2)
+    //         : 0;
+
+    //     return response()->json([
+    //         'valor_cmv_global' => round($globalCmv, 2),
+    //         'porcentagem_cmv_global' => $porcentagemCmvGlobal,
+    //         'unidades' => $detalhes,
+    //     ]);
+    // }
     public function cmvGlobal(Request $request, AnalyticService $service)
     {
-        // Datas em formato ISO obrigatório
         try {
             $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
             $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
@@ -45,14 +84,20 @@ class AnalyticsApiController extends Controller
             return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
         }
 
-        // Caso global: todas as unidades
         $units = \App\Models\InforUnidade::all();
         $detalhes = [];
         $globalCmv = 0;
-        $globalFaturamento = 0;
+
+        // Novas variáveis para a média da calculadora
+        $somaDasPorcentagens = 0;
+        $totalUnidadesComDados = 0;
 
         foreach ($units as $unit) {
             $data = $this->processUnitData($service, $unit->id, $inicio, $final);
+
+            if ($data['cmv'] <= 0) {
+                continue;
+            }
 
             $detalhes[] = [
                 'unidade_id' => $unit->id,
@@ -62,16 +107,20 @@ class AnalyticsApiController extends Controller
             ];
 
             $globalCmv += $data['cmv'];
-            $globalFaturamento += $data['faturamento'];
+
+            // Acumula as porcentagens para tirar a média simples depois
+            $somaDasPorcentagens += $data['porcentagem_cmv'];
+            $totalUnidadesComDados++;
         }
 
-        $porcentagemCmvGlobal = $globalFaturamento > 0
-            ? round(($globalCmv / $globalFaturamento) * 100, 2)
+        // Lógica da Calculadora: Média das porcentagens individuais
+        $porcentagemCmvGlobal = $totalUnidadesComDados > 0
+            ? round($somaDasPorcentagens / $totalUnidadesComDados, 2)
             : 0;
 
         return response()->json([
             'valor_cmv_global' => round($globalCmv, 2),
-            'porcentagem_cmv_global' => $porcentagemCmvGlobal,
+            'porcentagem_cmv_global' => $porcentagemCmvGlobal, // Agora vai bater com a calculadora
             'unidades' => $detalhes,
         ]);
     }

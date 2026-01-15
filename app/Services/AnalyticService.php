@@ -110,7 +110,7 @@ class AnalyticService
     private function performCalculations(int $unidadeId, Carbon $startDateCarbon, Carbon $endDateCarbon, bool $isCalendarMode, ?int $month, bool $includeOrderMetrics): array
     {
         // Data de corte para usar a nova API
-        $cutoffDate = Carbon::create(2027, 1, 1, 0, 0, 0);
+        $cutoffDate = Carbon::create(2026, 1, 1, 0, 0, 0);
 
         // Se o início do período for maior ou igual a 01/01/2026, usa a API externa para dados de faturamento
         if ($startDateCarbon->greaterThanOrEqualTo($cutoffDate)) {

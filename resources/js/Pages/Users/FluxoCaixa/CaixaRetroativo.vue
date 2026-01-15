@@ -25,6 +25,7 @@
         />
       </div>
     </div>
+    <AvisoSistemaNovo />
   </LayoutFranqueado>
 </template>
 
@@ -35,6 +36,7 @@ import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import CadastroColaborador from '@/Components/EstruturaFranqueado/CadastroColaborador.vue';
 import ListarCaixas from '@/Components/EstruturaFranqueado/ListarCaixas.vue';
 import DetalhesCaixa from '@/Components/EstruturaFranqueado/DetalhesCaixa.vue';
+import AvisoSistemaNovo from '@/Components/Modals/AvisoSistemaNovo.vue';
 
 const listaKey = ref(0);
 const dadosSelecionado = ref(null);

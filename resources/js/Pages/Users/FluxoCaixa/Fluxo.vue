@@ -400,6 +400,7 @@
         </div>
       </div>
     </div>
+    <AvisoSistemaNovo />
   </LayoutFranqueado>
 </template>
 
@@ -408,6 +409,7 @@ import LayoutFranqueado from '@/Layouts/LayoutFranqueado.vue';
 import { Head } from '@inertiajs/vue3';
 import InputModel from '@/Components/Inputs/InputModel.vue';
 import ButtonPrimaryMedio from '@/Components/Button/ButtonPrimaryMedio.vue';
+import AvisoSistemaNovo from '@/Components/Modals/AvisoSistemaNovo.vue';
 import ButtonSuave from '@/Components/Button/ButtonSuave.vue';
 import { onMounted, ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
