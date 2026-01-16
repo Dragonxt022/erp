@@ -136,25 +136,15 @@ class AnalyticService
         $totalCaixas = (float) $externalData['faturamento'];
         $quantidadePedidos = (int) $externalData['quantidade_pedidos'];
         $ticketMedio = (float) $externalData['ticket_medio'];
+        $totalTaxasDelivery = (float) ($externalData['taxas_canais_venda'] ?? 0);
 
-        $taxas = $externalData['taxas'];
-        $totalTaxasCredito = (float) $taxas['credito'];
-        $totalTaxasDebito = (float) $taxas['debito'];
-        $totalTaxasVrAlimentacao = (float) $taxas['voucher']; // Mapping 'voucher' to 'vr_alimentacao'
-        // 'pix', 'especie', 'voucher' (amount) are available in 'faturamento_metodos' if needed
+        $taxas = $externalData['taxas'] ?? [];
+        $totalTaxasCredito = (float) ($taxas['credito'] ?? 0);
+        $totalTaxasDebito = (float) ($taxas['debito'] ?? 0);
+        $totalTaxasVrAlimentacao = (float) ($taxas['voucher'] ?? 0);
 
         // Mapping 'custo_entregas' to 'totalMotoboy'
         $totalMotoboy = (float) $externalData['custo_entregas'];
-
-        // Faltam: Delivery taxa? API retorna 'voucher' tax (0.00), 'pix' tax (0.00). 
-        // Não temos 'delivery' ou 'canais' tax explicitamente na API JSON de exemplo para TAXAS.
-        // O JSON tem 'faturamento_metodos', mas 'taxas' só tem as chaves listadas.
-        // Assumindo que taxa de delivery não vem ou é zero, ou precisamos manter local?
-        // O prompt diz "adaptar os filtro corretamente e usarmos essa nova rota".
-        // Se a rota não traz taxa de delivery, talvez ela já esteja líquida ou não deva ser exibida?
-        // Vou assumir 0 se não vier, ou manter o cálculo local APENAS para o que faltar?
-        // O ideal é usar o que vem da API.
-        $totalTaxasDelivery = 0; // Não presente na resposta de exemplo da API para taxas
 
         // 2. Calcular métricas que NÃO vêm da API (Estoque/CMV, Salários, FGTS)
         $stockMetrics = $this->calculateStockMetrics($unidadeId, $startDateCarbon, $endDateCarbon, $isCalendarMode, $month);

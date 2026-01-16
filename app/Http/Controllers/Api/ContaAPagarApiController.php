@@ -89,7 +89,8 @@ class ContaAPagarApiController extends Controller
             'categoria_id' => 'required|integer|exists:categorias,id',
             'descricao' => 'nullable|string',
             'arquivo' => 'nullable|string',
-            'status' => 'nullable|in:pendente,pago,atrasado,agendada'
+            'status' => 'nullable|in:pendente,pago,atrasado,agendada',
+            'ignora_email' => 'nullable'
         ], [
             // Mensagens personalizadas em português
             'nome.required' => 'O campo nome é obrigatório.',
@@ -113,7 +114,8 @@ class ContaAPagarApiController extends Controller
             'categoria_id.required' => 'O campo categoria_id é obrigatório.',
             'categoria_id.integer' => 'O campo categoria_id deve ser um número inteiro.',
             'categoria_id.exists' => 'A categoria informada não existe.',
-            'status.in' => 'O status deve ser: pendente, pago, atrasado ou agendada.'
+            'status.in' => 'O status deve ser: pendente, pago, atrasado ou agendada.',
+            'ignora_email.in' => 'O campo ignora_email deve ser true ou false.'
         ]);
 
         if ($validator->fails()) {
@@ -136,7 +138,8 @@ class ContaAPagarApiController extends Controller
                 'dias_lembrete' => $request->dias_lembrete,
                 'status' => $request->status ?? 'agendada',
                 'unidade_id' => $request->unidade_id,
-                'categoria_id' => $request->categoria_id
+                'categoria_id' => $request->categoria_id,
+                'ignora_email' => $request->ignora_email ?? false
             ]);
 
             $nomeUsuario = $userData['name'] ?? 'API';
@@ -144,34 +147,36 @@ class ContaAPagarApiController extends Controller
 
 
             // Notificações por E-mail
-            try {
-                $unidade = InforUnidade::find($request->unidade_id);
-                $nomeUnidade = $unidade ? $unidade->cidade . ' - ' . $unidade->bairro : 'Unidade ' . $request->unidade_id;
+            if (!$request->ignora_email) {
+                try {
+                    $unidade = InforUnidade::find($request->unidade_id);
+                    $nomeUnidade = $unidade ? $unidade->cidade . ' - ' . $unidade->bairro : 'Unidade ' . $request->unidade_id;
 
-                // Criar um objeto de usuário genérico para o e-mail (já que o usuário vem de SSO)
-                $usuarioFake = (object)[
-                    'name' => $userData['name'] ?? 'Usuário API',
-                    'email' => $userData['email'] ?? null
-                ];
+                    // Criar um objeto de usuário genérico para o e-mail (já que o usuário vem de SSO)
+                    $usuarioFake = (object)[
+                        'name' => $userData['name'] ?? 'Usuário API',
+                        'email' => $userData['email'] ?? null
+                    ];
 
-                $destinatarios = [];
-                if ($usuarioFake->email) {
-                    $destinatarios[] = $usuarioFake->email;
+                    $destinatarios = [];
+                    if ($usuarioFake->email) {
+                        $destinatarios[] = $usuarioFake->email;
+                    }
+
+                    // Usuarios da Franqueadora da mesma Unidade
+                    $usuariosFranqueadora = User::where('unidade_id', $request->unidade_id)
+                        ->where('franqueado', 1)
+                        ->pluck('email')
+                        ->toArray();
+
+                    $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
+
+                    foreach ($destinatarios as $email) {
+                        Mail::to($email)->send(new ComprovanteContaAPagarMail($contaAPagar, $usuarioFake, $nomeUnidade));
+                    }
+                } catch (\Exception $mailEx) {
+                    Log::error('Erro ao enviar e-mail de comprovante (API): ' . $mailEx->getMessage());
                 }
-
-                // Usuarios da Franqueadora da mesma Unidade
-                $usuariosFranqueadora = User::where('unidade_id', $request->unidade_id)
-                    ->where('franqueadora', 1)
-                    ->pluck('email')
-                    ->toArray();
-
-                $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
-
-                foreach ($destinatarios as $email) {
-                    Mail::to($email)->send(new ComprovanteContaAPagarMail($contaAPagar, $usuarioFake, $nomeUnidade));
-                }
-            } catch (\Exception $mailEx) {
-                Log::error('Erro ao enviar e-mail de comprovante (API): ' . $mailEx->getMessage());
             }
 
             Log::info('Conta a pagar criada via API', [
