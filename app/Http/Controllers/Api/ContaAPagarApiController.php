@@ -26,57 +26,24 @@ class ContaAPagarApiController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validação do Token JWT
-        $token = $request->bearerToken();
+        // 1. Obtém o usuário autenticado via Middleware SSO
+        $user = auth()->user();
 
-        if (!$token) {
-            return response()->json([
+        if (!$user) {
+             return response()->json([
                 'status' => 'error',
-                'message' => 'Token de autenticação não fornecido.',
-                'error' => 'Token JWT é obrigatório no header Authorization: Bearer {token}'
+                'message' => 'Usuário não autenticado.',
+                'error' => 'Falha na autenticação via SSO.'
             ], 401);
         }
 
-        // Valida o token contra o SSO
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json',
-            ])->get('https://login.taiksu.com.br/api/user/me');
-
-            if ($response->failed()) {
-                Log::warning('Tentativa de acesso à API com token inválido', [
-                    'ip' => $request->ip(),
-                    'status_code' => $response->status()
-                ]);
-
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Token de autenticação inválido.',
-                    'error' => 'Não foi possível validar o token JWT fornecido.'
-                ], 401);
-            }
-
-            $userData = $response->json();
-
-            // Log de acesso bem-sucedido
-            Log::info('Acesso à API de Contas a Pagar', [
-                'user_id' => $userData['id'] ?? null,
-                'user_name' => $userData['name'] ?? null,
-                'ip' => $request->ip()
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Erro ao validar token JWT', [
-                'error' => $e->getMessage(),
-                'ip' => $request->ip()
-            ]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Erro ao validar autenticação.',
-                'error' => 'Não foi possível conectar ao servidor de autenticação.'
-            ], 500);
-        }
+        // Dados do usuário para log e e-mail
+        // Como o middleware já sincronizou, usamos os dados do model User
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+        ];
 
         // 2. Validação dos Dados Recebidos
         $validator = Validator::make($request->all(), [
@@ -166,6 +133,7 @@ class ContaAPagarApiController extends Controller
                     // Usuarios da Franqueadora da mesma Unidade
                     $usuariosFranqueadora = User::where('unidade_id', $request->unidade_id)
                         ->where('franqueado', 1)
+                        ->where('status', 'ativo')
                         ->pluck('email')
                         ->toArray();
 

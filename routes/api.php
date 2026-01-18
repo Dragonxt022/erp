@@ -10,10 +10,12 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
-// API Externa - Contas a Pagar
-Route::post('contas-a-pagar', [ContaAPagarApiController::class, 'store']);
+// API Externa - Contas a Pagar e Analytics (Protegidas pelo SSO)
+Route::middleware(['auth.sso'])->group(function () {
+    Route::post('contas-a-pagar', [ContaAPagarApiController::class, 'store']);
 
-// API Externa - Analytics
-Route::get('cmv', [AnalyticsApiController::class, 'cmv']);
-Route::get('cmv-global', [AnalyticsApiController::class, 'cmvGlobal']);
-Route::get('aproveitamento', [AnalyticsApiController::class, 'aproveitamento']);
+    // API Externa - Analytics
+    Route::get('cmv', [AnalyticsApiController::class, 'cmv']);
+    Route::get('cmv-global', [AnalyticsApiController::class, 'cmvGlobal']);
+    Route::get('aproveitamento', [AnalyticsApiController::class, 'aproveitamento']);
+});

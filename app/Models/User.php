@@ -39,7 +39,8 @@ class User extends Authenticatable
         'franqueado',
         'franqueadora',
         'colaborador',
-        'last_visited_url'
+        'last_visited_url',
+        'status'
     ];
 
     /**

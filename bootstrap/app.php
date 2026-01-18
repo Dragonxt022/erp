@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Registre o CheckPermission como um middleware nomeado
         $middleware->alias([
             'check.permission' => CheckPermission::class,
+            'auth.sso' => \App\Http\Middleware\SsoAuthenticationMiddleware::class,
         ]);
 
         //
