@@ -20,8 +20,8 @@ class CheckFranqueado
     {
         $user = Auth::user();
 
-        // Verifica se o usuário é da franqueadora
-        if (!$user || !$user->franqueado) {
+
+        if (!$user || (!$user->franqueado && !$user->colaborador && !$user->franqueadora)) {
             Log::error("Acesso negado ao painel do franqueado para o usuário: " . ($user ? $user->email : 'não autenticado'));
             return redirect('/')->with('error', 'Você não tem permissão para acessar esta área.');
         }

@@ -39,6 +39,7 @@ class User extends Authenticatable
         'franqueado',
         'franqueadora',
         'colaborador',
+        
         'last_visited_url',
         'status'
     ];
@@ -86,6 +87,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'franqueado' => 'boolean',
+            'franqueadora' => 'boolean',
+            'colaborador' => 'boolean',
         ];
     }
 
@@ -122,11 +126,6 @@ class User extends Authenticatable
         $this->notify(new ResetPasswordNotification($token));
     }
 
-    public function userPermission()
-    {
-        return $this->hasOne(UserPermission::class);
-    }
-
     public function cargo()
     {
         return $this->belongsTo(Cargo::class);
@@ -138,19 +137,18 @@ class User extends Authenticatable
     }
 
     /**
-     * Sistema de permissões
+     * Sistema de permissões (Simplificado para Flags)
+     * Mantemos o método hasPermission por compatibilidade, mas ele deve checar flags se possível,
+     * ou podemos removê-lo se o grep mostrar que ninguém usa além dos middlewares que vamos apagar.
+     * O usuário pediu "que apagar esse sistema da aplicação inteira".
+     * Então vou remover os métodos getPermissions e userPermission.
+     * O hasPermission pode ser mantido retornando true temporariamente até limparmos tudo, ou removido.
+     * Vou remover tudo.
      */
 
-    public function hasPermission(string $permission): bool
-    {
-        $permissions = $this->getPermissions();
-        return isset($permissions[$permission]) && $permissions[$permission] === 1;
-    }
-
-    public function getPermissions(): array
-    {
-        return UserPermission::getPermissions($this->id);
-    }
+    /**
+     * Notificações
+     */
 
     /**
      * Notificações

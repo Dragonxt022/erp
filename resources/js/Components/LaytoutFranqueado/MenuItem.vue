@@ -54,7 +54,7 @@ const props = defineProps({
     requiredPermission: String,
 });
 
-const userPermissions = inject('userPermissions', ref({}));
+// userPermissions removido
 const openSubmenuLink = inject('openSubmenuLink', ref(null)); // Injeta o estado compartilhado
 
 const showSubmenu = computed(() => openSubmenuLink.value === props.link);
@@ -76,17 +76,12 @@ const linkHref = computed(() => {
 
 // Verifica se o item principal é visível
 const isVisible = computed(() => {
-    return (
-        !props.requiredPermission || userPermissions.value[props.requiredPermission]
-    );
+    return true; // Visibilidade total (permissões removidas)
 });
 
 // Filtra submenus com base nas permissões
 const filteredSubmenuItems = computed(() => {
-    return props.submenuItems.filter(
-        (sub) =>
-            !sub.requiredPermission || userPermissions.value[sub.requiredPermission]
-    );
+    return props.submenuItems; // Retorna todos os submenus (sem filtro)
 });
 
 const handleClick = (e) => {

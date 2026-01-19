@@ -126,18 +126,29 @@ class ContaAPagarApiController extends Controller
                     ];
 
                     $destinatarios = [];
+                    
+                    // 1. Quem criou a conta
                     if ($usuarioFake->email) {
                         $destinatarios[] = $usuarioFake->email;
                     }
 
-                    // Usuarios da Franqueadora da mesma Unidade
-                    $usuariosFranqueadora = User::where('unidade_id', $request->unidade_id)
+                    // 2. Franqueados da mesma unidade (REMOCAO de colaboradores)
+                    // "se ele for franqueado e colaborador, não envie o email, somente se ele for somente franqueado!"
+                    $franqueadosUnidade = User::where('unidade_id', $request->unidade_id)
                         ->where('franqueado', 1)
+                        ->where('colaborador', 0) // Exclui quem também é colaborador
                         ->where('status', 'ativo')
                         ->pluck('email')
                         ->toArray();
 
-                    $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
+                    // 3. Franqueadoras (Global)
+                    $franqueadorasGlobal = User::where('franqueadora', 1)
+                        ->where('status', 'ativo')
+                        ->pluck('email')
+                        ->toArray();
+
+                    // Merge e unique
+                    $destinatarios = array_unique(array_merge($destinatarios, $franqueadosUnidade, $franqueadorasGlobal));
 
                     foreach ($destinatarios as $email) {
                         Mail::to($email)->send(new ComprovanteContaAPagarMail($contaAPagar, $usuarioFake, $nomeUnidade));

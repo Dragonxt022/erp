@@ -63,8 +63,26 @@ const fetchPermissions = async () => {
 // Busca o menu e ordena categorias, itens e filhos
 const fetchMenu = async () => {
   try {
-    const response = await axios.get('/api/menu');
+    // Adiciona timestamp para evitar cache
+    const response = await axios.get(`/api/menu?t=${Date.now()}`);
     const categories = response.data.data || [];
+
+    // DEBUG: Verifica se o item 31 está presente
+    let found31 = false;
+    categories.forEach(category => {
+      category.items.forEach(item => {
+        if (item.id === 31) {
+          found31 = true;
+          console.log('🔴 ITEM 31 ENCONTRADO NO FRONTEND:', item);
+        }
+      });
+    });
+    
+    if (!found31) {
+      console.log('✅ Item 31 (DRE) NÃO está na resposta da API - filtro funcionando!');
+    } else {
+      console.error('❌ Item 31 (DRE) AINDA ESTÁ NA RESPOSTA - filtro NÃO funcionando!');
+    }
 
     // Ordena categorias pelo campo 'order'
     const orderedCategories = categories
@@ -99,22 +117,11 @@ const filteredMenuCategories = computed(() => {
   return menuCategories.value
     .map(category => ({
       ...category,
-      items: category.items
-        .filter(item =>
-          !item.required_permission ||
-          userPermissions.value[item.required_permission] ||
-          (item.children &&
-            item.children.some(
-              child =>
-                !child.required_permission || userPermissions.value[child.required_permission]
-            ))
-        )
-        .map(item => ({
+      items: category.items.map(item => ({
           ...item,
           submenuItems: item.children || [],
-        })),
-    }))
-    .filter(category => category.items.length > 0);
+      }))
+    }));
 });
 
 onMounted(async () => {

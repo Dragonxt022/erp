@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\UserPermission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -43,17 +42,16 @@ class AuthController extends Controller
             ]);
         }
 
-        // Busca as permissões do usuário na tabela UserPermission
-        $userPermission = UserPermission::where('user_id', $usuario->id)->first();
-
         // Verifica se o usuário tem permissão para acessar o controle de estoque
-        if (!$userPermission || !$userPermission->controle_saida_estoque) {
-            // Retorna o erro como uma propriedade no Inertia
-            return Inertia::render('Auth/LoginEstoque', [
-                'errorMessage' => 'Acesso negado ao controle de estoque.',
+        // (Simplificado: Se tem PIN, tem acesso, ou checar se é ativo)
+        if ($usuario->status !== 'ativo') {
+             return Inertia::render('Auth/LoginEstoque', [
+                'errorMessage' => 'Usuário inativo.',
             ]);
         }
 
+        // Permissão concedida implicitamente conforme solicitação de desbloqueio total
+        
         // Autentica o usuário manualmente
         Auth::login($usuario);
 
@@ -214,8 +212,17 @@ class AuthController extends Controller
         $user = $user->load('userDetails', 'unidade', 'cargo');
 
 
-        // Obtém as permissões do usuário e converte 0/1 para booleanos
-        $permissions = array_map('boolval', $user->getPermissions());
+        // Mock de permissões para manter a compatibilidade com o frontend
+        // Como o usuário pediu para não bloquear nada, retornamos true para tudo.
+        $permissions = [
+            'controle_estoque'       => true,
+            'controle_saida_estoque' => true,
+            'gestao_equipe'          => true,
+            'fluxo_caixa'            => true,
+            'dre'                    => true,
+            'contas_pagar'           => true,
+            'gestao_salmao'          => true,
+        ];
 
         // Obtém o token RH da sessão para o sistema de notificações
         $rhToken = Session::get('rh_token');
@@ -245,7 +252,7 @@ class AuthController extends Controller
             return redirect()->route('franqueadora.painel');
         }
 
-        if ($user->franqueado) {
+        if ($user->franqueado || $user->colaborador) {
             return redirect()->route('franqueado.painel');
         }
 

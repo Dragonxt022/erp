@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\ResetPasswordMail;
 use App\Models\Cargo;
 use App\Models\Notificacao;
-use App\Models\UserPermission;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,8 +29,16 @@ class UserController extends Controller
 
         // Formata a resposta para incluir as unidades relacionadas e as permissões
         $data = $users->map(function ($user) {
-            // Obtém as permissões do usuário atual e converte 0/1 para booleanos
-            $permissions = array_map('boolval', $user->getPermissions());
+            // Mock de permissões (tudo liberado)
+            $permissions = [
+                'controle_estoque'       => true,
+                'controle_saida_estoque' => true,
+                'gestao_equipe'          => true,
+                'fluxo_caixa'            => true,
+                'dre'                    => true,
+                'contas_pagar'           => true,
+                'gestao_salmao'          => true,
+            ];
 
             return [
                 'id' => $user->id,
@@ -44,7 +51,7 @@ class UserController extends Controller
                 'pin' => $user->pin,
                 'profile_photo_url' => $user->profile_photo_url,
                 'colaborador' => $user->colaborador,
-                'permissions' => $permissions, // Adiciona as permissões convertidas
+                'permissions' => $permissions, // Adiciona as permissões (mockadas)
                 'unidade' => $user->unidade ? [
                     'id' => $user->unidade->id,
                     'cep' => $user->unidade->cep,
@@ -122,17 +129,8 @@ class UserController extends Controller
                 'profile_photo_path' => $profilePhotoPath, // Caminho da foto
             ]);
 
-            // Criar permissões padrão para o novo usuário
-            UserPermission::create([
-                'user_id' => $user->id,
-                'controle_estoque' => true,
-                'controle_saida_estoque' => true,
-                'gestao_equipe' => true,
-                'fluxo_caixa' => true,
-                'dre' => true,
-                'contas_pagar' => true,
-                'gestao_salmao' => true,
-            ]);
+            // Permissões padrão não são mais criadas (sistema removido)
+            // Acesso controlado por flags (franqueado, admin, etc)
 
             // Gerar o token de redefinição de senha
             $token = Password::createToken($user);
@@ -170,8 +168,7 @@ class UserController extends Controller
                 Storage::disk('public')->delete($user->profile_photo_path);
             }
 
-            // Excluir todas as permissões associadas ao usuário
-            UserPermission::where('user_id', $user->id)->delete();
+            // (Permissões removidas)
 
             // Excluir o usuário
             $user->delete();
@@ -196,10 +193,24 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuário não autenticado.'], 401);
         }
 
-        // Buscar todos os usuários da mesma unidade_id, excluir o próprio usuário e incluir o cargo e permissões
+        // Buscar todos os usuários da mesma unidade_id, excluir o próprio usuário e incluir o cargo
         $colaboradores = User::where('unidade_id', $user->unidade_id)
-            ->with(['userPermission', 'cargo', 'setor']) // Carrega as permissões e cargos dos usuários
+            ->with(['cargo', 'setor']) // Carrega cargos e setores
             ->get();
+
+        // Adiciona mock de permissões
+        $colaboradores->transform(function($u) {
+            $u->permissions = [
+                'controle_estoque'       => true,
+                'controle_saida_estoque' => true,
+                'gestao_equipe'          => true,
+                'fluxo_caixa'            => true,
+                'dre'                    => true,
+                'contas_pagar'           => true,
+                'gestao_salmao'          => true,
+            ];
+            return $u;
+        });
 
         // Retornar a lista de colaboradores com cargos e permissões em formato JSON
         return response()->json($colaboradores);
@@ -209,33 +220,10 @@ class UserController extends Controller
     // Atualiza as permissões de um usuário específico
     public function upsertPermissions(Request $request)
     {
-        // Validar os dados da requisição
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id', // Garante que o usuário existe
-            'controle_estoque' => 'required|boolean',
-            'controle_saida_estoque' => 'required|boolean',
-            'gestao_equipe' => 'required|boolean',
-            'fluxo_caixa' => 'required|boolean',
-            'dre' => 'required|boolean',
-            'contas_pagar' => 'required|boolean',
-            'gestao_salmao' => 'required|boolean',
-        ]);
-
-        // Buscar o usuário a ser atualizado
-        $user = User::findOrFail($validated['user_id']);
-
-        // Verificar se já existem permissões registradas para este usuário
-        $userPermission = UserPermission::firstOrCreate(
-            ['user_id' => $user->id], // Garante que está alterando o usuário correto
-            $validated // Se não existir, cria com os dados validados
-        );
-
-        // Se já existir, apenas atualiza
-        if (!$userPermission->wasRecentlyCreated) {
-            $userPermission->update($validated);
-        }
-
-        return response()->json($userPermission);
+        // Método mantido apenas para compatibilidade de rotas
+        // O sistema de permissões foi descontinuado.
+        
+        return response()->json(['message' => 'Permissões ignoradas (sistema simplificado)']);
     }
 
     public function listarCargos()
@@ -364,16 +352,8 @@ class UserController extends Controller
             ]);
 
             // Criar permissões padrão para o novo usuário
-            UserPermission::create([
-                'user_id' => $user->id,
-                'controle_estoque' => false,
-                'controle_saida_estoque' => false,
-                'gestao_equipe' => false,
-                'fluxo_caixa' => false,
-                'dre' => false,
-                'contas_pagar' => false,
-                'gestao_salmao' => false,
-            ]);
+            // Permissões descontinuadas
+
 
             // Gerar o token de redefinição de senha
             $token = Password::createToken($user);

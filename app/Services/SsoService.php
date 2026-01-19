@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\UserPermission;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -77,7 +76,7 @@ class SsoService
      */
     public function syncUser(array $userData, ?int $unidadeId): User
     {
-        // Mapeamento de grupos para flags booleanas
+        // Mapeamento Simplificado de Grupos
         $franqueado   = 0;
         $franqueadora = 0;
         $colaborador  = 0;
@@ -93,20 +92,16 @@ class SsoService
             case 'Gerente':
                 $franqueado = 1;
                 break;
-            case 'Colaborador':
-            case 'Recepcionista':
-            case 'Operador de Caixa':
-                $colaborador = 1;
-                break;
             case 'Franqueadora':
                 $franqueadora = 1;
+                break;
+            default:
+                $colaborador = 1;
+                $franqueado = 1;
                 break;
         }
 
         // Recupera ou cria uma instância do usuário pelo ID (se vier do SSO) ou E-mail
-        // O ideal é confiar no ID do SSO se os bancos estiverem sincronizados, 
-        // mas como fallback usamos e-mail e atualizamos o ID se possível (embora ID seja PK).
-        // Aqui assumiremos que o ID da 'api/user/me' é o ID global que deve bater com o local.
         
         $userId = $userData['id'] ?? null;
         $email = $userData['email'];
@@ -117,7 +112,6 @@ class SsoService
             $user = User::find($userId);
         }
 
-        // Se não achou por ID, tenta por e-mail
         if (!$user) {
             $user = User::where('email', $email)->first();
         }
@@ -125,11 +119,10 @@ class SsoService
         if (!$user) {
             $user = new User();
             if ($userId) {
-                // Força o ID para bater com o SSO
                 $user->id = $userId;
             }
             $user->email = $email;
-            $user->password = bcrypt(Str::random(16)); // Senha dummy, autenticação é via token
+            $user->password = bcrypt(Str::random(16)); 
         }
 
         // Tratamento da foto
@@ -154,38 +147,8 @@ class SsoService
 
         $user->save();
 
-        // ⚡ Permissões default (Mantém a lógica do UserSyncService)
-        // Só cria se não existir. Se o SSO passar permissões específicas, poderíamos atualizar aqui.
-        if (!UserPermission::where('user_id', $user->id)->exists()) {
-            $permissoesDefault = [
-                'controle_estoque'       => false,
-                'controle_saida_estoque' => false,
-                'gestao_equipe'          => false,
-                'fluxo_caixa'            => false,
-                'dre'                    => false,
-                'contas_pagar'           => false,
-                'gestao_salmao'          => false,
-            ];
-
-            $gruposComPermissaoTotal = [
-                'Franqueado',
-                'Franqueadora',
-                'Desenvolvedor',
-                'Gerente',
-                'Recepcionista',
-                'Operador de Caixa',
-            ];
-
-            if (in_array($grupoNome, $gruposComPermissaoTotal)) {
-                $permissoesDefault = array_map(fn() => true, $permissoesDefault);
-            }
-
-            UserPermission::create(array_merge(
-                ['user_id' => $user->id],
-                $permissoesDefault
-            ));
-        }
-
+        // Removido sistema de UserPermission conforme solicitado
+        
         return $user;
     }
 }
