@@ -19,6 +19,7 @@
             <select
               id="categoria"
               v-model="categoriaSelecionada"
+              @change="verificarCategoriaFornecedor"
               name="categoria"
               class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
             >
@@ -55,6 +56,30 @@
               {{ errors.diasLembrete }}
             </span>
           </div>
+        </div>
+
+        <!-- Seletor de Fornecedor (aparece apenas quando a categoria for específica) -->
+        <div v-if="mostrarSeletorFornecedor" class="mb-8">
+          <LabelModel text="Fornecedor" />
+          <select
+            id="fornecedor"
+            v-model="fornecedorSelecionado"
+            @change="atualizarNomeConta"
+            name="fornecedor"
+            class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
+          >
+            <option value="" selected>Selecione um fornecedor</option>
+            <option
+              v-for="fornecedor in fornecedores"
+              :key="fornecedor.id"
+              :value="fornecedor"
+            >
+              {{ fornecedor.nome }}
+            </option>
+          </select>
+          <span v-if="errors.fornecedor" class="text-red-500 text-sm">
+            {{ errors.fornecedor }}
+          </span>
         </div>
 
         <LabelModel text="Valor" />
@@ -188,6 +213,9 @@ const vencimento = ref('');
 const diasLembrete = ref(1);
 const categoriaSelecionada = ref(null);
 const arquivoNome = ref('');
+const fornecedorSelecionado = ref(null);
+const fornecedores = ref([]);
+const mostrarSeletorFornecedor = ref(false);
 
 const isConfirmDialogVisible = ref(false);
 const motivo = ref('');
@@ -197,16 +225,54 @@ const errors = ref({}); // Armazenar erros de validação
 
 const emit = defineEmits(['voltar']);
 
+// IDs das categorias que devem mostrar o seletor de fornecedor
+const CATEGORIAS_FORNECEDOR = [5, 19];
+
+
 onMounted(async () => {
   try {
-    const response = await axios.get('/api/categorias/seleto-contas');
+    const response = await axios.get('/api/categorias/seleto-contas'); 
     categorias.value = response.data;
   } catch (error) {
     console.error('Erro ao carregar categorias:', error);
   }
 });
 
-// Envio
+// Carrega fornecedores da API externa
+const carregarFornecedores = async () => {
+  if (fornecedores.value.length > 0) return; // Evita recarregar se já tiver
+
+  try {
+    const response = await axios.get('/api/cursto/fornecedores-externos');
+    fornecedores.value = response.data;
+    console.log(fornecedores.value);
+  } catch (error) {
+    console.error('Erro ao carregar fornecedores:', error);
+    toast.error('Erro ao carregar lista de fornecedores');
+  }
+};
+
+// Verifica se a categoria selecionada deve mostrar o seletor de fornecedores
+const verificarCategoriaFornecedor = () => {
+  // Verifica se a categoria selecionada está na lista de categorias de fornecedor
+  mostrarSeletorFornecedor.value = CATEGORIAS_FORNECEDOR.includes(parseInt(categoriaSelecionada.value));
+  
+  // Se for categoria de fornecedor, carrega a lista
+  if (mostrarSeletorFornecedor.value) {
+    carregarFornecedores();
+  } else {
+    // Se não for categoria de fornecedor, limpa o fornecedor selecionado
+    fornecedorSelecionado.value = null;
+  }
+};
+
+// Atualiza o nome da conta quando um fornecedor é selecionado
+const atualizarNomeConta = () => {
+    // A lógica de usar o nome é feita no submitForm enviando 'nome_personalizado'.
+    // Aqui podemos fazer alguma validação visual se necessário.
+    console.log('Fornecedor selecionado:', fornecedorSelecionado.value);
+};
+
 // Função para submeter o formulário
 const submitForm = async () => {
   errors.value = {}; // Limpa os erros
@@ -241,6 +307,11 @@ const submitForm = async () => {
       formData.append('vencimento', vencimento.value);
       formData.append('dias_lembrete', diasLembrete.value);
       formData.append('descricao', descricao.value);
+
+      // Se houver fornecedor selecionado, envia o nome dele como nome personalizado
+      if (fornecedorSelecionado.value && fornecedorSelecionado.value.nome) {
+          formData.append('nome_personalizado', fornecedorSelecionado.value.nome);
+      }
 
       // Adicionar o arquivo se estiver presente
       if (arquivoNome.value) {
@@ -308,6 +379,8 @@ const cancelForm = () => {
   diasLembrete.value = 1;
   descricao.value = '';
   arquivoNome.value = '';
+  fornecedorSelecionado.value = null;
+  mostrarSeletorFornecedor.value = false;
 
   emit('voltar');
 };

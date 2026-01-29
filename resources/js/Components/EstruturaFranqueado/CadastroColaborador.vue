@@ -292,7 +292,6 @@ const submitForm = async () => {
       );
 
       toast.success('Colaborador cadastrado com sucesso!');
-      console.log('Colaborador cadastrado:', response.data);
 
       // Limpar o formulário
       cancelForm();

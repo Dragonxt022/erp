@@ -84,32 +84,21 @@ const fetchPermissions = async () => {
 // MENU
 // =====================
 const fetchMenu = async () => {
-  console.log('[Menu] Buscando menu...');
   try {
     const response = await axios.get(`/api/menu?t=${Date.now()}`);
 
-    console.log('[Menu] Resposta bruta da API:', response);
-    console.log('[Menu] Data:', response.data);
-
     const categories = response.data?.data || [];
-
-    console.log('[Menu] Categorias recebidas:', categories);
 
     menuCategories.value = categories
       .map(category => {
-        console.log('[Menu] Categoria antes do sort:', category);
 
         const items = (category.items || [])
           .slice()
           .sort((a, b) => a.order - b.order)
           .map(item => {
-            console.log('[Menu] Item antes do sort:', item);
-
             const children = item.children
               ? item.children.slice().sort((a, b) => a.order - b.order)
               : [];
-
-            console.log('[Menu] Filhos ordenados:', children);
 
             return {
               ...item,
@@ -117,13 +106,9 @@ const fetchMenu = async () => {
             };
           });
 
-        console.log('[Menu] Itens ordenados:', items);
-
         return { ...category, items };
       })
       .sort((a, b) => a.order - b.order);
-
-    console.log('[Menu] Menu final normalizado:', menuCategories.value);
 
   } catch (error) {
     console.error('[Menu] Erro ao carregar menu:', error);

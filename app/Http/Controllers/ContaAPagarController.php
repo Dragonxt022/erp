@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\ComprovanteContaAPagarMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use App\Models\User;
 
 class ContaAPagarController extends Controller
@@ -228,7 +229,11 @@ class ContaAPagarController extends Controller
 
             // Obter o nome da categoria selecionada
             $categoria = DB::table('categorias')->where('id', $validated['categoria_id'])->first();
-            $nomeCategoria = $categoria->nome;
+
+            // Verifica se foi enviado um nome personalizado (ex: nome do fornecedor)
+            // Se sim, usa esse nome. Se não, usa o nome da categoria.
+            $nomeConta = $request->input('nome_personalizado') ? $request->input('nome_personalizado') : $categoria->nome;
+
 
             // Processamento do arquivo (se houver)
             $arquivoPath = null;
@@ -256,7 +261,7 @@ class ContaAPagarController extends Controller
 
             // Criação da conta a pagar com o id da unidade do usuário
             $conta = ContaAPagar::create([
-                'nome' => $nomeCategoria,  // Nome é o mesmo da categoria
+                'nome' => $nomeConta,  // Usa o nome definido acima
                 'valor' => $validated['valor'],
                 'emitida_em' => $validated['emitida_em'],
                 'vencimento' => $validated['vencimento'],
@@ -305,7 +310,7 @@ class ContaAPagarController extends Controller
         }
     }
 
-    // Controle de vencietno
+    // Controle de vencietno 
     public function verificarContasAtrasadas()
     {
         ContaAPagar::where('status', 'pendente')
@@ -331,6 +336,23 @@ class ContaAPagarController extends Controller
                 'message' => 'Erro ao buscar status.',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    // Proxy para buscar fornecedores externos
+    public function fornecedores()
+    {
+        try {
+            $response = Http::get('https://insumos.taiksu.com.br/fornecedores');
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            return response()->json(['message' => 'Erro ao buscar fornecedores externos'], $response->status());
+        } catch (\Exception $e) {
+            Log::error('Erro ao buscar fornecedores externos: ' . $e->getMessage());
+            return response()->json(['message' => 'Erro interno ao buscar fornecedores'], 500);
         }
     }
 }

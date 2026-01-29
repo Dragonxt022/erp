@@ -145,7 +145,6 @@ const mostrarResumo = ref(false);
 // Métodos
 const confirmarEntrada = () => {
   // Lógica para confirmar a entrada no banco de dados
-  console.log('Entrada confirmada', carrinho.value);
   mostrarModalRevisao.value = false;
   carrinho.value = []; // Limpar carrinho após confirmação
 };
@@ -153,8 +152,7 @@ const confirmarEntrada = () => {
 const fetchProdutos = async () => {
   try {
     const response = await axios.get('/api/produtos/lista');
-    console.log('Produtos carregados:', response.data);
-
+    
     // Verificar se a resposta é um objeto
     if (typeof response.data === 'object' && response.data !== null) {
       produtos.value = groupByCategoria(response.data); // Agrupar os produtos por categoria

@@ -261,6 +261,7 @@ Route::prefix('api')->middleware([
         Route::get('/contas-a-pagar/historico', [ContaAPagarController::class, 'historicoPagas']);
         Route::put('/cursto/contas-a-pagar/{id}/status', [ContaAPagarController::class, 'atualizarStatus']);
         Route::get('/contas-a-pagar/status-options', [ContaAPagarController::class, 'statusOptions']);
+        Route::get('/fornecedores-externos', [ContaAPagarController::class, 'fornecedores']);
     });
 
     // Painel de Analitycos
