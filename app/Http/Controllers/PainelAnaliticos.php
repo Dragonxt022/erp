@@ -535,37 +535,72 @@ class PainelAnaliticos extends Controller
         $valoresParaGrafico = [];
         $porcentagensParaGrafico = [];
 
-        $totalCaixas = $dreData['total_caixas'];
-        $totalLiquido = $dreData['Total_Liquido'];
+        // USAR O FATURAMENTO NÃO AUDITADO COMO BASE PARA AS PORCENTAGENS
+        // Se não existir, usa o total_caixas como fallback
+        $baseParaPorcentagem = $dreData['faturamento_nao_auditado'] ?? $dreData['total_caixas'];
 
-        // 1. CMV
-        $valoresParaGrafico['CMV'] = $dreData['cmv'];
-        $porcentagensParaGrafico['CMV'] = ($totalLiquido > 0) ? ($dreData['cmv'] / $totalLiquido) * 100 : 0;
+        // VALIDAÇÃO IMPORTANTE: evitar divisão por zero
+        if ($baseParaPorcentagem <= 0) {
+            return [
+                'labels' => ['CMV', 'Custos Fixos', 'Impostos', 'Outras Despesas', 'Resultado do Período'],
+                'data' => [0, 0, 0, 0, 0],
+                'porcentagens' => ['0,00%', '0,00%', '0,00%', '0,00%', '0,00%']
+            ];
+        }
+
+        // 1. CMV (Custo das Mercadorias Vendidas)
+        $cmv = $dreData['cmv'];
+        $valoresParaGrafico['CMV'] = $cmv;
+        $porcentagensParaGrafico['CMV'] = ($cmv / $baseParaPorcentagem) * 100;
 
         // 2. Custos Fixos
         $grupoCustosFixos = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Custos Fixos');
-        $totalCustosFixosGrafico = ($grupoCustosFixos && isset($grupoCustosFixos['categorias'])) ? $grupoCustosFixos['categorias']->sum('valor') : 0;
+        $totalCustosFixosGrafico = ($grupoCustosFixos && isset($grupoCustosFixos['categorias']))
+            ? $grupoCustosFixos['categorias']->sum('valor')
+            : 0;
 
         $valoresParaGrafico['Custos Fixos'] = $totalCustosFixosGrafico;
-        $porcentagensParaGrafico['Custos Fixos'] = ($totalCaixas > 0) ? ($totalCustosFixosGrafico / $totalCaixas) * 100 : 0;
+        $porcentagensParaGrafico['Custos Fixos'] = ($totalCustosFixosGrafico / $baseParaPorcentagem) * 100;
 
         // 3. Impostos
         $grupoImpostos = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Impostos');
-        $totalImpostosGrafico = ($grupoImpostos && isset($grupoImpostos['categorias'])) ? $grupoImpostos['categorias']->sum('valor') : 0;
+        $totalImpostosGrafico = ($grupoImpostos && isset($grupoImpostos['categorias']))
+            ? $grupoImpostos['categorias']->sum('valor')
+            : 0;
 
         $valoresParaGrafico['Impostos'] = $totalImpostosGrafico;
-        $porcentagensParaGrafico['Impostos'] = ($totalCaixas > 0) ? ($totalImpostosGrafico / $totalCaixas) * 100 : 0;
+        $porcentagensParaGrafico['Impostos'] = ($totalImpostosGrafico / $baseParaPorcentagem) * 100;
 
         // 4. Outras Despesas
-        $outrasDespesasGrafico = $dreData['total_despesas_categorias'] - $dreData['cmv'] - $totalCustosFixosGrafico - $totalImpostosGrafico;
-        $outrasDespesasGrafico = max(0, $outrasDespesasGrafico);
-        $valoresParaGrafico['Outras Despesas'] = $outrasDespesasGrafico;
-        $porcentagensParaGrafico['Outras Despesas'] = ($totalCaixas > 0) ? ($outrasDespesasGrafico / $totalCaixas) * 100 : 0;
+        // Calcula o que sobra após CMV, Custos Fixos e Impostos
+        $outrasDespesasGrafico = $dreData['total_despesas_categorias']
+                            - $cmv
+                            - $totalCustosFixosGrafico
+                            - $totalImpostosGrafico;
 
-        // 5. Resultado do Período
-        $resultadoPeriodo = $totalCaixas - $dreData['total_despesas_categorias'];
+        // Garante que não seja negativo
+        $outrasDespesasGrafico = max(0, $outrasDespesasGrafico);
+
+        $valoresParaGrafico['Outras Despesas'] = $outrasDespesasGrafico;
+        $porcentagensParaGrafico['Outras Despesas'] = ($outrasDespesasGrafico / $baseParaPorcentagem) * 100;
+
+        // 5. Resultado do Período (Lucro/Prejuízo)
+        // IMPORTANTE: O resultado continua sendo calculado com base no total_caixas (auditado ou não)
+        // mas a PORCENTAGEM é calculada com base no faturamento não auditado
+        $resultadoPeriodo = $dreData['total_caixas'] - $dreData['total_despesas_categorias'];
+
         $valoresParaGrafico['Resultado do Período'] = $resultadoPeriodo;
-        $porcentagensParaGrafico['Resultado do Período'] = ($totalCaixas > 0) ? ($resultadoPeriodo / $totalCaixas) * 100 : 0;
+        $porcentagensParaGrafico['Resultado do Período'] = ($resultadoPeriodo / $baseParaPorcentagem) * 100;
+
+        // VALIDAÇÃO: A soma das porcentagens deve dar aproximadamente 100%
+        $somaPorcentagens = array_sum($porcentagensParaGrafico);
+
+        // Se houver diferença significativa, ajusta no resultado (arredondamento)
+        if (abs($somaPorcentagens - 100) > 0.1) {
+            // Ajusta a diferença no resultado do período (menos impactante visualmente)
+            $diferenca = 100 - $somaPorcentagens;
+            $porcentagensParaGrafico['Resultado do Período'] += $diferenca;
+        }
 
         return [
             'labels' => array_keys($valoresParaGrafico),
@@ -574,12 +609,15 @@ class PainelAnaliticos extends Controller
         ];
     }
 
-    private function generateExplanation(array $dreData, array $graficoData): string
+   private function generateExplanation(array $dreData, array $graficoData): string
     {
-        $totalCaixasFormatado = number_format($dreData['total_caixas'], 2, ',', '.');
+        // Usar o faturamento não auditado para mostrar o valor base
+        $baseParaPorcentagem = $dreData['faturamento_nao_auditado'] ?? $dreData['total_caixas'];
+
+        $totalCaixasFormatado = number_format($baseParaPorcentagem, 2, ',', '.');
         $cmvFormatado = number_format($dreData['cmv'], 2, ',', '.');
 
-        // We need to access the raw values again or store them. 
+        // We need to access the raw values again or store them.
         // Since $graficoData['data'] has raw values, we can use them by index.
         // Order: CMV, Custos Fixos, Impostos, Outras Despesas, Resultado
 

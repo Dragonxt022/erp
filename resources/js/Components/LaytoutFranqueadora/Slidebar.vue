@@ -3,7 +3,7 @@
         <div v-for="category in menuCategories" :key="category.name" class="menu-category">
             <div class="category-title flex items-center gap-2">
                 {{ category.name }}
-                <span v-if="category.name === 'Analíticos'" 
+                <span v-if="category.name === 'Analíticos'"
                     class="bg-green-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter ml-1">
                     NOVA!
                 </span>
@@ -45,6 +45,11 @@ const isActive = (link) => {
     return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
 };
 
+// Obter usuário para verificação de permissões
+const page = usePage();
+const user = page.props.auth.user || {};
+const canViewDre = user.franqueado && user.colaborador != 1;
+
 // Definindo as categorias de menu
 const menuCategories = [
     {
@@ -70,12 +75,14 @@ const menuCategories = [
                     {
                         label: 'DRE Gerencial',
                         link: 'franqueadora.analytics.dre',
+                        visible: canViewDre,
                     },
                     {
                         label: 'Caixas',
                         link: 'franqueadora.analytics.faturamento',
+                        visible: true,
                     },
-                ],
+                ].filter(item => item.visible !== false),
                 isActive: false,
             },
         ],

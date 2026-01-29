@@ -10,38 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 class MenuController extends Controller
 {
-    // public function index()
-    // {
-    //     // Carrega categorias com itens e subitens (parent_id)
-    //     $categories = MenuCategory::with(['items' => function($query) {
-    //         $query->whereNull('parent_id')->with(['children']);
-    //     }])->orderBy('order')->get();
-
-    //     // Converte is_logout em isLogout e aplica recursivamente aos filhos
-    //     $categories = $categories->map(function($category) {
-    //         $category->items = $category->items->map(function($item) {
-    //             // Converte para boolean e força logout se link == 'logout'
-    //             $item->isLogout = $item->link === 'logout' ? true : ($item->is_logout == 1);
-
-    //             // Se houver filhos, aplica recursivamente
-    //             if ($item->children && $item->children->count()) {
-    //                 $item->children = $item->children->map(function($child) {
-    //                     $child->isLogout = $child->link === 'logout' ? true : ($child->is_logout == 1);
-    //                     return $child;
-    //                 });
-    //             }
-
-    //             return $item;
-    //         });
-
-    //         return $category;
-    //     });
-
-    //     // Retorna JSON
-    //     return response()->json([
-    //         'data' => $categories
-    //     ]);
-    // }
 
     /**
      * Verifica se um item deve ser escondido baseado em regras específicas.
@@ -53,16 +21,11 @@ class MenuController extends Controller
 
     private function shouldHideItem($itemId, $user): bool
     {
-        // 🔴 REGRA ABSOLUTA: Esconde o item 31 (DRE Gerencial) quando o usuário for COLABORADOR E FRANQUEADO
         $isColaborador = (bool) $user->colaborador;
         $isFranqueado = (bool) $user->franqueado;
 
-        // Log detalhado para debug
-        Log::info("shouldHideItem - Item: {$itemId}, User: {$user->id}, Colaborador: " . ($isColaborador ? 'SIM' : 'NÃO') . ", Franqueado: " . ($isFranqueado ? 'SIM' : 'NÃO'));
-
-        // Aplica a regra: esconde item 31 se for colaborador E franqueado
+        // Aplica a regra: esconde itens se for colaborador E franqueado
         if ($isColaborador && $isFranqueado && $itemId == 31) {
-            Log::info("🔴 ITEM 31 (DRE) ESCONDIDO para usuário {$user->id} (colaborador + franqueado)");
             return true;
         }
 
@@ -91,12 +54,10 @@ class MenuController extends Controller
             $category->items = $category->items
                 ->filter(function ($item) use ($user, $userRoles) {
 
-                    // 🔴 1. REGRA MANUAL (PRIMEIRO)
                     if ($this->shouldHideItem($item->id, $user)) {
                         return false;
                     }
 
-                    // 🔒 2. required_permission
                     if (!$item->required_permission) {
                         return true;
                     }
@@ -114,7 +75,6 @@ class MenuController extends Controller
                         $item->children = $item->children
                             ->filter(function ($child) use ($user, $userRoles) {
 
-                                // 🔴 REGRA MANUAL NOS FILHOS
                                 if ($this->shouldHideItem($child->id, $user)) {
                                     return false;
                                 }
@@ -131,19 +91,10 @@ class MenuController extends Controller
 
                     return $item;
                 })
-                ->values(); // 🔴 IMPORTANTE: Reindexar array após filtro
+                ->values();
 
             return $category;
         });
-
-        // 🔍 DEBUG: Log dos IDs de itens que serão retornados
-        $itemIds = [];
-        foreach ($categories as $category) {
-            foreach ($category->items as $item) {
-                $itemIds[] = $item->id;
-            }
-        }
-        Log::info("📋 IDs de itens na resposta JSON: " . implode(', ', $itemIds));
 
         return response()->json(['data' => $categories]);
     }

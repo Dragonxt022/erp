@@ -105,8 +105,7 @@ Route::middleware([
         return Inertia::render('Users/Dre/Index');
     })->name('franqueado.dreGerencial');
 
-    Route::get('/relatorios/faturamento-anual', [\App\Http\Controllers\CaixaAnaliticoController::class, 'relatorioFaturamentoAnual'])
-        ;
+    Route::get('/relatorios/faturamento-anual', [\App\Http\Controllers\CaixaAnaliticoController::class, 'relatorioFaturamentoAnual']);
 
     Route::get('/franqueado/contas', function () {
         return Inertia::render('Users/Contas/Index');
@@ -128,6 +127,4 @@ Route::middleware([
     Route::get('/franqueado/produtividade/gestao-producao', function () {
         return Inertia::render('Users/Produtividade/AgendaProducao');
     })->name('franqueado.AgendaProducao');
-
-
 });

@@ -51,7 +51,7 @@ class AuthController extends Controller
         }
 
         // Permissão concedida implicitamente conforme solicitação de desbloqueio total
-        
+
         // Autentica o usuário manualmente
         Auth::login($usuario);
 
@@ -115,32 +115,6 @@ class AuthController extends Controller
         // ✅ Autentica sempre com os dados mais recentes
         Auth::login($user, true);
 
-        // TODO: Avaliar se syncUnidade (lista completa) ainda é desejado no login
-        // Originalmente estava aqui. Se for pesado, pode mover para job.
-        // Mantendo compatibilidade com UserSyncService original, mas usando UserSyncService legado para isso se necessário
-        // ou movendo essa lógica para SsoService se for crítica.
-        // O user disse "parar de depender das tabelas locais", mas "syncUnidade" puxa todos os colaboradores...
-        // Talvez seja melhor manter a chamada ao servico antigo se ele ainda existir, ou omitir se o foco for só Auth.
-        // O plano diz "Remover a dependência de UserSyncService e usar SsoService".
-        // Vou assumir que o syncUnidade em massa não é o foco "da rota que é usada em todas as aplicações",
-        // mas é bom manter se o sistema precisa listar colaboradores offline.
-        
-        // if (in_array($grupoNome, ['Desenvolvedor', 'Franqueadora', 'Franqueado', 'Gerente'])) {
-        //     try {
-        //         // Mantendo a sincronização de unidade via UserSyncService legado por enquanto se necessário, 
-        //         // ou implementando no SsoService se for vital.
-        //         // Como não copiei syncUnidade (massa) para SsoService, vou deixar comentado ou usar o legado temporariamente?
-        //         // O código original usava UserSyncService::syncUnidade.
-        //         // Vou manter o uso estático do UserSyncService para essa função específica de *bulk sync* se ela for necessária,
-        //         // mas o AuthController agora depende primariamente do SsoService.
-        //         \App\Services\UserSyncService::syncUnidade($unidadeId, $token);
-        //     } catch (\Throwable $e) {
-        //         Log::error("Erro na sincronização de usuários da unidade {$unidadeId}: " . $e->getMessage());
-        //     }
-        // }
-
-        Log::info("Usuário autenticado: {$user->email}, Grupo: {$grupoNome}, Redirecionando...");
-
         // Redireciona conforme grupo ou última URL
         return $this->redirectUser($user);
     }
@@ -197,8 +171,6 @@ class AuthController extends Controller
     public function getProfile()
     {
         $token = request()->bearerToken();
-        Log::info('Token recebido: ' . $token); // Verifica o token recebido
-
         if (!Auth::check()) {
             return response()->json([
                 'status' => 'error',
@@ -211,6 +183,8 @@ class AuthController extends Controller
         // Carrega os relacionamentos necessários, incluindo 'cargo'
         $user = $user->load('userDetails', 'unidade', 'cargo');
 
+        // Verifica se é franqueado puro (não é colaborador)
+        $isFranqueadoPuro = $user->franqueado && !$user->colaborador;
 
         // Mock de permissões para manter a compatibilidade com o frontend
         // Como o usuário pediu para não bloquear nada, retornamos true para tudo.
@@ -219,7 +193,7 @@ class AuthController extends Controller
             'controle_saida_estoque' => true,
             'gestao_equipe'          => true,
             'fluxo_caixa'            => true,
-            'dre'                    => true,
+            'dre'                    => $isFranqueadoPuro,
             'contas_pagar'           => true,
             'gestao_salmao'          => true,
         ];
@@ -238,11 +212,24 @@ class AuthController extends Controller
     }
 
     /**
-     * Redireciona o usuário para sua última página visitada ou para o painel padrão.
+     * Mascara email para logs (LGPD)
      */
+    private function maskEmail(string $email): string
+    {
+        return preg_replace('/(^..)[^@]+/', '$1*****', $email);
+    }
+
     private function redirectUser($user)
     {
-        Log::info("Redirecionando usuário {$user->email}: franqueadora={$user->franqueadora}, franqueado={$user->franqueado}, last_visited_url={$user->last_visited_url}");
+        $emailMasked = $this->maskEmail($user->email);
+
+        Log::info(
+            "Registro de usuario: {$emailMasked} "
+            . "franqueadora={$user->franqueadora}, "
+            . "franqueado={$user->franqueado}, "
+            . "colaborador={$user->colaborador} "
+            . "last_visited_url={$user->last_visited_url}"
+        );
 
         if ($user->last_visited_url) {
             return redirect($user->last_visited_url);
@@ -256,7 +243,12 @@ class AuthController extends Controller
             return redirect()->route('franqueado.painel');
         }
 
-        Log::warning("Usuário {$user->email} sem permissões de acesso (franqueador/franqueado = 0).");
-        return redirect('https://login.taiksu.com.br/')->with('error', 'Você não tem permissão para acessar este sistema.');
+        Log::warning(
+            "Usuário {$emailMasked} sem permissões de acesso (franqueador/franqueado = 0)."
+        );
+
+        return redirect('https://login.taiksu.com.br/')
+            ->with('error', 'Você não tem permissão para acessar este sistema.');
     }
+
 }

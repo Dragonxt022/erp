@@ -22,50 +22,51 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
-    public function index()
-    {
-        // Carrega usuários junto com as informações das unidades (empresas)
-        $users = User::with('unidade')->get();
+    // public function index()
+    // {
+    //     // Carrega usuários junto com as informações das unidades (empresas)
+    //     $users = User::with('unidade')->get();
 
-        // Formata a resposta para incluir as unidades relacionadas e as permissões
-        $data = $users->map(function ($user) {
-            // Mock de permissões (tudo liberado)
-            $permissions = [
-                'controle_estoque'       => true,
-                'controle_saida_estoque' => true,
-                'gestao_equipe'          => true,
-                'fluxo_caixa'            => true,
-                'dre'                    => true,
-                'contas_pagar'           => true,
-                'gestao_salmao'          => true,
-            ];
+    //     // Formata a resposta para incluir as unidades relacionadas e as permissões
+    //     $data = $users->map(function ($user) {
+    //         // Mock de permissões (tudo liberado)
+    //         $permissions = [
+    //             'controle_estoque'       => true,
+    //             'controle_saida_estoque' => true,
+    //             'gestao_equipe'          => true,
+    //             'fluxo_caixa'            => true,
+    //             'dre'                    => true,
+    //             'dre'                    => $user->franqueadora || $user->is_admin || ($user->franqueado && !$user->colaborador),
+    //             'contas_pagar'           => true,
+    //             'gestao_salmao'          => true,
+    //         ];
 
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'cpf' => $user->cpf,
-                'unidade_id' => $user->unidade_id,
-                'cargo_id' => $user->cargo_id,
-                'setor_id' => $user->setor_id,
-                'pin' => $user->pin,
-                'profile_photo_url' => $user->profile_photo_url,
-                'colaborador' => $user->colaborador,
-                'permissions' => $permissions, // Adiciona as permissões (mockadas)
-                'unidade' => $user->unidade ? [
-                    'id' => $user->unidade->id,
-                    'cep' => $user->unidade->cep,
-                    'rua' => $user->unidade->rua,
-                    'numero' => $user->unidade->numero,
-                    'cidade' => $user->unidade->cidade,
-                    'bairro' => $user->unidade->bairro,
-                    'cnpj' => $user->unidade->cnpj,
-                ] : null,
-            ];
-        });
+    //         return [
+    //             'id' => $user->id,
+    //             'name' => $user->name,
+    //             'email' => $user->email,
+    //             'cpf' => $user->cpf,
+    //             'unidade_id' => $user->unidade_id,
+    //             'cargo_id' => $user->cargo_id,
+    //             'setor_id' => $user->setor_id,
+    //             'pin' => $user->pin,
+    //             'profile_photo_url' => $user->profile_photo_url,
+    //             'colaborador' => $user->colaborador,
+    //             'permissions' => $permissions, // Adiciona as permissões (mockadas)
+    //             'unidade' => $user->unidade ? [
+    //                 'id' => $user->unidade->id,
+    //                 'cep' => $user->unidade->cep,
+    //                 'rua' => $user->unidade->rua,
+    //                 'numero' => $user->unidade->numero,
+    //                 'cidade' => $user->unidade->cidade,
+    //                 'bairro' => $user->unidade->bairro,
+    //                 'cnpj' => $user->unidade->cnpj,
+    //             ] : null,
+    //         ];
+    //     });
 
-        return response()->json($data);
-    }
+    //     return response()->json($data);
+    // }
 
     public function store(Request $request)
     {
@@ -109,7 +110,7 @@ class UserController extends Controller
             chmod($folderPath . '/' . $fileName, 0644);  // Permissões para leitura e escrita para o proprietário e leitura para outros
 
             // Caminho correto para salvar no banco de dados
-            $profilePhotoPath = 'images/' . $fileName;  // Corrigido para 'images/', sem duplicação de 'storage' 
+            $profilePhotoPath = 'images/' . $fileName;  // Corrigido para 'images/', sem duplicação de 'storage'
         }
 
 
@@ -205,7 +206,7 @@ class UserController extends Controller
                 'controle_saida_estoque' => true,
                 'gestao_equipe'          => true,
                 'fluxo_caixa'            => true,
-                'dre'                    => true,
+                'dre'                    => $u->franqueadora || $u->is_admin || ($u->franqueado && !$u->colaborador),
                 'contas_pagar'           => true,
                 'gestao_salmao'          => true,
             ];
@@ -222,7 +223,7 @@ class UserController extends Controller
     {
         // Método mantido apenas para compatibilidade de rotas
         // O sistema de permissões foi descontinuado.
-        
+
         return response()->json(['message' => 'Permissões ignoradas (sistema simplificado)']);
     }
 
@@ -270,7 +271,7 @@ class UserController extends Controller
                 'tipo'      => 'info',
                 'global'    => false,
                 'setor_id'  => null,
-            ]);            
+            ]);
 
             return response()->json([
                 'message' => 'PIN atualizado com sucesso',

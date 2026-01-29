@@ -7,10 +7,15 @@
 
         <!-- Sidebar -->
         <div v-else :class="[
-            'sidebar fixed top-16 left-0 bg-[#164110] text-white flex flex-col p-3 overflow-y-auto h-full transition-transform duration-300 ease-in-out',
-            sidebarStore.isOpen ? 'translate-x-0' : '-translate-x-full',
-            'md:translate-x-0 md:relative  md:top-0 md:left-0'
-        ]" ref="sidebar" @scroll="saveScrollPosition" >
+                'sidebar z-50 bg-[#164110] text-white flex flex-col p-3 transition-transform duration-300 ease-in-out',
+
+                /* Mobile: fixo na esquerda */
+                'fixed inset-y-0 left-0 transform',
+                sidebarStore.isOpen ? 'translate-x-0' : '-translate-x-full',
+
+                /* Desktop: fixo e sempre visível */
+                'md:relative md:translate-x-0 md:h-screen md:sticky md:top-0'
+            ]" ref="sidebar" @scroll="saveScrollPosition">
 
             <div v-for="category in filteredMenuCategories" :key="category.name" class="menu-category mb-6">
                 <!-- Categoria de menu (Título escondido em telas pequenas) -->
@@ -21,7 +26,7 @@
 
                 <!-- Itens do menu -->
                 <MenuItem v-for="item in category.items" :key="item.link || 'no-link'" :label="item.label"
-                    :icon="item.icon" :link="item.link" :submenuItems="item.submenuItems"
+                    :icon="item.icon" :link="item.link" :submenuItems="item.children"
                     :isActive="item.link ? isActive(item.link) : false" :isLogout="item.isLogout"
                     :requiredPermission="item.requiredPermission" />
             </div>
@@ -34,129 +39,190 @@
 <script setup>
 import { ref, onMounted, computed, provide } from 'vue';
 import { useSidebarStore } from '@/stores/sidebar';
-
 import MenuItem from './MenuItem.vue';
 import axios from 'axios';
 
 const sidebar = ref(null);
-const userPermissions = ref({});
 const menuCategories = ref([]);
 const sidebarStore = useSidebarStore();
 const loading = ref(true);
-const openSubmenuLink = ref(null); // Controla qual submenu está aberto
+const openSubmenuLink = ref(null);
+
+const userProfile = ref({});
+const userPermissions = ref({});
+
 
 const toggleSidebar = () => {
   sidebarStore.toggle();
 };
 
-// Busca permissões do usuário
+// =====================
+// PERMISSÕES
+// =====================
 const fetchPermissions = async () => {
   try {
     const response = await axios.get('/api/navbar-profile');
-    userPermissions.value = response.data.data.permissions || {};
+
+    const user = response.data.data;
+
+    userProfile.value = {
+      franqueado: user.franqueado,
+      colaborador: user.colaborador,
+    };
+
+    userPermissions.value = user.permissions || {};
+
   } catch (error) {
     console.error('Erro ao carregar permissões:', error);
+    userProfile.value = {};
     userPermissions.value = {};
   }
 };
 
-// Busca o menu e ordena categorias, itens e filhos
+
+// =====================
+// MENU
+// =====================
 const fetchMenu = async () => {
+  console.log('[Menu] Buscando menu...');
   try {
-    // Adiciona timestamp para evitar cache
     const response = await axios.get(`/api/menu?t=${Date.now()}`);
-    const categories = response.data.data || [];
 
-    // DEBUG: Verifica se o item 31 está presente
-    let found31 = false;
-    categories.forEach(category => {
-      category.items.forEach(item => {
-        if (item.id === 31) {
-          found31 = true;
-          console.log('🔴 ITEM 31 ENCONTRADO NO FRONTEND:', item);
-        }
-      });
-    });
-    
-    if (!found31) {
-      console.log('✅ Item 31 (DRE) NÃO está na resposta da API - filtro funcionando!');
-    } else {
-      console.error('❌ Item 31 (DRE) AINDA ESTÁ NA RESPOSTA - filtro NÃO funcionando!');
-    }
+    console.log('[Menu] Resposta bruta da API:', response);
+    console.log('[Menu] Data:', response.data);
 
-    // Ordena categorias pelo campo 'order'
-    const orderedCategories = categories
+    const categories = response.data?.data || [];
+
+    console.log('[Menu] Categorias recebidas:', categories);
+
+    menuCategories.value = categories
       .map(category => {
-        // Ordena os itens da categoria
-        const orderedItems = (category.items || []).slice().sort((a, b) => a.order - b.order);
+        console.log('[Menu] Categoria antes do sort:', category);
 
-        // Ordena os filhos de cada item, se existirem
-        orderedItems.forEach(item => {
-          if (item.children && Array.isArray(item.children)) {
-            item.children = item.children.slice().sort((a, b) => a.order - b.order);
-          }
-        });
+        const items = (category.items || [])
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map(item => {
+            console.log('[Menu] Item antes do sort:', item);
 
-        return { ...category, items: orderedItems };
+            const children = item.children
+              ? item.children.slice().sort((a, b) => a.order - b.order)
+              : [];
+
+            console.log('[Menu] Filhos ordenados:', children);
+
+            return {
+              ...item,
+              children,
+            };
+          });
+
+        console.log('[Menu] Itens ordenados:', items);
+
+        return { ...category, items };
       })
       .sort((a, b) => a.order - b.order);
 
-    menuCategories.value = orderedCategories;
+    console.log('[Menu] Menu final normalizado:', menuCategories.value);
+
   } catch (error) {
-    console.error('Erro ao carregar menu:', error);
+    console.error('[Menu] Erro ao carregar menu:', error);
     menuCategories.value = [];
   }
 };
 
-// Fornece userPermissions para componentes filhos via provide/inject
+// =====================
+// PROVIDE
+// =====================
 provide('userPermissions', userPermissions);
 provide('openSubmenuLink', openSubmenuLink);
 
-// Computed que filtra categorias e itens com base nas permissões do usuário
+// =====================
+// MENU FILTRADO (DEBUG TOTAL)
+// =====================
 const filteredMenuCategories = computed(() => {
+  const { franqueado, colaborador } = userProfile.value;
+
   return menuCategories.value
-    .map(category => ({
-      ...category,
-      items: category.items.map(item => ({
-          ...item,
-          submenuItems: item.children || [],
-      }))
-    }));
+    .map(category => {
+      const items = category.items
+        .map(item => {
+          // REGRA DO DRE
+          if (item.required_permission === 'dre') {
+            const show = franqueado === true && colaborador === false;
+
+            if (!show) return null;
+          }
+
+          // 🔐 PERMISSÕES NORMAIS
+          if (
+            item.required_permission &&
+            userPermissions.value[item.required_permission] !== true
+          ) {
+            return null;
+          }
+
+          const children = (item.children || []).filter(child => {
+            if (!child.required_permission) return true;
+            return userPermissions.value[child.required_permission] === true;
+          });
+
+          return {
+            ...item,
+            children,
+          };
+        })
+        .filter(Boolean);
+
+      return { ...category, items };
+    })
+    .filter(category => category.items.length > 0);
 });
 
+
+// =====================
+// MOUNT
+// =====================
 onMounted(async () => {
   loading.value = true;
+
   await fetchPermissions();
   await fetchMenu();
 
-  // Restaura posição de scroll da sidebar
   const savedScrollPosition = localStorage.getItem('sidebarScrollPosition');
+
   if (savedScrollPosition && sidebar.value) {
     sidebar.value.scrollTop = savedScrollPosition;
   }
+
   loading.value = false;
 });
 
-// Salva posição de scroll da sidebar
+// =====================
+// SCROLL
+// =====================
 const saveScrollPosition = () => {
   if (sidebar.value) {
     localStorage.setItem('sidebarScrollPosition', sidebar.value.scrollTop);
   }
 };
 
-// Verifica se o link está ativo (para destacar menu)
+// =====================
+// LINK ATIVO
+// =====================
 const isActive = (link) => {
   const currentPath = window.location.pathname;
   const resolvedPath = new URL(link, window.location.origin).pathname;
-  return currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
+
+  const active =
+    currentPath === resolvedPath || currentPath.startsWith(resolvedPath);
+  return active;
 };
 </script>
 
-
 <style scoped>
 .sidebar {
-    height: calc(100% - 60px);
-    top: 70px;
+    /* Remova o top e height fixos daqui se quiser usar a lógica do Tailwind */
     width: 249px;
     padding-top: 27px;
     padding-bottom: 27px;
@@ -164,12 +230,12 @@ const isActive = (link) => {
     display: flex;
     flex-direction: column;
     color: white;
-    overflow-y: hidden;
 
-    scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
-    /* Para a animação do toggle */
-    transform: translateX(0);
+    /* Permite rolagem se o menu for grande */
+    overflow-y: auto;
+
+    /* Mantém a transição suave */
+    transition: transform 0.3s ease-in-out;
 }
 
 .sidebar.-translate-x-full {
@@ -183,9 +249,13 @@ const isActive = (link) => {
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-    background-color: transparent;
+    background-color: rgba(255, 255, 255, 0.2); /* Mude de transparent para uma cor visível */
+    border-radius: 4px;
 }
 
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
 .sidebar::-webkit-scrollbar-track {
     background: transparent;
 }
@@ -200,6 +270,27 @@ const isActive = (link) => {
   margin: auto;
 }
 
+/* No MenuItem.vue */
+.submenu {
+    margin-left: 20px; /* Adicione um recuo para os submenus aparecerem à direita do ícone pai */
+    padding: 5px 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.1); /* Opcional: uma linha guia */
+}
+
+.submenu-item .label {
+    font-size: 14px; /* Submenus levemente menores */
+    opacity: 0.9;
+}
+@media (min-width: 768px) {
+    .sidebar {
+        /* Ajuste o '70px' para a altura exata da sua Navbar */
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        padding-top: 95px;
+        padding-bottom: 100px;
+    }
+}
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

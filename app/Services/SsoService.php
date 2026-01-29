@@ -11,7 +11,7 @@ class SsoService
 {
     /**
      * Sincroniza os detalhes da unidade (empresa) com base nos dados do SSO.
-     * 
+     *
      * @param array $unidadeData
      * @return void
      */
@@ -69,7 +69,7 @@ class SsoService
 
     /**
      * Sincroniza o usuário do SSO com a base local para garantir integridade.
-     * 
+     *
      * @param array $userData
      * @param int|null $unidadeId
      * @return User
@@ -89,11 +89,15 @@ class SsoService
                 $colaborador  = 1;
                 break;
             case 'Franqueado':
-            case 'Gerente':
                 $franqueado = 1;
                 break;
             case 'Franqueadora':
                 $franqueadora = 1;
+                $franqueado = 1;
+                break;
+            case 'Gerente':
+                $colaborador = 1;
+                $franqueado = 1;
                 break;
             default:
                 $colaborador = 1;
@@ -102,7 +106,7 @@ class SsoService
         }
 
         // Recupera ou cria uma instância do usuário pelo ID (se vier do SSO) ou E-mail
-        
+
         $userId = $userData['id'] ?? null;
         $email = $userData['email'];
 
@@ -122,7 +126,7 @@ class SsoService
                 $user->id = $userId;
             }
             $user->email = $email;
-            $user->password = bcrypt(Str::random(16)); 
+            $user->password = bcrypt(Str::random(16));
         }
 
         // Tratamento da foto
@@ -143,12 +147,13 @@ class SsoService
             'franqueadora'       => $franqueadora,
             'colaborador'        => $colaborador,
             'status'             => $userData['status'] ?? 'ativo',
+            // 'pin'                => $userData['pin'] ?? null,
         ]);
 
         $user->save();
 
         // Removido sistema de UserPermission conforme solicitado
-        
+
         return $user;
     }
 }

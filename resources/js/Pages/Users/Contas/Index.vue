@@ -1,6 +1,6 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Contas" />
+    <Head title="Pagamentos" />
 
     <!-- Botão para alternar entre Cadastro e Listagem -->
     <div v-if="!showCadastro" class="fixed bottom-6 right-6">

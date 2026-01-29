@@ -8,14 +8,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Jetstream\HasProfilePhoto;
+
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     use HasApiTokens;
     use HasFactory;
-    use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
 
@@ -39,7 +38,7 @@ class User extends Authenticatable
         'franqueado',
         'franqueadora',
         'colaborador',
-        
+
         'last_visited_url',
         'status'
     ];
@@ -67,14 +66,27 @@ class User extends Authenticatable
 
     public function getProfilePhotoUrlAttribute()
     {
-        if ($this->profile_photo_path && (str_starts_with($this->profile_photo_path, 'http://') || str_starts_with($this->profile_photo_path, 'https://'))) {
-            return $this->profile_photo_path;
+        if ($this->profile_photo_path) {
+
+            // URL externa
+            if (
+                str_starts_with($this->profile_photo_path, 'http://') ||
+                str_starts_with($this->profile_photo_path, 'https://')
+            ) {
+                return $this->profile_photo_path;
+            }
+
+            // Arquivo local
+            return Storage::url($this->profile_photo_path);
         }
 
-        return $this->profile_photo_path
-            ? Storage::url($this->profile_photo_path)
-            : $this->defaultProfilePhotoUrl();
+        // Fallback padrão (avatar)
+        return 'https://ui-avatars.com/api/?name=' .
+            urlencode($this->name ?? 'User') .
+            '&color=7F9CF5&background=EBF4FF';
     }
+
+
 
 
     /**

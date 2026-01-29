@@ -3,33 +3,24 @@
     <Head title="Painel" />
     <div class="flex justify-between items-center mb-4">
       <div>
-        <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
-          Visão geral da loja
+        <div class="painel-title text-2xl sm:text-3xl md:text-3xl">
+          ERP Legado
         </div>
         <div class="painel-subtitle">
-          <p class="text-sm sm:text-base md:text-lg">
+          <p class="text-sm sm:text-base md:text-md">
             Acompanhe o desempenho geral
           </p>
         </div>
       </div>
-
-      <div class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight">
-        <div class="flex items-center space-x-2">
-          <img src="/storage/images/calendar_month.svg" alt="Filtro" class="w-5 h-5" />
-          <span class="text-gray-900 text-[17px] font-semibold">
-            <CalendarSimples />
-          </span>
-        </div>
-      </div>
     </div>
 
-    <div class="mt-5">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="mt-5 w-full h-screen">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Primeira coluna -->
-        <div class="md:row-span-3">
-          <div class="bg-white rounded-lg p-5 h-full w-full">
+        <div class="md:row-span-1">
+          <div class="bg-white rounded-lg border border-gray-200 p-5 h-full w-full">
             <h3 class="text-lg font-semibold text-gray-700 mb-2">
-              Compromissos
+              Pagamentos
             </h3>
             <div class="compromissos-container flex flex-col gap-2 overflow-hidden">
               <div
@@ -61,155 +52,17 @@
         </div>
 
         <!-- Segunda coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Faturamento</h3>
-
-          <div
-            class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            R$ {{ totalCaixas }}
-          </div>
-
-          <div class="flex items-center gap-2 mt-[35px]">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center">
-              <!-- Ícone aqui -->
-            </div>
-
-            <div
-              class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
-            >
-              0% coletando dados
-            </div>
-          </div>
-        </div>
-
-        <!-- Terceira coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <div class="flex items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-700">CMV</h3>
-            <button @click="openModal" class="ml-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                style="fill: rgba(0, 0, 0, 1); transform: msfilter"
-              >
-                <path
-                  d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
-                ></path>
-              </svg>
-            </button>
-          </div>
-
-          <div
-            class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            R$ {{ cmv }}
-          </div>
-
-          <div class="flex items-center gap-2 mt-[35px]">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center">
-              <!-- Ícone aqui -->
-            </div>
-
-            <div
-              class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
-            >
-              0% coletando dados
-            </div>
-          </div>
-
-          <!-- modal CMV -->
-          <div
-            v-if="isModalOpen"
-            class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50"
-          >
-            <div class="bg-white rounded-lg p-7 w-[350px] shadow-lg">
-              <h3 class="text-lg font-semibold text-gray-700 mb-4">
-                Detalhes do CMV
-              </h3>
-              <div class="text-sm text-gray-600 space-y-2">
-                <p>
-                  <span class="font-semibold text-gray-800">Período:</span>
-                  {{ start_date }} - {{ end_date }}
-                </p>
-                <p>
-                  <span class="font-semibold text-gray-800">Saldo Inicial:</span>
-                  R$ {{ saldoEstoqueInicial }}
-                </p>
-                <p>
-                  <span class="font-semibold text-gray-800">Entradas:</span>
-                  R$ {{ entradasDurantePeriodo }}
-                </p>
-                <p>
-                  <span class="font-semibold text-gray-800">Saldo Final:</span>
-                  R$ {{ saldoEstoqueFinal }}
-                </p>
-                <p class="text-lg font-bold text-gray-900 mt-3">
-                  <span class="font-semibold">CMV:</span> R$ {{ cmv }}
-                </p>
-                <p>
-                  Parâmetros: Saldo Inicial + Entradas nesse período - Saldo Final = Total
-                  CMV
-                </p>
-              </div>
-              <button @click="closeModal" class="mt-4 text-red-800 rounded-md transition">
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quarta coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Ticket médio</h3>
-
-          <div
-            class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            R$ {{ ticketMedio }}
-          </div>
-
-          <div class="flex items-center gap-2 mt-[35px]">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center">
-              <!-- Ícone aqui -->
-            </div>
-
-            <div
-              class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
-            >
-              0% coletando dados
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-lg p-4">
-          <h3 class="text-lg font-semibold text-gray-700 mb-4">Pedidos</h3>
-
-          <div
-            class="text-[#262a27] text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            {{ quantidadePedidos }}
-          </div>
-
-          <div class="flex items-center gap-2 mt-[35px]">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center">
-              <!-- Ícone aqui -->
-            </div>
-
-            <div
-              class="text-[#6d6d6d] text-[13px] font-semibold font-['Figtree'] leading-[18px]"
-            >
-              0% coletando dados
-            </div>
-          </div>
+        <div class="flex flex-col items-center justify-center w-full bg-white rounded-lg p-12 border border-gray-200 group">
+          <img src="https://login.taiksu.com.br/applications/6967173ec2616.png" alt="Logo" class="w-16 h-16 mb-4 group-hover:scale-110 transition-all ease-in-out duration-300">
+          <h2 class="text-lg font-semibold text-gray-700 text-center">Estamos migrando para o visão geral</h2>
+          <p class="text-sm text-gray-500 text-center">Veja os dados da unidade no novo app.</p>
+          <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Fdashboard.taiksu.com.br%2Fcallback" class="text-sm text-white bg-green-500 px-6 shadow-xl hover:shadow-sm transition-shadow duration-400 py-1 rounded-full hover:bg-green-600 transition-all ease-in-out duration-300 mt-4 text-center">Acessar</a>
         </div>
 
         <!-- Quarta linha que ocupa 3 colunas -->
-        <div class="bg-white rounded-lg p-4 col-span-1 md:col-span-3">
+        <div class="hidden bg-white rounded-lg p-4 col-span-1 md:col-span-3">
           <h3 class="text-lg font-semibold text-gray-700">Faturamento diário</h3>
-          <div class="w-full h-[220px]">
+          <div class="w-full h-[20px]">
             <canvas ref="barChart"></canvas>
           </div>
         </div>

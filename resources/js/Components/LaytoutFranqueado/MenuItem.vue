@@ -42,6 +42,7 @@ import { defineProps, ref, computed, watch, nextTick, inject } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
+    
     label: String,
     icon: String,
     link: String,

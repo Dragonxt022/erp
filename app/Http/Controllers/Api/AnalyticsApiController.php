@@ -35,46 +35,7 @@ class AnalyticsApiController extends Controller
         return $this->cmvGlobal($request, $service);
     }
 
-    // public function cmvGlobal(Request $request, AnalyticService $service)
-    // {
-    //     // Datas em formato ISO obrigatório
-    //     try {
-    //         $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
-    //         $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
-    //     }
 
-    //     // Caso global: todas as unidades
-    //     $units = \App\Models\InforUnidade::all();
-    //     $detalhes = [];
-    //     $globalCmv = 0;
-    //     $globalFaturamento = 0;
-
-    //     foreach ($units as $unit) {
-    //         $data = $this->processUnitData($service, $unit->id, $inicio, $final);
-
-    //         $detalhes[] = [
-    //             'unidade_id' => $unit->id,
-    //             'nome_unidade' => $unit->cidade,
-    //             'valor_cmv' => $data['cmv'],
-    //             'porcentagem_cmv' => $data['porcentagem_cmv'],
-    //         ];
-
-    //         $globalCmv += $data['cmv'];
-    //         $globalFaturamento += $data['faturamento'];
-    //     }
-
-    //     $porcentagemCmvGlobal = $globalFaturamento > 0
-    //         ? round(($globalCmv / $globalFaturamento) * 100, 2)
-    //         : 0;
-
-    //     return response()->json([
-    //         'valor_cmv_global' => round($globalCmv, 2),
-    //         'porcentagem_cmv_global' => $porcentagemCmvGlobal,
-    //         'unidades' => $detalhes,
-    //     ]);
-    // }
     public function cmvGlobal(Request $request, AnalyticService $service)
     {
         try {
@@ -147,13 +108,10 @@ class AnalyticsApiController extends Controller
         ]);
     }
 
-    /**
-     * Processa os dados de uma unidade específica
-     */
+
     private function processUnitData(AnalyticService $service, int $unidadeId, Carbon $inicio, Carbon $final): array
     {
-        // Dados financeiros
-        $data = $service->calculatePeriodData(
+        $dreData = $service->calculatePeriodData(
             $unidadeId,
             $inicio,
             $final,
@@ -163,26 +121,19 @@ class AnalyticsApiController extends Controller
             false
         );
 
-        $faturamento = (float) $data['total_caixas'];
-        $cmv = round((float) $data['cmv'], 2);
+        $valorCmv = (float) ($dreData['cmv'] ?? 0);
 
-        $porcentagemCmv = $faturamento > 0
-            ? round(($cmv / $faturamento) * 100, 2)
-            : 0;
+        // USAR O MÉTODO CENTRALIZADO DO SERVIÇO PARA OBTER A PORCENTAGEM DO CMV
+        $porcentagemCmv = $service->extractCmvPercentage($dreData);
 
-        // Reaproveitamento real do salmão
         $aproveitamentoSalmao = round(
-            $this->calcularAproveitamentoSalmao(
-                $unidadeId,
-                $inicio,
-                $final
-            ),
+            $this->calcularAproveitamentoSalmao($unidadeId, $inicio, $final),
             2
         );
 
         return [
-            'faturamento' => $faturamento,
-            'cmv' => $cmv,
+            'faturamento' => (float) $dreData['total_caixas'],
+            'cmv' => round($valorCmv, 2),
             'porcentagem_cmv' => $porcentagemCmv,
             'aproveitamento_salmao' => $aproveitamentoSalmao,
         ];

@@ -5,15 +5,15 @@
     <div class="navbar-content">
       <!-- Logo e ícones de navegação -->
       <div class="navbar-left">
-        <div class="navbar-logo">
-          <div class="mr-4 mt-2 hide-mobile">
-            <button @click="toggleSidebar">
+        <div class="navbar-logo items-center flex flex-row gap-2">
+          <div class="hide-mobile">
+            <a href="https://login.taiksu.com.br/">
               <img
-                src="/storage/images/quadrados_verdes.svg"
+                src="https://login.taiksu.com.br/frontend/img/menu_service.png"
                 alt="Menu"
-                class="w-full h-full"
+                class="w-7 h-7"
               />
-            </button>
+            </a>
           </div>
           <div>
             <a :href="route('franqueado.painel')">
@@ -50,7 +50,7 @@
           class="user-info hide-mobile"
           :class="{ loading: !user }"
         >
-          <div class="user-info" v-if="user">
+          <a href="https://login.taiksu.com.br/perfil" class="user-info" v-if="user">
             <img :src="profilePhoto" alt="Avatar" class="avatar" />
             <div class="user-details">
               <div class="user-name">{{ user.name }}</div>
@@ -58,7 +58,7 @@
                 {{ unidade?.cidade || 'Taiksu Franchising' }}
               </div>
             </div>
-          </div>
+          </a>
 
           <div class="user-info loading" v-else>
             <div class="avatar-skeleton"></div>

@@ -1,6 +1,6 @@
 <template>
   <LayoutFranqueado>
-    <Head title="Painel" />
+    <Head title="Pagamentos" />
 
     <div v-if="!showCadastro" class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 h-full">
       <!-- Componente de Listagem -->

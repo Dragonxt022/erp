@@ -17,10 +17,10 @@ class ContaAPagarApiController extends Controller
 {
     /**
      * Cria uma nova conta a pagar via API externa.
-     * 
+     *
      * Requer autenticação JWT no header: Authorization: Bearer {token}
      * O token será validado contra https://login.taiksu.com.br/api/user/me
-     * 
+     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -126,7 +126,7 @@ class ContaAPagarApiController extends Controller
                     ];
 
                     $destinatarios = [];
-                    
+
                     // 1. Quem criou a conta
                     if ($usuarioFake->email) {
                         $destinatarios[] = $usuarioFake->email;
@@ -157,12 +157,6 @@ class ContaAPagarApiController extends Controller
                     Log::error('Erro ao enviar e-mail de comprovante (API): ' . $mailEx->getMessage());
                 }
             }
-
-            Log::info('Conta a pagar criada via API', [
-                'conta_id' => $contaAPagar->id,
-                'user_id' => $userData['id'] ?? null,
-                'unidade_id' => $request->unidade_id
-            ]);
 
             return response()->json([
                 'status' => 'success',
