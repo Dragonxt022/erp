@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\SalmaoHistoricoService;
 
 class SalmaoHistoricoController extends Controller
 {
@@ -192,102 +193,16 @@ class SalmaoHistoricoController extends Controller
             'desperdicio' => 'required|numeric|min:0',
         ]);
 
-        // Iniciar transação
-        DB::beginTransaction();
-
         try {
-            // 1. Registrar no SalmaoHistorico
-            $historico = SalmaoHistorico::create([
-                'responsavel_id' => $validated['responsavel_id'],
-                'calibre_id' => $validated['calibre_id'],
-                'valor_pago' => $validated['valor_pago'],
-                'peso_bruto' => $validated['peso_bruto'],
-                'peso_limpo' => $validated['peso_limpo'],
-                'aproveitamento' => $validated['aproveitamento'],
-                'desperdicio' => $validated['desperdicio'],
-                'unidade_id' => $user->unidade_id,
-            ]);
-
-            // 2. Buscar "Salmão Limpo" na ListaProduto
-            $salmaoLimpo = ListaProduto::firstOrCreate(
-                ['id' => 84], // Busca por nome
-                [ // Valores padrão apenas se criar um novo registro
-                    'categoria_id' => 13,
-                    'unidadeDeMedida' => 'a_granel',
-                    'prioridade' => 1,
-                ]
-            );
-
-            // Se não existir, lançar uma exceção
-            if (!$salmaoLimpo) {
-                throw new \Exception('O produto "Salmão Limpo" não foi encontrado na lista de produtos. Por favor, cadastre-o antes de continuar.');
-            }
-
-            $precoPorQuilo = $validated['peso_limpo'] > 0 ? $validated['valor_pago'] / $validated['peso_limpo'] : 0;
-
-
-            // 3. Adicionar ao estoque (UnidadeEstoque)
-            $estoque = UnidadeEstoque::create([
-                'insumo_id' => $salmaoLimpo->id,
-                'fornecedor_id' => $validated['fornecedor_id'],
-                'usuario_id' => Auth::id(),
-                'unidade_id' => $user->unidade_id,
-                'quantidade' => $validated['peso_limpo'],
-                'preco_insumo' => $precoPorQuilo,
-                'categoria_id' => $salmaoLimpo->categoria_id,
-                'operacao' => 'Entrada',
-                'unidade' => 'kg',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // 4. Registrar movimentação no histórico de estoques
-            MovimentacoesEstoque::create([
-                'insumo_id' => $salmaoLimpo->id,
-                'fornecedor_id' => $validated['fornecedor_id'],
-                'usuario_id' => Auth::id(),
-                'quantidade' => $validated['peso_limpo'],
-                'preco_insumo' => $precoPorQuilo,
-                'operacao' => 'Entrada',
-                'unidade' => 'kg',
-                'unidade_id' => $user->unidade_id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-
-            // Dados principais do painel
-            $estoque = UnidadeEstoque::where('unidade_id', $user->unidade_id)->where('quantidade', '>', 0)->get();
-            $valorInsumos = $estoque->reduce(function ($total, $item) {
-                $preco = $item->preco_insumo;
-                $quantidade = $item->quantidade;
-                return $item->unidade === 'kg' ? $total + $preco : $total + ($preco * $quantidade);
-            }, 0);
-
-            $saldoAtual = $valorInsumos;
-
-
-            DB::table('controle_saldo_estoques')->insert([
-                'ajuste_saldo' => $saldoAtual,
-                'data_ajuste' => now(),
-                'motivo_ajuste' => 'Atualização após entrada',
-                'unidade_id' => $user->unidade_id,
-                'responsavel_id' => $validated['responsavel_id'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            // Confirmar transação
-            DB::commit();
+            $service = new SalmaoHistoricoService();
+            $result = $service->registrarHistorico($validated, $user);
 
             return response()->json([
                 'message' => 'Registro salvo e estoque atualizado com sucesso!',
-                'historico' => $historico,
-                'estoque' => $estoque,
+                'historico' => $result['historico'],
+                'estoque' => $result['estoque'],
             ], 201);
         } catch (\Exception $e) {
-            // Reverter transação em caso de erro
-            DB::rollBack();
             return response()->json(['error' => 'Erro ao salvar: ' . $e->getMessage()], 500);
         }
     }

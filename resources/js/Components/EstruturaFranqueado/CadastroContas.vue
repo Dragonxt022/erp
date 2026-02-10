@@ -226,7 +226,7 @@ const errors = ref({}); // Armazenar erros de validação
 const emit = defineEmits(['voltar']);
 
 // IDs das categorias que devem mostrar o seletor de fornecedor
-const CATEGORIAS_FORNECEDOR = [5, 19];
+const CATEGORIAS_FORNECEDOR = [19];
 
 
 onMounted(async () => {

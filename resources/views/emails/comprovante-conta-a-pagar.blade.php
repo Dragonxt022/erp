@@ -15,7 +15,7 @@
                     <!-- Cabeçalho -->
                     <tr>
                         <td style="text-align: center;">
-                            <img src="{{ $message->embed(public_path('storage/images/logo_tipo_verde.png')) }}" alt="Logo Taiksu" style="width: 175px; margin-bottom: 30px;">
+                            <img src="{{ config('app.url') }}/storage/images/logo_tipo_verde.png" alt="Logo Taiksu" style="width: 175px; margin-bottom: 30px;">
                         </td>
                     </tr>
 

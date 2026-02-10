@@ -5,12 +5,12 @@
       <!-- Coluna 1: Título e subtítulo -->
       <div>
         <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
-          Controle de Resíduos
+          Gestão de Resíduos
         </div>
         <div class="painel-subtitle">
-          <p class="text-sm sm:text-base md:text-lg">
-            Acompanhe o aproveitamento de insumos
-          </p>
+          <div class="p-2 w-full bg-white border border-gray-200 rounded-md text-sm mt-2">
+            <b class="text-green-600 font-semibold">Novidades em breve:</b> O gestão de resíduos irá receber atualizações
+          </div>
         </div>
       </div>
 
@@ -78,14 +78,13 @@
               alt="Filtro"
               class="w-5 h-5"
             /> -->
-            <p>0% coletando informações</p>
           </div>
         </div>
 
         <!-- Coluna -->
         <div class="bg-white rounded-lg p-7">
           <h3 class="font-semibold text-[#6d6d6d] text-[15px] mb-2">
-            Eficiência por colaborador
+            Ranking
           </h3>
           <div class="flex flex-col gap-2 compromissos-container">
             <div

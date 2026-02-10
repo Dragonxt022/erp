@@ -1,7 +1,7 @@
 <template>
     <div>
         <!-- Título principal -->
-        <div class="painel-title">Histórico contas</div>
+        <div class="painel-title">Histórico pagamentos</div>
         <div class="painel-subtitle">
             <p>Relatório de contas a pagar</p>
 

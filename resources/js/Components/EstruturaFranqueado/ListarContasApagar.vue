@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Título principal -->
-    <div class="painel-title">Contas a pagar</div>
+    <div class="painel-title">Pagamentos</div>
 
     <!-- Subtítulo da página -->
     <div class="painel-subtitle">

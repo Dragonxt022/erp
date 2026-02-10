@@ -306,7 +306,8 @@ class AnalyticService
             'quantidade_pedidos',
             'ticket_medio',
             'custo_entregas',
-            'taxas'
+            'taxas',
+            'total_depositos'
         ];
 
         foreach ($requiredFields as $field) {

@@ -12,6 +12,8 @@ use App\Mail\ComprovanteContaAPagarMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\InforUnidade;
+use App\Services\EmailApiService;
+use Illuminate\Support\Facades\View;
 
 class ContaAPagarApiController extends Controller
 {
@@ -147,11 +149,31 @@ class ContaAPagarApiController extends Controller
                         ->pluck('email')
                         ->toArray();
 
-                    // Merge e unique
                     $destinatarios = array_unique(array_merge($destinatarios, $franqueadosUnidade, $franqueadorasGlobal));
 
+                    // Preparar anexos se houver arquivo
+                    $attachments = [];
+                    if ($contaAPagar->arquivo && file_exists(public_path($contaAPagar->arquivo))) {
+                        $path = public_path($contaAPagar->arquivo);
+                        $attachments[] = [
+                            'filename' => basename($path),
+                            'content' => base64_encode(file_get_contents($path))
+                        ];
+                    }
+
+                    $emailService = new EmailApiService();
+                    $subject = 'Comprovante de Cadastro de Conta a Pagar - #' . $contaAPagar->id . ' | ' . $nomeUnidade;
+                    
+                    $dataCadastro = now()->format('d/m/Y H:i:s');
+                    $body = View::make('emails.comprovante-conta-a-pagar', [
+                        'conta' => $contaAPagar,
+                        'usuario' => $usuarioFake,
+                        'nomeUnidade' => $nomeUnidade,
+                        'dataCadastro' => $dataCadastro,
+                    ])->render();
+
                     foreach ($destinatarios as $email) {
-                        Mail::to($email)->send(new ComprovanteContaAPagarMail($contaAPagar, $usuarioFake, $nomeUnidade));
+                        $emailService->send($email, $subject, $body, $attachments);
                     }
                 } catch (\Exception $mailEx) {
                     Log::error('Erro ao enviar e-mail de comprovante (API): ' . $mailEx->getMessage());

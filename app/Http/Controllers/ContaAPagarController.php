@@ -14,6 +14,8 @@ use App\Mail\ComprovanteContaAPagarMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use App\Models\User;
+use App\Services\EmailApiService;
+use Illuminate\Support\Facades\View;
 
 class ContaAPagarController extends Controller
 {
@@ -293,9 +295,30 @@ class ContaAPagarController extends Controller
 
                 $destinatarios = array_unique(array_merge($destinatarios, $usuariosFranqueadora));
 
+                // Preparar anexos se houver arquivo
+                $attachments = [];
+                if ($conta->arquivo && file_exists(public_path($conta->arquivo))) {
+                    $path = public_path($conta->arquivo);
+                    $attachments[] = [
+                        'filename' => basename($path),
+                        'content' => base64_encode(file_get_contents($path))
+                    ];
+                }
+
+                $emailService = new EmailApiService();
+                $subject = 'Comprovante de Cadastro de Conta a Pagar - #' . $conta->id . ' | ' . $nomeUnidade;
+                
+                $dataCadastro = now()->format('d/m/Y H:i:s');
+                $body = View::make('emails.comprovante-conta-a-pagar', [
+                    'conta' => $conta,
+                    'usuario' => $user,
+                    'nomeUnidade' => $nomeUnidade,
+                    'dataCadastro' => $dataCadastro,
+                ])->render();
+
                 // Enviar e-mail para todos os destinatários
                 foreach ($destinatarios as $email) {
-                    Mail::to($email)->send(new ComprovanteContaAPagarMail($conta, $user, $nomeUnidade));
+                    $emailService->send($email, $subject, $body, $attachments);
                 }
             } catch (\Exception $mailEx) {
                 // Log do erro de e-mail, mas não impede o sucesso da criação
