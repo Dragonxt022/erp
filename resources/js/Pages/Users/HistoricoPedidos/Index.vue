@@ -2,6 +2,9 @@
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
     <Head title="Histórico de Pedidos" />
+    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-xl ">
+      <img src="/storage/images/banner-xl.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    </a>
     <!-- Container principal -->
     <div
       class="grid grid-cols-1 gap-[3rem] mt-3 sm:grid-cols-2 card-container h-full overflow-hidden"

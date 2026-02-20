@@ -13,7 +13,6 @@
         :key="category.id"
         class="mb-6"
       >
-        <h3 class="font-bold text-lg text-green-700 mb-2">{{ category.name || 'Sem Categoria' }}</h3>
 
         <draggable
           v-model="category.items"

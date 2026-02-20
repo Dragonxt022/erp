@@ -260,7 +260,8 @@ class AnalyticService
             $totalFGTS,
             $apiMetrics['taxFees'],
             $stockMetrics['cmv'],
-            $apiMetrics['totalMotoboy']
+            $apiMetrics['totalMotoboy'],
+            $apiMetrics['totalDepositos']
         );
 
         // Calcular categorias
@@ -331,6 +332,7 @@ class AnalyticService
             'quantidadePedidos' => (int) $externalData['quantidade_pedidos'],
             'ticketMedio' => (float) $externalData['ticket_medio'],
             'totalMotoboy' => (float) $externalData['custo_entregas'],
+            'totalDepositos' => (float) $externalData['total_depositos'],
             'taxFees' => [
                 'pix' => (float) ($taxas['pix'] ?? 0),
                 'credito' => (float) ($taxas['credito'] ?? 0),
@@ -375,7 +377,8 @@ class AnalyticService
             $operationalExpenses['fgts'],
             $taxFees,
             $stockMetrics['cmv'],
-            $operationalExpenses['motoboy']
+            $operationalExpenses['motoboy'],
+            0.0
         );
 
         $categoryData = $this->calculateCategoryGroups($context);
@@ -415,7 +418,8 @@ class AnalyticService
         float $totalFGTS,
         array $taxFees,
         float $cmv,
-        float $totalMotoboy = 0.0
+        float $totalMotoboy = 0.0,
+        float $totalDepositos = 0.0
     ): array {
         return [
             'unidadeId' => $unidadeId,
@@ -423,6 +427,7 @@ class AnalyticService
             'endDateCarbon' => $endDate,
             'totalSalarios' => $totalSalarios,
             'totalMotoboy' => $totalMotoboy,
+            'totalDepositos' => $totalDepositos,
             'totalRoyalties' => $totalRoyalties,
             'totalFundoPropaganda' => $totalFundoPropaganda,
             'totalLiquido' => $totalLiquido,
@@ -928,7 +933,8 @@ class AnalyticService
             'Plataformas de Delivery' => $context['taxFees']['canais'],
             'Taxas de Delivery' => $context['taxFees']['delivery'],
             'Voucher Alimentação' => $context['taxFees']['vr_alimentacao'],
-            'Motoboy' => $context['totalMotoboy']
+            'Motoboy' => $context['totalMotoboy'],
+            'Depósito' => $context['totalDepositos']
         ];
 
         // Retornar valor fixo se existir

@@ -1,13 +1,5 @@
 <template>
   <div>
-    <!-- Título principal -->
-    <div class="painel-title">Histórico de pedidos</div>
-
-    <!-- Subtítulo da página -->
-    <div class="painel-subtitle">
-      <p>Visualize pedidos já realizados com fornecedores</p>
-    </div>
-
     <!-- Campo de pesquisa -->
     <div class="search-container relative flex items-center w-full mb-4">
       <!-- Ícone de pesquisa -->

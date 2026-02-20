@@ -2,7 +2,9 @@
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
     <Head title="Insumos" />
-
+    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-md">
+      <img src="/storage/images/banner-xl.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    </a>
     <!-- Container de novos produtos -->
     <div v-if="showCadastroProduto" class="mt-6">
       <CadastroProduto

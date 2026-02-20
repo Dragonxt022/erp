@@ -19,10 +19,6 @@
 
             <div v-for="category in filteredMenuCategories" :key="category.name" class="menu-category mb-6">
                 <!-- Categoria de menu (Título escondido em telas pequenas) -->
-                <div class="category-title menu-categorias text-sm sm:text-base font-medium text-[#87ba73] mb-3 pl-4"
-                    v-if="category.items.length > 0">
-                    {{ category.name }}
-                </div>
 
                 <!-- Itens do menu -->
                 <MenuItem v-for="item in category.items" :key="item.link || 'no-link'" :label="item.label"

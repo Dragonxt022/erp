@@ -2,27 +2,11 @@
     <LayoutFranqueado>
 
         <Head title="Painel" />
-        <div class="painel-title">DRE Gerencial</div>
-        <div class="painel-subtitle">
-            <p>Acompanhe a saúde da sua operação</p>
-        </div>
+    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-md">
+      <img src="/storage/images/finoo.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    </a>
+
         <div class="flex justify-end mb-4">
-            <button @click="showModal = true" class="mr-2" placeholder="Ajuda a entender esses gráficos!">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                style="fill: #018f7f; transform: msfilter"
-              >
-                <path
-                  d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
-                ></path>
-              </svg>
-            </button>
-            <button @click="imprimirRelatorio" class="mr-3 bg-[#174111] hover:bg-[#12330d] text-white font-bold py-1 px-3 rounded text-sm transition duration-300">
-                Imprimir Relatório Anual
-            </button>
             <div class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight">
                 <div class="flex items-center space-x-2 justify-end">
                     <span class="text-gray-900 text-[17px] font-semibold">
@@ -96,10 +80,6 @@
 
                     </div>
 
-                    <div class="mt-4 p-4 bg-green-100 text-green-800 rounded font-medium text-sm">
-                        {{ feedbackChatbot }}
-                    </div>
-
 
                     <div class="mt-5">
                         <div class="flex items-center justify-between">
@@ -144,20 +124,7 @@
                 </div>
             </div>
         </div>
-        <template v-if="showModal">
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div class="bg-white rounded-lg max-w-xl p-6 shadow-lg relative">
-                    <button @click="showModal = false"
-                        class="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-xl font-bold">
-                        &times;
-                    </button>
-                    <h2 class="text-xl font-bold mb-4">Como funcionam os cálculos do DRE</h2>
-                    <p class="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
-                        {{ explicacaoDRE }}
-                    </p>
-                </div>
-            </div>
-        </template>
+
 
 
     </LayoutFranqueado>

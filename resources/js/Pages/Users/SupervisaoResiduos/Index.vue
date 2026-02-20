@@ -4,13 +4,10 @@
     <div class="flex justify-between items-center mb-4">
       <!-- Coluna 1: Título e subtítulo -->
       <div>
-        <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
+        <div class="hidden painel-title text-2xl sm:text-3xl md:text-4xl">
           Gestão de Resíduos
         </div>
         <div class="painel-subtitle">
-          <div class="p-2 w-full bg-white border border-gray-200 rounded-md text-sm mt-2">
-            <b class="text-green-600 font-semibold">Novidades em breve:</b> O gestão de resíduos irá receber atualizações
-          </div>
         </div>
       </div>
 
@@ -18,14 +15,9 @@
       <div
         class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight"
       >
-        <div class="flex items-center space-x-2">
-          <img
-            src="/storage/images/calendar_month.svg"
-            alt="Filtro"
-            class="w-5 h-5"
-          />
+        <div class="hidden flex items-center space-x-2">
           <!-- Ajuste o tamanho do ícone conforme necessário -->
-          <span class="text-gray-900 text-[17px] font-semibold">
+          <span class=" text-gray-900 text-[17px] font-semibold">
             <CalendarSimples2 @update-filters="handleFilterUpdate" />
           </span>
         </div>

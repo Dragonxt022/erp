@@ -34,6 +34,7 @@ class TrackLastVisitedUrl
                 '/logout',
                 '/callback',
                 '/resetar-password',
+                '/events.heartbeat',
                 '/api/', // Evitar rotas puras de API se não forem Inertia (embora o middleware web geralmente não as pegue se estiverem no grupo api)
             ];
 

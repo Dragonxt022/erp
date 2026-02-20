@@ -5,26 +5,10 @@
     <div class="navbar-content">
       <!-- Logo e ícones de navegação -->
       <div class="navbar-left">
-        <div class="navbar-logo items-center flex flex-row gap-2">
-          <div class="hide-mobile">
-            <a href="https://login.taiksu.com.br/">
-              <img
-                src="https://login.taiksu.com.br/frontend/img/menu_service.png"
-                alt="Menu"
-                class="w-7 h-7"
-              />
-            </a>
-          </div>
-          <div>
-            <a :href="route('franqueado.painel')">
-              <img
-                src="/storage/images/logo_tipo_verde.svg"
-                alt="logo tipo verde"
-                class="w-full h-full"
-              />
-            </a>
-          </div>
-        </div>
+          <a href="https://login.taiksu.com.br/" class="flex flex-row gap-2 px-3 py-1 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
+            <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-5 h-5 rotate-180" />
+            <h2 class="group text-md font-semibold text-green-700">Voltar para o <span class="text-green-500 font-bold">Office</span></h2>
+          </a>
       </div>
 
       <!-- Avatar e informações do usuário -->

@@ -7,11 +7,6 @@
         <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
           Controle de estoque
         </div>
-        <div class="painel-subtitle">
-          <p class="text-sm sm:text-base md:text-lg">
-            Acompanhe seu negócio em tempo real
-          </p>
-        </div>
       </div>
 
       <!-- Coluna 2: Data -->
@@ -32,11 +27,16 @@
         </div>
       </div>
     </div>
+
+    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-xl">
+      <img src="/storage/images/banner-estoque.png" alt="Banner Estoque" class="w-full h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    </a>
+
     <div class="mt-5">
       <!-- Ajuste do grid para ser responsivo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
+        <div class="bg-white rounded-lg p-8 border border-gray-200 shadow-md">
           <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
             Valor inicial
           </h3>
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
+        <div class="bg-white rounded-lg p-8 border border-gray-200 shadow-md">
           <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
             Estoque atual
           </h3>
@@ -56,18 +56,6 @@
             class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
           >
             R$ {{ saldoEstoqueFinal }}
-          </div>
-        </div>
-
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-7">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            CMV
-          </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            {{ cmv }}
           </div>
         </div>
       </div>

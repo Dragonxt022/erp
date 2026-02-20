@@ -1,12 +1,5 @@
 <template>
   <div>
-    <!-- Título principal -->
-    <div class="painel-title">Novo pedido</div>
-
-    <!-- Subtítulo da página -->
-    <div class="painel-subtitle">
-      <p>Efetuar novo pedido de insumos com fornecedor</p>
-    </div>
 
     <!-- Campo de pesquisa -->
     <div class="search-container relative flex items-center w-full mb-4">

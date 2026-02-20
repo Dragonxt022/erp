@@ -1,6 +1,11 @@
 <template>
   <LayoutFranqueadoEstoque>
     <!-- Cabeçalho da página -->
+
+    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-xl ">
+      <img src="/storage/images/banner-xl.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    </a>
+    
     <Head title="Controle de Estoque" />
     <div v-if="isLoading" class="loading-overlay">
       <div class="spinner"></div>
