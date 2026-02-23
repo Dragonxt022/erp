@@ -1,13 +1,5 @@
 <template>
   <div>
-    <!-- Título principal -->
-    <div class="painel-title">Inventário da loja</div>
-
-    <!-- Subtítulo da página -->
-    <div class="painel-subtitle">
-      <p>Verifique a quantidade de cada item</p>
-    </div>
-
     <!-- Campo de pesquisa -->
     <div class="search-container relative flex items-center w-full mb-4">
       <div class="absolute left-3">
@@ -25,7 +17,7 @@
     <div class="card-container compromissos-container overflow-hidden">
       <div v-for="(categoria, categoriaNome) in filteredProdutos" :key="categoriaNome" class="categoria-group">
         <div
-          class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-8 mb-1"
+          class="w-full h-[18.63px] text-[#6d6d6d] text-[15px] font-semibold font-['Figtree'] leading-tight mt-4 mb-1"
         >
           {{ categoria.categoria_nome }}
         </div>

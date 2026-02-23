@@ -7,7 +7,7 @@
 
         <!-- Sidebar -->
         <div v-else :class="[
-                'sidebar z-50 bg-[#164110] text-white flex flex-col p-3 transition-transform duration-300 ease-in-out',
+                'sidebar z-50 bg-gray-200 text-gray-800 flex flex-col p-3 transition-transform duration-300 ease-in-out',
 
                 /* Mobile: fixo na esquerda */
                 'fixed inset-y-0 left-0 transform',
@@ -207,10 +207,9 @@ const isActive = (link) => {
     width: 249px;
     padding-top: 27px;
     padding-bottom: 27px;
-    background-color: #164110;
     display: flex;
     flex-direction: column;
-    color: white;
+    color: rgb(109, 109, 109);
 
     /* Permite rolagem se o menu for grande */
     overflow-y: auto;
@@ -253,14 +252,16 @@ const isActive = (link) => {
 
 /* No MenuItem.vue */
 .submenu {
+    color:rgb(61, 61, 61);
     margin-left: 20px; /* Adicione um recuo para os submenus aparecerem à direita do ícone pai */
     padding: 5px 0;
     border-left: 1px solid rgba(255, 255, 255, 0.1); /* Opcional: uma linha guia */
 }
 
 .submenu-item .label {
-    font-size: 14px; /* Submenus levemente menores */
+    font-size: 24px; /* Submenus levemente menores */
     opacity: 0.9;
+    color:rgb(61, 61, 61);
 }
 @media (min-width: 768px) {
     .sidebar {

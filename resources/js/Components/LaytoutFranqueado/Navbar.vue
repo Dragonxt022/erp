@@ -13,11 +13,6 @@
 
       <!-- Avatar e informações do usuário -->
       <div class="navbar-right">
-        <!-- Ícone de Notificações Externas -->
-        <div class="mr-4">
-          <iconeNotificacao />
-        </div>
-
         <div class="view-mobile">
           <button @click="toggleSidebar">
             <img

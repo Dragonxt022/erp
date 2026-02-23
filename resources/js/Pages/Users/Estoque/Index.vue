@@ -4,7 +4,7 @@
     <div class="flex justify-between items-center mb-4">
       <!-- Coluna 1: Título e subtítulo -->
       <div>
-        <div class="painel-title text-2xl sm:text-3xl md:text-4xl">
+        <div class="painel-title text-xl">
           Controle de estoque
         </div>
       </div>
@@ -63,7 +63,7 @@
 
     <!-- Histórico de Movimentações -->
     <div class="mt-8">
-      <div class="flex items-center justify-between mb-4">
+      <div class="hidden flex items-center justify-between mb-4">
         <h3
           class="text-[#262a27] text-[17px] mb-[-13px] font-semibold font-['Figtree'] leading-snug"
         >
@@ -424,13 +424,6 @@ onMounted(() => {
 
 .scroll-hidden::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Edge */
-}
-
-.painel-title {
-  font-size: 34px;
-  font-weight: 700;
-  color: #262a27; /* Cor escura para título */
-  line-height: 80%;
 }
 
 .painel-subtitle {

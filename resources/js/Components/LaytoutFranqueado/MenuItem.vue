@@ -4,9 +4,6 @@
         <component :is="isExternalLink ? 'a' : Link" v-if="!isLogout && link && isVisible" class="menu-item"
             :class="[menuItemClass, { active: isActive || isAnySubmenuActive }]" :href="linkHref"
             :target="isExternalLink ? '_blank' : null" @click="handleClick">
-            <div class="icon">
-                <img :src="icon" alt="icon" />
-            </div>
             <div class="label">{{ label }}</div>
             <div v-if="filteredSubmenuItems.length > 0" class="right-icon" :class="{ 'rotate-icon': isIconRotated }">
                 <img src="/storage/images/arrow_drop_down.svg" alt="arrow icon" />
@@ -166,6 +163,7 @@ watch(openSubmenuLink, () => {
 
 .menu-item {
     display: flex;
+    color:#568f40;
     align-items: center;
     height: 44px;
     padding-left: 14px;
@@ -188,7 +186,7 @@ watch(openSubmenuLink, () => {
 }
 
 .menu-item .label {
-    color: white;
+    color: rgb(64, 91, 46);
     font-size: 90%;
     font-family: Figtree;
     font-weight: 600;
@@ -197,17 +195,19 @@ watch(openSubmenuLink, () => {
 }
 
 .menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(77, 145, 52, 0.1);
 }
 
 .submenu {
     margin-left: 0px;
+    color:#568f40;
     padding: 5px 0;
 }
 
 .submenu-item {
     display: flex;
     align-items: center;
+    color:#568f40;
     height: 44px;
     padding-left: 14px;
     padding-right: 14px;
@@ -219,11 +219,12 @@ watch(openSubmenuLink, () => {
 }
 
 .submenu-item.active {
-    background-color: #568f4063;
+    background-color: #95ac8c63;
+    color: white;
 }
 
 .submenu-item .label {
-    color: white;
+    color: rgb(40, 92, 54);
     font-size: 15px;
     font-family: Figtree;
     font-weight: 600;
@@ -232,6 +233,6 @@ watch(openSubmenuLink, () => {
 }
 
 .submenu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(186, 202, 187, 0.273);
 }
 </style>

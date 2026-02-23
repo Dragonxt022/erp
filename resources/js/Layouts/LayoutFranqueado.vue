@@ -62,7 +62,7 @@ onUnmounted(() => {
         <Slidebar />
         <main class="content" :style="{
             left: sidebarStore.isOpen ? '252px' : '0',
-            width: sidebarStore.isOpen ? 'calc(100vw - 250px)' : '100vw',
+            width: sidebarStore.isOpen ? 'calc(100vw - 252px)' : '100vw',
         }">
             <slot />
         </main>
