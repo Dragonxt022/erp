@@ -2,7 +2,7 @@
   <div class="elemento-fixo">
     <div
       v-if="!isEditMode"
-      class="w-full h-[200px] bg-white rounded-[20px] p-12"
+      class="w-full bg-white rounded-[20px] p-8"
     >
       <div class="relative w-full h-full">
         <!-- Container das colunas -->
@@ -12,24 +12,26 @@
             <img
               :src="getProfilePhotoUrl(produto.profile_photo)"
               alt="Foto do Usuário"
-              class="w-20 h-20 rounded-md shadow-lg"
+              class="hidden w-20 h-20 rounded-md shadow-lg"
             />
           </div>
 
           <!-- Coluna do Nome -->
           <div class="w-2/3 pl-5">
-            <div
-              class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
-            >
+            <div class="text-gray-700 text-xl font-bold font-['Figtree'] tracking-tight">
               {{ produto.nome || 'N/A' }}
 
-              <div
-                class="text-[#6db631] text-[25px] font-bold font-['Figtree'] mt-3 tracking-tight"
-              >
+              <div class="text-gray-600 text-md font-medium font-['Figtree'] mt-1 tracking-tight">
                 R$ {{
                   produto.valor_total_lote
                 }}
               </div>
+            </div>
+            <div class="quantidade text-gray-600 font-semibold mt-8 bg-gray-50 px-3 py-1 rounded-lg">
+              {{ getQuantidadeTotal(produto.lotes) }}
+              <span class="text-gray-300 text-xs">
+                {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
+              </span>
             </div>
           </div>
         </div>
@@ -66,12 +68,6 @@
                   produto.unidadeDeMedida === 'unitario' ? 'v. unit' : 'v. kg'
                 }}
               </th>
-
-              <th
-                class="px-6 py-4 text-[15px] font-semibold text-gray-500 uppercase tracking-wider TrRedonDireita"
-              >
-                total
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -95,22 +91,9 @@
               <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
                 {{ lote.preco_insumo }}
               </td>
-
-              <!-- Valor Total ou Preço Unitário -->
-              <td class="px-6 py-4 text-[16px] text-gray-500 font-semibold">
-                {{ lote.valor_total }}
-              </td>
             </tr>
           </tbody>
         </table>
-      </div>
-      <div v-if="produto.id && !isEditMode" class="mt-4">
-        <ButtonEditeMedio
-          text="Editar insumos"
-          icon-path="/storage/images/border_color.svg"
-          @click="toggleEditMode"
-          class="px-4 py-2 bg-[#F8F8F8] text-white rounded-lg"
-        />
       </div>
     </div>
 
@@ -157,9 +140,19 @@ const getProfilePhotoUrl = (profilePhoto) => {
   return new URL(profilePhoto, window.location.origin).href;
 };
 
+
+
 const toggleEditMode = () => {
   isEditMode.value = !isEditMode.value;
   showCadastroProduto.value = false;
+};
+
+const getQuantidadeTotal = (lotes) => {
+  if (!Array.isArray(lotes)) {
+    console.warn('getQuantidadeTotal recebeu um valor inválido:', lotes);
+    return 0;
+  }
+  return lotes.reduce((total, lote) => total + lote.quantidade, 0);
 };
 
 const cancelEdit = () => {

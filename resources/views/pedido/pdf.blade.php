@@ -4,11 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
     <style>
         body {
-            font-family: 'Poppins', Arial, sans-serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
         }
 
@@ -111,14 +109,16 @@
 </head>
 
 <body>
-    <img src="{{ asset('storage/images/logo_tipo_verde.png')}}" alt="Taiksu" class="logo">
+    @if(!empty($logoPath) && file_exists($logoPath))
+    <img src="{{ $logoPath }}" alt="Taiksu" class="logo">
+    @endif
 
     <h2>Novo Pedido #{{ $pedido->id }}</h2>
 
     <div class="info-header">
         <p><strong>Unidade:</strong> {{ $nomeUnidade }}</p>
         <p><strong>Data:</strong> {{ $dataAtual }}</p>
-        <p><strong>Fornecedor:</strong> {{ $nomeFornecedor->razao_social }}</p>
+        <p><strong>Fornecedor:</strong> {{ $nomeFornecedor }}</p>
     </div>
 
 

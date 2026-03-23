@@ -10,44 +10,10 @@
             <h2 class="group text-md font-semibold text-green-700">Voltar para o <span class="text-green-500 font-bold">Office</span></h2>
           </a>
       </div>
-
-      <!-- Avatar e informações do usuário -->
-      <div class="navbar-right">
-        <div class="view-mobile">
-          <button @click="toggleSidebar">
-            <img
-              src="/storage/images/bx-menuv.svg"
-              alt="Menu"
-              class="w-full h-full"
-            />
-          </button>
-        </div>
-
-        <Link
-          v-if="user"
-          href="https://login.taiksu.com.br/perfil"
-          class="user-info hide-mobile"
-          :class="{ loading: !user }"
-        >
-          <a href="https://login.taiksu.com.br/perfil" class="user-info" v-if="user">
-            <img :src="profilePhoto" alt="Avatar" class="avatar" />
-            <div class="user-details">
-              <div class="user-name">{{ user.name }}</div>
-              <div class="user-location">
-                {{ unidade?.cidade || 'Taiksu Franchising' }}
-              </div>
-            </div>
-          </a>
-
-          <div class="user-info loading" v-else>
-            <div class="avatar-skeleton"></div>
-            <div class="user-details-skeleton">
-              <div class="name-skeleton"></div>
-              <div class="location-skeleton"></div>
-            </div>
-          </div>
-        </Link>
-      </div>
+      <a v-if="canAccessDre" href="https://admin.taiksu.com.br/franqueado/dre-gerencial" class="flex flex-row gap-2 px-3 py-1 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
+        <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-5 h-5 rotate-180" />
+        <h2 class="group text-md font-semibold text-green-700">DRE Gerencial</h2>
+      </a>
     </div>
   </div>
 </template>
@@ -68,6 +34,9 @@ const toggleSidebar = () => {
 
 const user = ref(null);
 const unidade = computed(() => user.value?.unidade);
+const canAccessDre = computed(() => {
+  return Boolean(user.value?.franqueado) && !Boolean(user.value?.colaborador);
+});
 
 const profilePhoto = computed(() => {
   return (

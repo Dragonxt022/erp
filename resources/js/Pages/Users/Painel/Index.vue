@@ -8,14 +8,14 @@
         </div>
         <div class="painel-subtitle">
           <p class="text-sm sm:text-base md:text-md">
-            Acompanhe o desempenho geral
+            Será descontinuado em breve...
           </p>
         </div>
       </div>
     </div>
 
     <div class="mt-5 w-full h-screen">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 gap-4">
         <!-- Primeira coluna -->
         <div class="md:row-span-1">
           <div class="bg-white rounded-lg border border-gray-200 p-5 h-full w-full">
@@ -49,14 +49,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Segunda coluna -->
-        <div class="flex flex-col items-center justify-center w-full bg-white rounded-lg p-12 border border-gray-200 group">
-          <img src="https://login.taiksu.com.br/applications/6967173ec2616.png" alt="Logo" class="w-16 h-16 mb-4 group-hover:scale-110 transition-all ease-in-out duration-300">
-          <h2 class="text-lg font-semibold text-gray-700 text-center">Estamos migrando para o visão geral</h2>
-          <p class="text-sm text-gray-500 text-center">Veja os dados da unidade no novo app.</p>
-          <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Fdashboard.taiksu.com.br%2Fcallback" class="text-sm text-white bg-green-500 px-6 shadow-xl hover:shadow-sm transition-shadow duration-400 py-1 rounded-full hover:bg-green-600 transition-all ease-in-out duration-300 mt-4 text-center">Acessar</a>
         </div>
 
         <!-- Quarta linha que ocupa 3 colunas -->

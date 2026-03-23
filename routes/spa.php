@@ -28,6 +28,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminPainelController;
 use App\Http\Middleware\CheckFranqueado;
 use App\Http\Middleware\CheckFranqueadora;
+use App\Http\Middleware\EnsureDreAccess;
 
 
 
@@ -201,6 +202,7 @@ Route::prefix('api')->middleware([
     // Rotas do histórico de vendas
     Route::prefix('historico')->group(function () {
         Route::get('lista', [HistoricoPedidoController::class, 'index'])->name('lista.historico');
+        Route::get('{id}/pdf', [HistoricoPedidoController::class, 'downloadPdf'])->name('historico.pdf');
     });
 
     //  Rotas de produtos
@@ -274,7 +276,7 @@ Route::prefix('api')->middleware([
         Route::get('/calcula-cmv-soma-caixas-mes', [PainelAnaliticos::class, 'calcularCMVESomarCaixas'])->name('calcularCMVESomarCaixas');
     });
 
-    Route::prefix('painel-dre')->group(function () {
+    Route::prefix('painel-dre')->middleware(EnsureDreAccess::class)->group(function () {
         Route::get('/analitycs-dre', [PainelAnaliticos::class, 'analitycsDRE'])->name('analitycsDRE');
         Route::get('/painel-analitycs', [PainelAnaliticos::class, 'analitycsBuscar']);
     });

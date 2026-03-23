@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckFranqueado;
+use App\Http\Middleware\EnsureDreAccess;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -103,7 +104,7 @@ Route::middleware([
     // DRE
     Route::get('/franqueado/dre-gerencial', function () {
         return Inertia::render('Users/Dre/Index');
-    })->name('franqueado.dreGerencial');
+    })->middleware(EnsureDreAccess::class)->name('franqueado.dreGerencial');
 
     Route::get('/relatorios/faturamento-anual', [\App\Http\Controllers\CaixaAnaliticoController::class, 'relatorioFaturamentoAnual']);
 

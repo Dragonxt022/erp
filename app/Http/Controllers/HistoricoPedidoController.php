@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\HistoricoPedido;
+use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -86,5 +87,23 @@ class HistoricoPedidoController extends Controller
 
         // Retornando a resposta com os dados processados
         return response()->json($pedidos);
+    }
+
+    public function downloadPdf($id)
+    {
+        $usuario = Auth::user();
+
+        $pedido = HistoricoPedido::where('id', $id)
+            ->where('unidade_id', $usuario->unidade_id)
+            ->firstOrFail();
+
+        $arquivos = glob(public_path("storage/pedidos/*_{$pedido->id}.pdf"));
+        $arquivoPdf = $arquivos[0] ?? null;
+
+        if (!$arquivoPdf || !File::exists($arquivoPdf)) {
+            abort(404, 'PDF do pedido não encontrado.');
+        }
+
+        return response()->download($arquivoPdf, basename($arquivoPdf));
     }
 }

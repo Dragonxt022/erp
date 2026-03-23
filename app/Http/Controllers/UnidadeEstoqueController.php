@@ -18,6 +18,7 @@ use Dompdf\Options;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
 class UnidadeEstoqueController extends Controller
@@ -147,15 +148,62 @@ class UnidadeEstoqueController extends Controller
         Log::info('Início do método criarPedido', ['request' => $request->all()]);
 
         try {
-            $itens = $request->itens;
-            Log::info('Itens do pedido recebidos', ['itens' => $itens]);
+            $validator = Validator::make($request->all(), [
+                'itens' => ['required', 'array', 'min:1'],
+                'itens.*.fornecedor_id' => ['required', 'integer', 'exists:fornecedores,id'],
+                'itens.*.id' => ['required'],
+                'itens.*.nome' => ['required', 'string'],
+                'itens.*.quantidade' => ['required', 'numeric', 'gt:0'],
+                'itens.*.valor_unitario' => ['required', 'numeric', 'gte:0'],
+                'itens.*.valor_total_item' => ['required', 'numeric', 'gte:0'],
+                'itens.*.unidadeDeMedida' => ['nullable', 'string'],
+                'itens.*.unidade_de_medida' => ['nullable', 'string'],
+                'valor_total_carrinho' => ['required', 'numeric', 'gte:0'],
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'error' => 'Dados do pedido inválidos.',
+                    'details' => $validator->errors(),
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+            $itens = collect($validated['itens'])
+                ->map(function ($item) {
+                    $item['unidadeDeMedida'] = $item['unidadeDeMedida']
+                        ?? $item['unidade_de_medida']
+                        ?? 'unitario';
+
+                    return $item;
+                })
+                ->values()
+                ->all();
+
+            Log::info('Itens do pedido recebidos: ' . json_encode($itens, JSON_UNESCAPED_UNICODE));
 
             $fornecedorId = $itens[0]['fornecedor_id'];
-            Log::info('ID do fornecedor extraído', ['fornecedor_id' => $fornecedorId]);
+            Log::info('ID do fornecedor extraído: ' . $fornecedorId);
+
+            $pedidoPossuiMultiplosFornecedores = collect($itens)
+                ->pluck('fornecedor_id')
+                ->map(fn ($id) => (int) $id)
+                ->unique()
+                ->count() > 1;
+
+            if ($pedidoPossuiMultiplosFornecedores) {
+                return response()->json([
+                    'error' => 'Todos os itens do pedido devem pertencer ao mesmo fornecedor.',
+                ], 422);
+            }
 
             // Buscar o fornecedor e acessar todas as colunas
             $fornecedor = Fornecedor::findOrFail($fornecedorId);
-            Log::info('Fornecedor encontrado', ['fornecedor' => $fornecedor]);
+            Log::info('Fornecedor encontrado: ' . json_encode([
+                'id' => $fornecedor->id,
+                'razao_social' => $fornecedor->razao_social,
+                'email' => $fornecedor->email,
+            ], JSON_UNESCAPED_UNICODE));
 
             // Obter a unidade do usuário autenticado
             $unidade = Auth::user()->unidade;
@@ -169,49 +217,70 @@ class UnidadeEstoqueController extends Controller
                 'quantidade' => array_sum(array_column($itens, 'quantidade')),
                 'valor_unitario' => array_column($itens, 'valor_unitario'),
                 'valor_total_item' => array_column($itens, 'valor_total_item'),
-                'valor_total_carrinho' => $request->valor_total_carrinho,
+                'valor_total_carrinho' => $validated['valor_total_carrinho'],
                 'unidade_id' => Auth::user()->unidade_id,
                 'usuario_responsavel_id' => Auth::user()->id,
                 'fornecedor_id' => $fornecedor->id,
-                'nome_primeiro_fornecedor' => $fornecedor->nome,
+                'nome_primeiro_fornecedor' => $fornecedor->razao_social,
             ]);
-            Log::info('Pedido criado com sucesso', ['pedido' => $pedido]);
+            Log::info('Pedido criado com sucesso: ' . json_encode([
+                'id' => $pedido->id,
+                'fornecedor_id' => $pedido->fornecedor_id,
+                'valor_total_carrinho' => $pedido->valor_total_carrinho,
+            ], JSON_UNESCAPED_UNICODE));
 
-            // Gerar o PDF
-            $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
-            Log::info('PDF gerado', ['fileName' => $fileName]);
+            $fileName = null;
+            $warnings = [];
+
+            try {
+                $fileName = $this->gerarPdf($pedido, $itens, $fornecedor);
+                Log::info('PDF gerado', ['fileName' => $fileName]);
+            } catch (\Throwable $e) {
+                $warnings[] = 'Nao foi possivel gerar o PDF do pedido.';
+                Log::error('Erro ao gerar PDF do pedido: ' . $e->getMessage());
+            }
 
             // Recuperar o e-mail do fornecedor
             $emailFornecedor = $fornecedor->email;
-            Log::info('E-mail do fornecedor recuperado', ['email' => $emailFornecedor]);
+            Log::info('E-mail do fornecedor recuperado: ' . ($emailFornecedor ?? 'null'));
 
             // Recuperar o e-mail do usuário autenticado (responsável)
             $emailUsuario = Auth::user()->email;
 
             // Recuperar o e-mail da franqueadora (caso tenha, ou pode ser um e-mail fixo)
-            $emailFranqueadora = 'taiksusushi@gmail.com'; // Substitua pelo e-mail da franqueadora
+            $emailFranqueadora = 'taiksusushi@gmail.com';
 
-            // Enviar o e-mail para o fornecedor com o PDF, incluindo o nome da unidade e a data do pedido
+            Log::info('Destinatários do pedido: ' . json_encode([
+                'to' => $emailFornecedor,
+                'cc' => [$emailUsuario, $emailFranqueadora],
+                'pdf' => $fileName,
+            ], JSON_UNESCAPED_UNICODE));
+
             if ($emailFornecedor) {
-                Mail::to($emailFornecedor)
-                    ->cc([$emailUsuario, $emailFranqueadora]) // Adiciona o usuário e a franqueadora em cópia
-                    ->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name, $nomeUnidade, $dataPedido));
+                try {
+                    Mail::to($emailFornecedor)
+                        ->cc([$emailUsuario, $emailFranqueadora])
+                        ->send(new NovoPedidoMail($pedido, $fileName, Auth::user()->name, $nomeUnidade, $dataPedido));
 
-                Log::info('E-mail enviado para o fornecedor, com cópia para o usuário e franqueadora', [
-                    'email' => $emailFornecedor,
-                    'cc' => [$emailUsuario, $emailFranqueadora],
-                ]);
+                    Log::info('E-mail enviado para o fornecedor: ' . json_encode([
+                        'to' => $emailFornecedor,
+                        'cc' => [$emailUsuario, $emailFranqueadora],
+                    ], JSON_UNESCAPED_UNICODE));
+                } catch (\Throwable $e) {
+                    $warnings[] = 'O pedido foi salvo, mas o e-mail nao foi enviado.';
+                    Log::error('Erro ao enviar e-mail do pedido: ' . $e->getMessage());
+                }
+            } elseif (!$emailFornecedor) {
+                $warnings[] = 'O pedido foi salvo, mas o fornecedor nao possui e-mail cadastrado.';
             }
 
             return response()->json([
                 'pedido' => $pedido,
                 'pdf' => $fileName,
+                'warnings' => $warnings,
             ], 201);
         } catch (\Exception $e) {
-            Log::error('Erro ao criar pedido', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            Log::error('Erro ao criar pedido: ' . $e->getMessage());
 
             return response()->json([
                 'error' => 'Ocorreu um erro ao criar o pedido. Verifique os logs para mais detalhes.',
@@ -224,15 +293,17 @@ class UnidadeEstoqueController extends Controller
     {
         // Preparando os dados dos produtos para o PDF diretamente da request
         $produtosParaPdf = array_map(function ($item) {
+            $unidadeDeMedida = $item['unidadeDeMedida'] ?? $item['unidade_de_medida'] ?? 'unitario';
+
             return [
                 'nome' => $item['nome'],
                 // Formata a quantidade de acordo com a unidade de medida:
-                'quantidade' => $item['unidadeDeMedida'] === 'a_granel'
+                'quantidade' => $unidadeDeMedida === 'a_granel'
                     ? number_format($item['quantidade'], 3, ',', '.')
                     : number_format($item['quantidade'], 0, ',', '.'),
                 'valor_unitario' => number_format($item['valor_unitario'], 2, ',', '.'), // Convertendo para reais
                 'valor_total_item' => number_format($item['valor_total_item'], 2, ',', '.'), // Convertendo para reais
-                'unidade_de_medida' => $item['unidadeDeMedida'] === 'a_granel' ? 'KG' : 'UN', // Definindo a unidade de medida
+                'unidade_de_medida' => $unidadeDeMedida === 'a_granel' ? 'KG' : 'UN', // Definindo a unidade de medida
             ];
         }, $itens);
 
@@ -240,7 +311,8 @@ class UnidadeEstoqueController extends Controller
         $unidade = Auth::user()->unidade; // Acessando o relacionamento
         $nomeUsuario = Auth::user()->name ?? 'Não informado';
         $nomeUnidade = $unidade->cidade ?? 'Unidade Desconhecida'; // Usando 'cidade' para o nome da unidade
-        $nomeFornecedor = $fornecedor ?? 'não informado';
+        $nomeFornecedor = $fornecedor->razao_social ?? 'Nao informado';
+        $logoPath = public_path('storage/images/logo_tipo_verde.png');
 
         // Data do dia em formato brasileiro
         $dataAtual = now()->format('d/m/Y');
@@ -249,23 +321,25 @@ class UnidadeEstoqueController extends Controller
         $pdfOptions = new Options();
         $pdfOptions->set('isHtml5ParserEnabled', true);
         $pdfOptions->set('isPhpEnabled', true);
+        $pdfOptions->set('isRemoteEnabled', false);
 
         $dompdf = new Dompdf($pdfOptions);
 
         // Gerando o HTML do PDF
-        $html = view('pedido.pdf', compact('produtosParaPdf', 'pedido', 'nomeUnidade', 'dataAtual', 'nomeFornecedor', 'nomeUsuario'))->render();
+        $html = view('pedido.pdf', compact('produtosParaPdf', 'pedido', 'nomeUnidade', 'dataAtual', 'nomeFornecedor', 'nomeUsuario', 'logoPath'))->render();
         $dompdf->loadHtml($html);
         $dompdf->render();
 
         // Gerar o nome do arquivo
-        $fileName = "pedido_{$nomeUnidade}_{$pedido->id}.pdf";
+        $nomeUnidadeSlug = preg_replace('/[^A-Za-z0-9_-]+/', '_', $nomeUnidade);
+        $fileName = "pedido_{$nomeUnidadeSlug}_{$pedido->id}.pdf";
 
-        // Caminho completo para o diretório public
+        // Usa o diretório publico que ja armazena os PDFs existentes
         $path = public_path('storage/pedidos');
 
         // Verificar se o diretório existe, caso contrário, criar
         if (!file_exists($path)) {
-            mkdir($path, 0777, true);
+            mkdir($path, 0755, true);
         }
 
         // Salvar o PDF no diretório public

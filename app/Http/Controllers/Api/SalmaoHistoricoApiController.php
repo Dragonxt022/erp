@@ -7,9 +7,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Services\SalmaoHistoricoService;
+use App\Services\SsoService;
 
 class SalmaoHistoricoApiController extends Controller
 {
+    protected $ssoService;
+
+    public function __construct(SsoService $ssoService)
+    {
+        $this->ssoService = $ssoService;
+    }
     /**
      * Store a newly created resource in storage via External API.
      *
@@ -27,6 +34,11 @@ class SalmaoHistoricoApiController extends Controller
                 'message' => 'Usuário não autenticado.',
                 'error' => 'Falha na autenticação via SSO.'
             ], 401);
+        }
+
+        // 1.5 Garante que o responsável existe localmente (Sincronização on-demand)
+        if ($request->has('responsavel_id')) {
+            $this->ssoService->ensureUserExists($request->responsavel_id);
         }
 
         // 2. Validação dos Dados Recebidos

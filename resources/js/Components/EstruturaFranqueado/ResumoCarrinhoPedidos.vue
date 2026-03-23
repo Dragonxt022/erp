@@ -30,17 +30,6 @@
           {{ nomePrimeiroFornecedor || 'Fornecedor desconhecido' }}.
         </span>
       </div>
-      <div
-        class="mt-[20%] text-[#ff2d55] text-[15px] font-normal font-['Figtree'] leading-[18px] tracking-tight"
-      >
-        <p>
-          * valor atualizado semanalmente,
-          <br />
-          podendo sofrer alterações, confirme
-          <br />
-          com o fornecedor no ato do envio do pedido.
-        </p>
-      </div>
     </div>
 
     <!-- Coluna da direita -->

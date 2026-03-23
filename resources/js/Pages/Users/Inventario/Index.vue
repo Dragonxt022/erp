@@ -2,8 +2,8 @@
   <LayoutFranqueado>
     <!-- Cabeçalho da página -->
     <Head title="Insumos" />
-    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-md">
-      <img src="/storage/images/banner-xl.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Festoque.taiksu.com.br%2Fcallback" target="_blank" class="w-full rounded-md">
+      <img src="https://dashboard.taiksu.com.br/images/banner-beta.png" alt="Banner Estoque" class="w-full rotate-180 mb-5 h-auto rounded-xl transition-all duration-300" />
     </a>
     <!-- Container de novos produtos -->
     <div v-if="showCadastroProduto" class="mt-6">
@@ -128,16 +128,4 @@ const ProdutoSelecionado = (produto) => {
   overflow: hidden; /* Barra de rolagem oculta */
 }
 
-/* Container interno com rolagem */
-.card-container {
-  height: 100%; /* Garante altura completa dentro do wrapper */
-  overflow-y: scroll; /* Habilita rolagem vertical */
-  scrollbar-width: none; /* Oculta barra no Firefox */
-  -ms-overflow-style: none; /* Oculta barra no IE e Edge */
-}
-
-/* Ocultar barra de rolagem no Chrome, Safari e Edge moderno */
-.card-container::-webkit-scrollbar {
-  display: none;
-}
 </style>

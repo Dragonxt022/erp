@@ -2,7 +2,7 @@
   <div>
 
     <!-- Campo de pesquisa -->
-    <div class="search-container relative flex items-center w-full mb-4">
+    <div class="hidden search-container relative flex items-center w-full mb-4">
       <!-- Ícone de pesquisa -->
       <div class="absolute left-3">
         <img
@@ -59,7 +59,7 @@
                 <!-- Nome do produto e estrela -->
                 <div class="city">
                   {{ produto.nome }}
-                  <span v-if="produto.estrela" class="estrela">★</span>
+                  <span v-if="produto.estrela" class="estrela hidden">★</span>
                 </div>
               </div>
               <div class="action-icon"></div>
@@ -227,14 +227,6 @@ onMounted(fetchProdutos);
 .text-container {
   margin-left: 14px;
   flex-grow: 1;
-}
-
-.city {
-  font-size: 17px;
-  font-family: Figtree;
-  font-weight: 600;
-  line-height: 22px;
-  color: #262a27;
 }
 
 .owner {

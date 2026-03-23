@@ -156,4 +156,85 @@ class SsoService
 
         return $user;
     }
+
+    /**
+     * Garante que o usuário existe localmente. Se não existir, tenta sincronizar com o SSO.
+     *
+     * @param int $userId
+     * @param string|null $token
+     * @return User
+     */
+    public function ensureUserExists(int $userId, ?string $token = null): User
+    {
+        $user = User::find($userId);
+
+        if ($user) {
+            return $user;
+        }
+
+        // Se não existir, tenta buscar no SSO
+        $userData = $this->fetchUserById($userId, $token);
+
+        if ($userData) {
+            $unidadeId = $userData['unidade']['id'] ?? $userData['unidade_id'] ?? null;
+            return $this->syncUser($userData, $unidadeId);
+        }
+
+        // Fallback: Cria um usuário "stub" para não quebrar FKs se o SSO não retornar nada
+        Log::warning("Usuário SSO #{$userId} não encontrado ou sem permissão de acesso. Criando stub local.", [
+            'user_id' => $userId
+        ]);
+
+        $user = new User();
+        $user->id = $userId;
+        $user->name = "Usuário SSO #{$userId}";
+        $user->email = "sso-stub-{$userId}@taiksu.com.br";
+        $user->password = bcrypt(Str::random(16));
+        $user->colaborador = 1; // Default seguro
+        $user->franqueado = 0;
+        $user->franqueadora = 0;
+        $user->status = 'ativo';
+        $user->save();
+
+        return $user;
+    }
+
+    /**
+     * Busca dados de um usuário específico no SSO por ID.
+     *
+     * @param int $userId
+     * @param string|null $token
+     * @return array|null
+     */
+    public function fetchUserById(int $userId, ?string $token = null): ?array
+    {
+        try {
+            $token = $token ?? session('rh_token') ?? request()->bearerToken();
+
+            if (!$token) {
+                return null;
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+            ])->timeout(5)->get("https://login.taiksu.com.br/api/user/find/{$userId}");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning("Falha ao buscar usuário por ID no SSO", [
+                'user_id' => $userId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Erro de conexão com SSO para buscar usuário #{$userId}", [
+                'exception' => $e->getMessage()
+            ]);
+        }
+
+        return null;
+    }
 }

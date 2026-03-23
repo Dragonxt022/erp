@@ -28,33 +28,19 @@
       </div>
     </div>
 
-    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-xl">
-      <img src="/storage/images/banner-estoque.png" alt="Banner Estoque" class="w-full h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
+    <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Festoque.taiksu.com.br%2Fcallback" target="_blank" class="w-full rounded-xl">
+      <img src="https://dashboard.taiksu.com.br/images/banner-beta.png" alt="Banner Estoque" class="rotate-180 w-full h-auto rounded-xl transition-all duration-300" />
     </a>
 
     <div class="mt-5">
       <!-- Ajuste do grid para ser responsivo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <!-- Coluna -->
-        <div class="bg-white rounded-lg p-8 border border-gray-200 shadow-md">
-          <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
-            Valor inicial
-          </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
-            R$ {{ saldoEstoqueInicial }}
-          </div>
-        </div>
-
+      <div class="grid grid-cols-1 gap-6">
         <!-- Coluna -->
         <div class="bg-white rounded-lg p-8 border border-gray-200 shadow-md">
           <h3 class="text-lg sm:text-xl md:text-lg font-semibold text-gray-500">
             Estoque atual
           </h3>
-          <div
-            class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide"
-          >
+          <div class="text-[#262a27] text-[40px] sm:text-[30px] md:text-[40px] font-bold font-['Figtree'] leading-[48px] tracking-wide">
             R$ {{ saldoEstoqueFinal }}
           </div>
         </div>
@@ -87,7 +73,7 @@
       <div class="bg-white rounded-lg shadow">
         <!-- Cabeçalho da lista -->
         <div
-          class="bg-[#164110] grid grid-cols-7 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
+          class="bg-[#164110] grid grid-cols-6 gap-4 py-4 px-6 text-xs font-semibold text-[#FFFFFF] uppercase tracking-wider rounded-tl-2xl rounded-tr-2xl"
         >
           <span
             @click="sortBy('operacao')"
@@ -105,20 +91,13 @@
           </span>
           <span
             @click="sortBy('item')"
-            class="cursor-pointer flex items-center gap-2"
+            class="w-full cursor-pointer flex items-center gap-2"
           >
             Item
             <img
               src="/storage/images/sync_alt.svg"
               class="w-[19px] h-[19px] cursor-pointer"
             />
-          </span>
-          <span
-            @click="sortBy('preco_unitario')"
-            class="cursor-pointer flex items-center gap-2"
-          >
-            Valor Unit.
-            <img src="/storage/images/sync_alt.svg" class="w-[19px] h-[19px]" />
           </span>
           <span
             @click="sortBy('valor_total')"
@@ -146,7 +125,7 @@
         <!-- Filtros (apenas exibidos se ativados) -->
         <div
           v-if="showFilters"
-          class="grid grid-cols-7 gap-4 py-2 px-6 bg-gray-50"
+          class="grid grid-cols-6 gap-4 py-2 px-6 bg-gray-50"
         >
           <input
             v-model="filters.operacao"
@@ -164,12 +143,6 @@
             v-model="filters.item"
             type="text"
             placeholder="Filtrar por item"
-            class="p-2 border border-gray-300 rounded"
-          />
-          <input
-            v-model="filters.preco_unitario"
-            type="text"
-            placeholder="Filtrar por valor unit."
             class="p-2 border border-gray-300 rounded"
           />
           <input
@@ -201,14 +174,9 @@
             <li
               v-for="(movimentacao, index) in filteredHistoricoMovimentacoes"
               :key="index"
-              class="hover:bg-gray-200 grid grid-cols-7 gap-1 px-6 py-2 text-[16px]"
+              class="hover:bg-gray-200 grid grid-cols-6 gap-1 px-6 py-2 text-[16px]"
             >
               <span class="flex items-center text-gray-900 font-semibold">
-                <img
-                  :src="statusMap[movimentacao.operacao].icon"
-                  alt="icon indicativo"
-                  class="mr-3 w-5 h-5"
-                />
                 {{ statusMap[movimentacao.operacao].label }}
               </span>
 
@@ -216,11 +184,8 @@
                 {{ movimentacao.quantidade }}
                 {{ movimentacao.unidade === 'unidade' ? 'uni' : 'kg' }}
               </span>
-              <span class="text-gray-900 font-medium">
+              <span class="text-gray-900 font-medium w-full">
                 {{ movimentacao.item }}
-              </span>
-              <span class="text-gray-900 font-semibold">
-                R$ {{ formatCurrency(movimentacao.preco_unitario) }}
               </span>
               <span class="text-gray-900 font-semibold">
                 R$ {{ formatCurrency(movimentacao.valor_total) }}

@@ -3,13 +3,15 @@
     <!-- Tabela de Lotes -->
     <div v-if="!isEditMode">
       <div class="mt-8">
-        <div
-          class="flex justify-between w-full h-[24.32px] text-[#262a27] text-[42px] font-semibold font-['Figtree'] leading-[12px]"
-        >
-          <p># {{ dados.id }}</p>
-          <p
-            class="text-[#6d6d6d] text-[15px] font-medium font-['Figtree'] leading-[20px]"
-          ></p>
+        <div class="flex justify-end mb-4">
+          <a
+            :href="`/api/historico/${dados.id}/pdf`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center rounded-lg bg-[#164110] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Baixar PDF
+          </a>
         </div>
 
         <div
@@ -33,11 +35,7 @@
               >
                 Item
               </th>
-              <th
-                class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                QTD.
-              </th>
+
               <th
                 class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
@@ -58,20 +56,20 @@
             >
               <!-- Nome do Item -->
               <td
-                class="px-6 py-4 text-[16px] text-left text-gray-900 font-semibold"
+                class="px-6 py-2 text-[16px] text-left text-gray-900 font-semibold"
               >
                 {{ item.nome }}
               </td>
 
               <!-- Quantidade -->
-              <td
-                class="px-6 py-4 text-[16px] text-gray-900 font-semibold text-center"
+              <!--td
+                class="px-6 py-2 text-[16px] hidden text-gray-900 font-semibold text-center"
               >
                 <span>
                   {{ formatQuantidade(item.quantidade, item.unidadeDeMedida) }}
                   {{ item.unidadeDeMedida === 'a_granel' ? 'KG' : 'UN' }}
                 </span>
-              </td>
+              </td-->
 
               <!-- Valor Unitário ou Valor por Quilo -->
               <td

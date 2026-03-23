@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isEditMode" class="elemento-fixo">
+  <div v-if="!isEditMode" class="">
     <div>
       <h3 class="text-xl font-bold mb-4 text-gray-500">
         Enviar pedido para o fornecedor
@@ -225,8 +225,10 @@ const adicionarAoCarrinho = () => {
   }
 
   // Verifique se o fornecedor selecionado tem um preço associado
+  const fornecedorSelecionadoId = Number(fornecedorSelecionado.value);
+
   const fornecedorPreco = produtoData.value.precos.find(
-    (preco) => preco.fornecedor_id === fornecedorSelecionado.value
+    (preco) => Number(preco.fornecedor_id) === fornecedorSelecionadoId
   );
 
   // Caso não encontre um preço do fornecedor, exibe uma mensagem de erro
@@ -254,7 +256,7 @@ const adicionarAoCarrinho = () => {
 
   // Busca o nome do fornecedor no array de fornecedores
   const fornecedor = fornecedores.value.find(
-    (f) => f.id === fornecedorSelecionado.value
+    (f) => Number(f.id) === fornecedorSelecionadoId
   );
 
   // Preço do fornecedor
@@ -265,7 +267,7 @@ const adicionarAoCarrinho = () => {
     id: produtoData.value.id,
     nome: produtoData.value.nome,
     unidadeDeMedida: produtoData.value.unidadeDeMedida,
-    fornecedorId: fornecedorSelecionado.value,
+    fornecedorId: fornecedorSelecionadoId,
     nomeFornecedor: fornecedor
       ? fornecedor.razao_social
       : 'Fornecedor desconhecido',

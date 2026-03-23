@@ -41,10 +41,7 @@
               </div>
               <div class="text-container flex justify-between items-center">
                 <div class="city">{{ produto.nome }}</div>
-                <div class="quantidade text-gray-600 font-semibold">
-                  {{ getQuantidadeTotal(produto.lotes) }}
-                  {{ produto.unidadeDeMedida === 'unitario' ? 'uni' : 'kg' }}
-                </div>
+                <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Ícone de seta" class="w-5 h-5" />
               </div>
               <div class="action-icon"></div>
             </div>
@@ -238,14 +235,6 @@ onMounted(() => {
 .text-container {
   margin-left: 14px;
   flex-grow: 1;
-}
-
-.city {
-  font-size: 17px;
-  font-family: Figtree;
-  font-weight: 600;
-  line-height: 22px;
-  color: #262a27;
 }
 
 .owner {

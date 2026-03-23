@@ -13,10 +13,17 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\InforUnidade;
 use App\Services\EmailApiService;
+use App\Services\SsoService;
 use Illuminate\Support\Facades\View;
 
 class ContaAPagarApiController extends Controller
 {
+    protected $ssoService;
+
+    public function __construct(SsoService $ssoService)
+    {
+        $this->ssoService = $ssoService;
+    }
     /**
      * Cria uma nova conta a pagar via API externa.
      *
@@ -46,6 +53,11 @@ class ContaAPagarApiController extends Controller
             'name' => $user->name,
             'email' => $user->email,
         ];
+
+        // 1.5 Garante que o responsável existe localmente se enviado (Sincronização on-demand)
+        if ($request->has('responsavel_id')) {
+            $this->ssoService->ensureUserExists($request->responsavel_id);
+        }
 
         // 2. Validação dos Dados Recebidos
         $validator = Validator::make($request->all(), [

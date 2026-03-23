@@ -30,7 +30,7 @@ class NovoPedidoMail extends Mailable
     {
         $subject = 'Pedido #' . $this->pedido->id . ' - Taiksu | ' . $this->nomeUnidade . ' | ' . $this->dataPedido;
 
-        return $this->view('emails.novo-pedido')
+        $mail = $this->view('emails.novo-pedido')
             ->with([
                 'pedido' => $this->pedido,
                 'fileName' => $this->fileName,
@@ -38,7 +38,16 @@ class NovoPedidoMail extends Mailable
                 'nomeUnidade' => $this->nomeUnidade,
                 'dataPedido' => $this->dataPedido,
             ])
-            ->subject($subject)  // Alteração no assunto do e-mail
-            ->attach(public_path("storage/pedidos/{$this->fileName}"));
+            ->subject($subject);
+
+        if ($this->fileName) {
+            $pdfPath = public_path("storage/pedidos/{$this->fileName}");
+
+            if (file_exists($pdfPath)) {
+                $mail->attach($pdfPath);
+            }
+        }
+
+        return $mail;
     }
 }

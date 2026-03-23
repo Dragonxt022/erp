@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\ListaProduto;
 use App\Models\PrecoFornecedore;
 use Illuminate\Http\Request;
@@ -15,13 +14,14 @@ class ListaProdutoController extends Controller
     public function index()
     {
         // Recupera todos os produtos com suas categorias e preços
-        $produtos = ListaProduto::with([
-            'categoriaProduto:id,nome', // Relacionamento com CategoriaProduto
-            'precos' => function ($query) {
-                $query->select('id', 'lista_produto_id', 'fornecedor_id', 'preco_unitario', 'qtd_minima')
-                    ->with(['fornecedor:id,razao_social']); // Relacionamento com Fornecedor
-            }
-        ])
+        $produtos = ListaProduto::whereNotIn('id', [0])
+            ->with([
+                'categoriaProduto:id,nome', // Relacionamento com CategoriaProduto
+                'precos' => function ($query) {
+                    $query->select('id', 'lista_produto_id', 'fornecedor_id', 'preco_unitario', 'qtd_minima')
+                        ->with(['fornecedor:id,razao_social']);
+                }
+            ])
             ->orderBy('categoria_id') // Ordenar por categoria
             ->orderBy('prioridade', 'desc') // Colocar os produtos prioritários no topo
             ->orderBy('nome') // Ordenar alfabeticamente por nome
@@ -53,7 +53,7 @@ class ListaProdutoController extends Controller
                             return [
                                 'preco_id' => $preco->id,
                                 'fornecedor_id' => $preco->fornecedor_id,
-                                'fornecedor' => $preco->fornecedor->razao_social, // Nome do fornecedor
+                                'fornecedor' => optional($preco->fornecedor)->razao_social ?? 'Fornecedor não encontrado', // Nome do fornecedor
                                 'preco_unitario' => $preco->preco_unitario,
                                 'qtd_minima' => $qtd_minima, // Quantidade mínima convertida se for unitário
                             ];
@@ -114,6 +114,14 @@ class ListaProdutoController extends Controller
             $profilePhotoPath = 'storage/images/' . $fileName;
         }
 
+        // Converte a string JSON de precos se necessário (comum em FormData com arquivos)
+        if ($request->has('precos') && is_string($request->precos)) {
+            $decodedPrecos = json_decode($request->precos, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['precos' => $decodedPrecos]);
+            }
+        }
+
         // Criar o produto
         $produto = ListaProduto::create([
             'nome' => $request->nome,
@@ -124,44 +132,41 @@ class ListaProdutoController extends Controller
         ]);
 
         // Processar os preços
-        foreach ($request->precos as $fornecedorId => $preco) {
-            // Remover o símbolo R$ e substituir vírgulas por pontos
-            $preco = preg_replace('/[^\d.,]/', '', $preco);
-            $preco = str_replace(',', '.', $preco);
-            $precoDecimal = (float) $preco;
+        if ($request->has('precos') && is_array($request->precos)) {
+            // Suporta dois formatos: {id => preco} ou {fornecedores => [{fornecedor_id, preco_unitario}]}
+            $precosData = isset($request->precos['fornecedores']) ? $request->precos['fornecedores'] : $request->precos;
 
-            // Tratando a quantidade mínima do fornecedor
-            $qtdMinima = isset($request->quantidades[$fornecedorId]) ? $request->quantidades[$fornecedorId] : null;
-
-            if ($qtdMinima !== null) {
-                $qtdMinima = str_replace(',', '.', $qtdMinima);
-                $qtdMinima = number_format((float) $qtdMinima, 3, '.', '');
-            }
-
-            // Buscar registro existente no banco de dados
-            $precoExistente = PrecoFornecedore::where('lista_produto_id', $produto->id)
-                ->where('fornecedor_id', $fornecedorId)
-                ->first();
-
-            if ($precoDecimal > 0 && !is_nan($precoDecimal)) {
-                // Se existir, atualizar, senão criar um novo
-                if ($precoExistente) {
-                    $precoExistente->update([
-                        'preco_unitario' => $precoDecimal,
-                        'qtd_minima' => $qtdMinima,
-                    ]);
+            foreach ($precosData as $key => $value) {
+                // Determina fornecedorId e preco dependendo do formato
+                if (is_array($value)) {
+                    $fornecedorId = isset($value['fornecedor_id']) ? $value['fornecedor_id'] : null;
+                    $precoRaw = isset($value['preco_unitario']) ? $value['preco_unitario'] : 0;
+                    $qtdMinimaRaw = isset($value['qtd_minima']) ? $value['qtd_minima'] : (isset($request->quantidades[$fornecedorId]) ? $request->quantidades[$fornecedorId] : null);
                 } else {
-                    PrecoFornecedore::create([
-                        'lista_produto_id' => $produto->id,
-                        'fornecedor_id' => $fornecedorId,
-                        'preco_unitario' => $precoDecimal,
-                        'qtd_minima' => $qtdMinima,
-                    ]);
+                    $fornecedorId = $key;
+                    $precoRaw = $value;
+                    $qtdMinimaRaw = isset($request->quantidades[$fornecedorId]) ? $request->quantidades[$fornecedorId] : null;
                 }
-            } else {
-                // Se o preço for inválido e já existir no banco, excluir o registro
-                if ($precoExistente) {
-                    $precoExistente->delete();
+
+                if (!$fornecedorId) continue;
+
+                // Remover o símbolo R$ e substituir vírgulas por pontos
+                $precoStr = preg_replace('/[^\d.,]/', '', (string)$precoRaw);
+                $precoStr = str_replace(',', '.', $precoStr);
+                $precoDecimal = (float) $precoStr;
+
+                // Tratando a quantidade mínima do fornecedor
+                $qtdMinima = $qtdMinimaRaw;
+                if ($qtdMinima !== null) {
+                    $qtdMinima = str_replace(',', '.', (string)$qtdMinima);
+                    $qtdMinima = number_format((float) $qtdMinima, 3, '.', '');
+                }
+
+                if ($precoDecimal > 0) {
+                    PrecoFornecedore::updateOrCreate(
+                        ['lista_produto_id' => $produto->id, 'fornecedor_id' => $fornecedorId],
+                        ['preco_unitario' => $precoDecimal, 'qtd_minima' => $qtdMinima]
+                    );
                 }
             }
         }
@@ -175,14 +180,14 @@ class ListaProdutoController extends Controller
     // Função de atualização
     public function update(Request $request)
     {
-        // Cnverte a json de precos
+        // Converte o JSON de preços se vier como string
         if ($request->has('precos') && is_string($request->precos)) {
             $decodedPrecos = json_decode($request->precos, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return response()->json(['error' => 'Formato de precos inválido'], 422);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $request->merge(['precos' => $decodedPrecos]);
+            } else {
+                return response()->json(['error' => 'Formato de preços inválido'], 422);
             }
-            // Mescla o array decodificado na request
-            $request->merge(['precos' => $decodedPrecos]);
         }
 
         // Validação dos dados
