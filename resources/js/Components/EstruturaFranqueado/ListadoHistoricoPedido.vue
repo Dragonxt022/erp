@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Campo de pesquisa -->
-    <div class="search-container relative flex items-center w-full mb-4">
+    <div class="hidden search-container relative flex items-center w-full mb-4">
       <!-- Ícone de pesquisa -->
       <div class="absolute left-3">
         <img

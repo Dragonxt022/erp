@@ -28,10 +28,6 @@
       </div>
     </div>
 
-    <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Festoque.taiksu.com.br%2Fcallback" target="_blank" class="w-full rounded-xl">
-      <img src="https://dashboard.taiksu.com.br/images/banner-beta.png" alt="Banner Estoque" class="rotate-180 w-full h-auto rounded-xl transition-all duration-300" />
-    </a>
-
     <div class="mt-5">
       <!-- Ajuste do grid para ser responsivo -->
       <div class="grid grid-cols-1 gap-6">

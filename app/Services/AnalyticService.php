@@ -850,8 +850,8 @@ class AnalyticService
      */
     private function calculateCategoryGroups(array $context): array
     {
-        $categoriasRemovidas = ['Fornecedores'];
-        $categoriasIgnoradasNaSoma = ['Fornecedores'];
+        $categoriasRemovidas = ['Fornecedores', 'Depósito', 'INSS'];
+        $categoriasIgnoradasNaSoma = ['Fornecedores', 'Depósito', 'INSS'];
 
         try {
             $grupos = Cache::remember('category_groups_with_categories', self::CACHE_TTL_STATIC_DATA, function () {

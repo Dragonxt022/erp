@@ -1,9 +1,6 @@
 <template>
   <div v-if="!isEditMode" class="">
     <div>
-      <h3 class="text-xl font-bold mb-4 text-gray-500">
-        Enviar pedido para o fornecedor
-      </h3>
       <div class="mb-6 relative">
         <div class="relative">
           <select
@@ -27,13 +24,6 @@
     <div class="w-full h-[150px] bg-white rounded-[20px] p-12">
       <div class="relative w-full h-full">
         <div class="flex items-center">
-          <div class="w-1/1 flex justify-center">
-            <img
-              :src="getProfilePhotoUrl(produto.profile_photo)"
-              alt="Foto do Produto"
-              class="w-20 h-20 rounded-md shadow-lg"
-            />
-          </div>
           <div class="w-2/3 pl-5">
             <div
               class="text-[#262a27] text-[28px] font-bold font-['Figtree'] leading-[30px] tracking-tight"
@@ -46,10 +36,6 @@
     </div>
     <!-- Tabela de Preços -->
     <div v-if="!isEditMode" class="mt-8">
-      <LabelModel
-        text="valor por fornecedor"
-        class="tracking-wider uppercase"
-      />
       <table class="min-w-full table-auto">
         <thead>
           <tr>

@@ -86,7 +86,6 @@ class SsoService
             case 'Desenvolvedor':
                 $franqueado   = 1;
                 $franqueadora = 1;
-                $colaborador  = 1;
                 break;
             case 'Franqueado':
                 $franqueado = 1;

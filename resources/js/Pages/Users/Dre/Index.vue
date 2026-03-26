@@ -2,10 +2,6 @@
     <LayoutFranqueado>
 
         <Head title="Painel" />
-    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-md">
-      <img src="/storage/images/finoo.png" alt="Banner Estoque" class="w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
-    </a>
-
         <div class="flex justify-end mb-4">
             <div class="text-[#262a27] text-[15px] font-semibold font-['Figtree'] leading-tight">
                 <div class="flex items-center space-x-2 justify-end">
