@@ -542,14 +542,17 @@ class PainelAnaliticos extends Controller
         // VALIDAÇÃO IMPORTANTE: evitar divisão por zero
         if ($baseParaPorcentagem <= 0) {
             return [
-                'labels' => ['CMV', 'Custos Fixos', 'Impostos', 'Outras Despesas', 'Resultado do Período'],
-                'data' => [0, 0, 0, 0, 0],
-                'porcentagens' => ['0,00%', '0,00%', '0,00%', '0,00%', '0,00%']
+                'labels' => ['CMV', 'Custos Fixos', 'Impostos', 'Custos Variáveis', 'Custos Operacionais', 'Resultado do Período'],
+                'data' => [0, 0, 0, 0, 0, 0],
+                'porcentagens' => ['0,00%', '0,00%', '0,00%', '0,00%', '0,00%', '0,00%']
             ];
         }
 
         // 1. CMV (Custo das Mercadorias Vendidas)
-        $cmv = $dreData['cmv'];
+        $grupoCmv = $dreData['dados_grupos']->firstWhere('nome_grupo', 'CMV');
+        $cmv = ($grupoCmv && isset($grupoCmv['categorias']))
+            ? $grupoCmv['categorias']->sum('valor')
+            : $dreData['cmv'];
         $valoresParaGrafico['CMV'] = $cmv;
         $porcentagensParaGrafico['CMV'] = ($cmv / $baseParaPorcentagem) * 100;
 
@@ -571,20 +574,25 @@ class PainelAnaliticos extends Controller
         $valoresParaGrafico['Impostos'] = $totalImpostosGrafico;
         $porcentagensParaGrafico['Impostos'] = ($totalImpostosGrafico / $baseParaPorcentagem) * 100;
 
-        // 4. Outras Despesas
-        // Calcula o que sobra após CMV, Custos Fixos e Impostos
-        $outrasDespesasGrafico = $dreData['total_despesas_categorias']
-                            - $cmv
-                            - $totalCustosFixosGrafico
-                            - $totalImpostosGrafico;
+        // 4. Custos Variáveis
+        $grupoCustosVariaveis = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Custos Variáveis');
+        $totalCustosVariaveisGrafico = ($grupoCustosVariaveis && isset($grupoCustosVariaveis['categorias']))
+            ? $grupoCustosVariaveis['categorias']->sum('valor')
+            : 0;
 
-        // Garante que não seja negativo
-        $outrasDespesasGrafico = max(0, $outrasDespesasGrafico);
+        $valoresParaGrafico['Custos Variáveis'] = $totalCustosVariaveisGrafico;
+        $porcentagensParaGrafico['Custos Variáveis'] = ($totalCustosVariaveisGrafico / $baseParaPorcentagem) * 100;
 
-        $valoresParaGrafico['Outras Despesas'] = $outrasDespesasGrafico;
-        $porcentagensParaGrafico['Outras Despesas'] = ($outrasDespesasGrafico / $baseParaPorcentagem) * 100;
+        // 5. Custos Operacionais
+        $grupoCustosOperacionais = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Custos Operacionais');
+        $totalCustosOperacionaisGrafico = ($grupoCustosOperacionais && isset($grupoCustosOperacionais['categorias']))
+            ? $grupoCustosOperacionais['categorias']->sum('valor')
+            : 0;
 
-        // 5. Resultado do Período (Lucro/Prejuízo)
+        $valoresParaGrafico['Custos Operacionais'] = $totalCustosOperacionaisGrafico;
+        $porcentagensParaGrafico['Custos Operacionais'] = ($totalCustosOperacionaisGrafico / $baseParaPorcentagem) * 100;
+
+        // 6. Resultado do Período (Lucro/Prejuízo)
         // IMPORTANTE: O resultado continua sendo calculado com base no total_caixas (auditado ou não)
         // mas a PORCENTAGEM é calculada com base no faturamento não auditado
         $resultadoPeriodo = $dreData['total_caixas'] - $dreData['total_despesas_categorias'];
@@ -615,16 +623,17 @@ class PainelAnaliticos extends Controller
         $baseParaPorcentagem = $dreData['faturamento_nao_auditado'] ?? $dreData['total_caixas'];
 
         $totalCaixasFormatado = number_format($baseParaPorcentagem, 2, ',', '.');
-        $cmvFormatado = number_format($dreData['cmv'], 2, ',', '.');
+        $cmvFormatado = number_format($graficoData['data'][0], 2, ',', '.');
 
         // We need to access the raw values again or store them.
         // Since $graficoData['data'] has raw values, we can use them by index.
-        // Order: CMV, Custos Fixos, Impostos, Outras Despesas, Resultado
+        // Order: CMV, Custos Fixos, Impostos, Custos Variáveis, Custos Operacionais, Resultado
 
         $custosFixosFormatado = number_format($graficoData['data'][1], 2, ',', '.');
         $impostosFormatado = number_format($graficoData['data'][2], 2, ',', '.');
-        $outrasDespesasFormatado = number_format($graficoData['data'][3], 2, ',', '.');
-        $resultadoPeriodoFormatado = number_format($graficoData['data'][4], 2, ',', '.');
+        $custosVariaveisFormatado = number_format($graficoData['data'][3], 2, ',', '.');
+        $custosOperacionaisFormatado = number_format($graficoData['data'][4], 2, ',', '.');
+        $resultadoPeriodoFormatado = number_format($graficoData['data'][5], 2, ',', '.');
 
         $porcentagens = $graficoData['porcentagens'];
 
@@ -635,9 +644,10 @@ class PainelAnaliticos extends Controller
         - O Custo das Mercadorias Vendidas (CMV) foi de R$ {$cmvFormatado} ({$porcentagens[0]}), que é o custo direto dos produtos vendidos.
         - Os Custos Fixos somaram R$ {$custosFixosFormatado} ({$porcentagens[1]}), que são despesas recorrentes como aluguel e salários.
         - Os Impostos pagos totalizaram R$ {$impostosFormatado} ({$porcentagens[2]}).
-        - Outras despesas diversas foram de R$ {$outrasDespesasFormatado} ({$porcentagens[3]}), incluindo despesas administrativas e operacionais.
+        - Os Custos Variáveis totalizaram R$ {$custosVariaveisFormatado} ({$porcentagens[3]}), incluindo despesas que acompanham a operação e o volume vendido.
+        - Os Custos Operacionais somaram R$ {$custosOperacionaisFormatado} ({$porcentagens[4]}), reunindo os gastos operacionais exibidos na tabela.
 
-        Após deduzir todas essas despesas, o resultado líquido foi de R$ {$resultadoPeriodoFormatado} ({$porcentagens[4]}), indicando o lucro ou prejuízo no período.
+        Após deduzir todas essas despesas, o resultado líquido foi de R$ {$resultadoPeriodoFormatado} ({$porcentagens[5]}), indicando o lucro ou prejuízo no período.
 
         Esta análise ajuda a entender onde estão concentrados os principais custos e como eles impactam a rentabilidade do seu negócio.
         EOT;

@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'event_broker' => [
+        'url' => env('EVENT_BROKER_URL'),
+        'service_token' => env('EVENT_BROKER_SERVICE_TOKEN'),
+    ],
+
 ];
