@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ListaProduto extends Model
 {
     protected $fillable = [
+        'insumo_id',
         'nome',
         'profile_photo',
         'categoria',
@@ -14,6 +15,11 @@ class ListaProduto extends Model
         'prioridade',
         'unidadeDeMedida',
     ];
+
+    public function brokerInsumoId(): string
+    {
+        return (string) ($this->insumo_id ?: $this->id);
+    }
 
     // Relacionamento pertence a CategoriaProduto
     public function categoriaProduto()

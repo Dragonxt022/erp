@@ -4,11 +4,27 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\EventoProcessado;
+use App\Services\EventBrokerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class EventoProcessadoApiController extends Controller
 {
+    public function __construct(
+        protected EventBrokerService $eventBrokerService
+    ) {
+    }
+
+    public function heartbeat()
+    {
+        return $this->eventBrokerService->heartbeat();
+    }
+
+    public function check(Request $request)
+    {
+        return $this->eventBrokerService->checkIncomingEvent($request);
+    }
+
     public function store(Request $request)
     {
         if ($response = $this->validateServiceToken($request)) {

@@ -24,8 +24,15 @@ Route::middleware(['auth.sso'])->group(function () {
 });
 
 Route::prefix('broker')->group(function () {
+    Route::get('heartbeat', [EventoProcessadoApiController::class, 'heartbeat']);
+    Route::post('eventos-processados/check', [EventoProcessadoApiController::class, 'check']);
     Route::post('eventos-processados', [EventoProcessadoApiController::class, 'store']);
     Route::get('eventos-processados/{deliveryId}', [EventoProcessadoApiController::class, 'show']);
     Route::put('eventos-processados/processando', [EventoProcessadoApiController::class, 'marcarProcessando']);
     Route::put('eventos-processados/confirmar', [EventoProcessadoApiController::class, 'confirmar']);
+});
+
+Route::prefix('delivery')->group(function () {
+    Route::put('processando', [EventoProcessadoApiController::class, 'marcarProcessando']);
+    Route::put('ok', [EventoProcessadoApiController::class, 'confirmar']);
 });

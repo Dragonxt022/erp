@@ -6,9 +6,11 @@ use App\Mail\NovoPedidoMail;
 use App\Models\ControleSaldoEstoque;
 use App\Models\Fornecedor;
 use App\Models\HistoricoPedido;
+use App\Models\ListaProduto;
 use App\Models\MovimentacoesEstoque;
 use App\Models\UnidadeEstoque;
 use App\Services\AnalyticService;
+use App\Services\EventBrokerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,10 +31,15 @@ class UnidadeEstoqueController extends Controller
      *
      */
     protected $analyticService;
+    protected $eventBrokerService;
 
-    public function __construct(AnalyticService $analyticService)
+    public function __construct(
+        AnalyticService $analyticService,
+        EventBrokerService $eventBrokerService
+    )
     {
         $this->analyticService = $analyticService;
+        $this->eventBrokerService = $eventBrokerService;
     } // Fim
 
     public function consumirEstoque(Request $request)
@@ -52,8 +59,13 @@ class UnidadeEstoqueController extends Controller
         DB::beginTransaction();
 
         try {
+            $produtosEvento = [];
+            $unidadeId = (string) $usuario->unidade_id;
+
             foreach ($validatedData['itens'] as $item) {
                 $quantidadeRestante = floatval($item['quantidade']);
+                $produto = ListaProduto::find($item['id']);
+
                 $estoques = DB::table('unidade_estoque')
                     ->where('insumo_id', $item['id'])
                     ->where('unidade_id', Auth::user()->unidade_id)
@@ -99,6 +111,15 @@ class UnidadeEstoqueController extends Controller
                         'unidade_id' => Auth::user()->unidade_id,
                     ]);
 
+                    $produtosEvento[] = [
+                        'insumo_id' => $produto?->brokerInsumoId() ?? (string) $item['id'],
+                        'nome' => $produto?->nome ?? null,
+                        'quantidade' => number_format((float) $quantidadeConsumir, 3, '.', ''),
+                        'preco_insumo' => $this->formatarPrecoEvento((float) $estoque->preco_insumo),
+                        'unidade' => $this->normalizarUnidadeEvento($estoque->unidade),
+                        'fornecedor_id' => $estoque->fornecedor_id !== null ? (string) $estoque->fornecedor_id : null,
+                    ];
+
                     $quantidadeRestante -= $quantidadeConsumir;
                 }
 
@@ -125,6 +146,19 @@ class UnidadeEstoqueController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $payloadEvento = [
+                'unidade_id' => $unidadeId,
+                'produtos' => $produtosEvento,
+            ];
+
+            DB::afterCommit(function () use ($payloadEvento, $usuario) {
+                $this->eventBrokerService->publishEventSafely(
+                    102,
+                    $payloadEvento,
+                    $usuario?->id
+                );
+            });
 
             DB::commit();
 
@@ -660,9 +694,13 @@ class UnidadeEstoqueController extends Controller
         DB::beginTransaction();
 
         try {
+            $produtosEvento = [];
+            $unidadeId = (string) Auth::user()->unidade_id;
+
             foreach ($validatedData['itens'] as $item) {
                 $quantidade = floatval($item['quantidade']);
                 $unidadeMedida = $item['unidadeDeMedida'] === 'a_granel' ? 'kg' : 'unidade';
+                $produto = ListaProduto::find($item['id']);
 
                 // Calcular o preço por unidade corretamente
                 $precoPorUnidade = ($unidadeMedida === 'kg' && $quantidade > 0)
@@ -695,6 +733,17 @@ class UnidadeEstoqueController extends Controller
                     'unidade' => $unidadeMedida,
                     'unidade_id' => Auth::user()->unidade_id,
                 ]);
+
+                $produtosEvento[] = [
+                    'insumo_id' => $produto?->brokerInsumoId() ?? (string) $item['id'],
+                    'nome' => $produto?->nome ?? null,
+                    'quantidade' => number_format((float) $quantidade, 3, '.', ''),
+                    'preco_insumo' => $this->formatarPrecoEvento((float) $precoPorUnidade),
+                    'unidade' => $this->normalizarUnidadeEvento($unidadeMedida),
+                    'fornecedor_id' => isset($validatedData['fornecedor_id']) && $validatedData['fornecedor_id'] !== null
+                        ? (string) $validatedData['fornecedor_id']
+                        : null,
+                ];
             }
 
             $unidade_id = Auth::user()->unidade_id;
@@ -716,6 +765,20 @@ class UnidadeEstoqueController extends Controller
                 'updated_at' => now(),
             ]);
 
+            $usuario = Auth::user();
+            $payloadEvento = [
+                'unidade_id' => $unidadeId,
+                'produtos' => $produtosEvento,
+            ];
+
+            DB::afterCommit(function () use ($payloadEvento, $usuario) {
+                $this->eventBrokerService->publishEventSafely(
+                    101,
+                    $payloadEvento,
+                    $usuario?->id
+                );
+            });
+
             DB::commit();
 
             return response()->json(['message' => 'Itens armazenados com sucesso!'], 201);
@@ -724,6 +787,16 @@ class UnidadeEstoqueController extends Controller
             Log::error('Erro ao armazenar entrada: ' . $e->getMessage());
             return response()->json(['error' => 'Erro ao armazenar itens. Tente novamente mais tarde.'], 500);
         }
+    }
+
+    private function normalizarUnidadeEvento(?string $unidade): string
+    {
+        return in_array($unidade, ['kg', 'quilo', 'a_granel'], true) ? 'KG' : 'UN';
+    }
+
+    private function formatarPrecoEvento(float $preco): string
+    {
+        return number_format($preco, 2, '.', '');
     }
 
     public function update(Request $request, $loteId)

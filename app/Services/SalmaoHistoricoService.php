@@ -11,6 +11,11 @@ use Exception;
 
 class SalmaoHistoricoService
 {
+    public function __construct(
+        protected EventBrokerService $eventBrokerService
+    ) {
+    }
+
     /**
      * Registra o histórico de salmão e atualiza estoques.
      *
@@ -102,6 +107,24 @@ class SalmaoHistoricoService
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            DB::afterCommit(function () use ($salmaoLimpo, $data, $user) {
+                $this->eventBrokerService->publishEventSafely(
+                    101,
+                    [
+                        'unidade_id' => (string) $user->unidade_id,
+                        'produtos' => [[
+                            'insumo_id' => $salmaoLimpo->brokerInsumoId(),
+                            'nome' => $salmaoLimpo->nome,
+                            'quantidade' => number_format((float) $data['peso_limpo'], 3, '.', ''),
+                            'preco_insumo' => number_format((float) $precoPorQuilo, 2, '.', ''),
+                            'unidade' => 'KG',
+                            'fornecedor_id' => (string) $data['fornecedor_id'],
+                        ]],
+                    ],
+                    $user->id
+                );
+            });
 
             // Confirmar transação
             DB::commit();

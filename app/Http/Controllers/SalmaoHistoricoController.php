@@ -17,6 +17,11 @@ use App\Services\SalmaoHistoricoService;
 
 class SalmaoHistoricoController extends Controller
 {
+    public function __construct(
+        protected SalmaoHistoricoService $salmaoHistoricoService
+    ) {
+    }
+
     /**
      *
      * Pagina de Analytics de limpeza de residuos
@@ -194,8 +199,7 @@ class SalmaoHistoricoController extends Controller
         ]);
 
         try {
-            $service = new SalmaoHistoricoService();
-            $result = $service->registrarHistorico($validated, $user);
+            $result = $this->salmaoHistoricoService->registrarHistorico($validated, $user);
 
             return response()->json([
                 'message' => 'Registro salvo e estoque atualizado com sucesso!',
