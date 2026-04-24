@@ -35,7 +35,7 @@ class EventBrokerService
         }
     }
 
-    public function publishEvent(string|int $eventId, array $payload, string|int|null $userId = null, ?string $priority = 'medium'): array
+    public function publishEvent(string|int $eventId, array $payload, string|int|null $userId = null, ?string $priority = 'urgent'): array
     {
         $url = config('services.event_broker.url');
         $priority = $this->normalizePriority($priority);
@@ -89,7 +89,7 @@ class EventBrokerService
         ];
     }
 
-    public function publishEventSafely(string|int $eventId, array $payload, string|int|null $userId = null, ?string $priority = 'medium'): array
+    public function publishEventSafely(string|int $eventId, array $payload, string|int|null $userId = null, ?string $priority = 'urgent'): array
     {
         try {
             return $this->publishEvent($eventId, $payload, $userId, $priority);
@@ -242,7 +242,7 @@ class EventBrokerService
 
     protected function normalizePriority(?string $priority): string
     {
-        $priority = strtolower(trim((string) ($priority ?: 'medium')));
+        $priority = strtolower(trim((string) ($priority ?: 'urgent')));
         $allowed = ['low', 'medium', 'high', 'urgent'];
 
         if (! in_array($priority, $allowed, true)) {

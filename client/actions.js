@@ -5,6 +5,7 @@ const confirmaProcesso = require('./confirmaProcesso');
 const eventHandlers = {
     '101': (req, res) => estoqueController.receiveEntradaItemEstoqueEvent(req, res),
     '102': (req, res) => estoqueController.receiveSaidaItemEstoqueEvent(req, res),
+    // Aqui entra o evento 1: salmao limpo
 };
 
 async function actions(req, res) {

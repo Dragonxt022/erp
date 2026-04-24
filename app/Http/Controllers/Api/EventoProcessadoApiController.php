@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\BrokerActions;
 use App\Http\Controllers\Controller;
 use App\Models\EventoProcessado;
 use App\Services\EventBrokerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class EventoProcessadoApiController extends Controller
 {
     public function __construct(
-        protected EventBrokerService $eventBrokerService
+        protected EventBrokerService $eventBrokerService,
+        protected BrokerActions $brokerActions
     ) {
     }
 
@@ -31,7 +34,12 @@ class EventoProcessadoApiController extends Controller
             return $response;
         }
 
-        $validator = Validator::make($request->all(), [
+        $metadata = [
+            'delivery_id' => (string) ($request->input('delivery_id') ?: $request->header('delivery-id')),
+            'event_type' => (string) ($request->input('event_type') ?: $request->header('event-type')),
+        ];
+
+        $validator = Validator::make($metadata, [
             'delivery_id' => 'required|uuid',
             'event_type' => 'required|string|max:100',
         ]);
@@ -45,12 +53,67 @@ class EventoProcessadoApiController extends Controller
         }
 
         $evento = EventoProcessado::firstOrCreate(
-            ['delivery_id' => $request->delivery_id],
+            ['delivery_id' => $metadata['delivery_id']],
             [
-                'event_type' => $request->event_type,
+                'event_type' => $metadata['event_type'],
                 'status' => false,
             ]
         );
+
+        if ($evento->status === true) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Evento já havia sido processado anteriormente.',
+                'data' => $evento,
+            ]);
+        }
+
+        $payload = $this->extractPayload($request);
+
+        if ($payload !== []) {
+            $evento->update([
+                'event_type' => $metadata['event_type'],
+                'processando_em' => now(),
+            ]);
+
+            try {
+                $processed = $this->brokerActions->dispatch(
+                    $metadata['event_type'],
+                    $payload,
+                    $metadata['delivery_id']
+                );
+
+                $evento->update([
+                    'status' => true,
+                    'processado_em' => now(),
+                ]);
+
+                $this->eventBrokerService->confirmProcessoSafely($metadata['delivery_id']);
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Evento recebido e processado com sucesso.',
+                    'data' => [
+                        'evento' => $evento->fresh(),
+                        'processed' => $processed,
+                    ],
+                ], $evento->wasRecentlyCreated ? 201 : 200);
+            } catch (\Throwable $exception) {
+                Log::error('Falha ao processar evento recebido do broker.', [
+                    'delivery_id' => $metadata['delivery_id'],
+                    'event_type' => $metadata['event_type'],
+                    'payload' => $payload,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Evento recebido, mas falhou no processamento.',
+                    'error' => $exception->getMessage(),
+                    'data' => $evento->fresh(),
+                ], 500);
+            }
+        }
 
         return response()->json([
             'status' => 'success',
@@ -175,5 +238,23 @@ class EventoProcessadoApiController extends Controller
         }
 
         return null;
+    }
+
+    protected function extractPayload(Request $request): array
+    {
+        $payload = $request->input('payload');
+
+        if (is_array($payload)) {
+            return $payload;
+        }
+
+        $event = $request->input('event');
+        if (is_array($event) && is_array($event['payload'] ?? null)) {
+            return $event['payload'];
+        }
+
+        $body = $request->except(['delivery_id', 'event_type']);
+
+        return array_filter($body, static fn ($value) => $value !== null);
     }
 }

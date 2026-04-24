@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\EventoProcessadoApiController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\PainelAnaliticos;
 use App\Http\Controllers\UserController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +45,16 @@ Route::get('/get-token', function () {
 // Rotas do sistema de retirada de estoque!
 Route::get('/login-estoque', [AuthController::class, 'paginaLoginEstoque'])->name('login.pagina.estoque');
 Route::post('/login-estoque', [AuthController::class, 'loginComPin'])->name('login.estoque');
+
+// Compatibilidade com consumidores Node do ecossistema Taiksu.
+Route::prefix('events')
+    ->withoutMiddleware([ValidateCsrfToken::class])
+    ->group(function () {
+        Route::get('/heartbeat', [EventoProcessadoApiController::class, 'heartbeat']);
+        Route::post('/', [EventoProcessadoApiController::class, 'store']);
+        Route::post('/receive', [EventoProcessadoApiController::class, 'store']);
+        Route::post('/check', [EventoProcessadoApiController::class, 'check']);
+    });
 
 
 // Carregar rotas do painel administrativo

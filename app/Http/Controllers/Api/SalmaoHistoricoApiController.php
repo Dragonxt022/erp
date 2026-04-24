@@ -13,8 +13,10 @@ class SalmaoHistoricoApiController extends Controller
 {
     protected $ssoService;
 
-    public function __construct(SsoService $ssoService)
-    {
+    public function __construct(
+        SsoService $ssoService,
+        protected SalmaoHistoricoService $salmaoHistoricoService
+    ) {
         $this->ssoService = $ssoService;
     }
     /**
@@ -63,8 +65,7 @@ class SalmaoHistoricoApiController extends Controller
 
         // 3. Processamento via Service
         try {
-            $service = new SalmaoHistoricoService();
-            $result = $service->registrarHistorico($validator->validated(), $user);
+            $result = $this->salmaoHistoricoService->registrarHistorico($validator->validated(), $user);
 
             return response()->json([
                 'status' => 'success',

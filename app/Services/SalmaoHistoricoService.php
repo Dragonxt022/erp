@@ -26,6 +26,9 @@ class SalmaoHistoricoService
      */
     public function registrarHistorico(array $data, $user)
     {
+        $unidadeId = $data['unidade_id'] ?? $user->unidade_id;
+        $shouldPublishBrokerEvent = $data['publish_broker_event'] ?? true;
+
         // Iniciar transação
         DB::beginTransaction();
 
@@ -39,7 +42,7 @@ class SalmaoHistoricoService
                 'peso_limpo' => $data['peso_limpo'],
                 'aproveitamento' => $data['aproveitamento'],
                 'desperdicio' => $data['desperdicio'],
-                'unidade_id' => $user->unidade_id,
+                'unidade_id' => $unidadeId,
             ]);
 
             // 2. Buscar "Salmão Limpo" na ListaProduto
@@ -64,7 +67,7 @@ class SalmaoHistoricoService
                 'insumo_id' => $salmaoLimpo->id,
                 'fornecedor_id' => $data['fornecedor_id'],
                 'usuario_id' => $user->id,
-                'unidade_id' => $user->unidade_id,
+                'unidade_id' => $unidadeId,
                 'quantidade' => $data['peso_limpo'],
                 'preco_insumo' => $precoPorQuilo,
                 'categoria_id' => $salmaoLimpo->categoria_id,
@@ -83,13 +86,13 @@ class SalmaoHistoricoService
                 'preco_insumo' => $precoPorQuilo,
                 'operacao' => 'Entrada',
                 'unidade' => 'kg',
-                'unidade_id' => $user->unidade_id,
+                'unidade_id' => $unidadeId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             // Dados principais do painel
-            $estoque = UnidadeEstoque::where('unidade_id', $user->unidade_id)->where('quantidade', '>', 0)->get();
+            $estoque = UnidadeEstoque::where('unidade_id', $unidadeId)->where('quantidade', '>', 0)->get();
             $valorInsumos = $estoque->reduce(function ($total, $item) {
                 $preco = $item->preco_insumo;
                 $quantidade = $item->quantidade;
@@ -102,29 +105,31 @@ class SalmaoHistoricoService
                 'ajuste_saldo' => $saldoAtual,
                 'data_ajuste' => now(),
                 'motivo_ajuste' => 'Atualização após entrada',
-                'unidade_id' => $user->unidade_id,
+                'unidade_id' => $unidadeId,
                 'responsavel_id' => $data['responsavel_id'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            DB::afterCommit(function () use ($salmaoLimpo, $data, $user) {
-                $this->eventBrokerService->publishEventSafely(
-                    101,
-                    [
-                        'unidade_id' => (string) $user->unidade_id,
-                        'produtos' => [[
-                            'insumo_id' => $salmaoLimpo->brokerInsumoId(),
-                            'nome' => $salmaoLimpo->nome,
-                            'quantidade' => number_format((float) $data['peso_limpo'], 3, '.', ''),
-                            'preco_insumo' => number_format((float) $precoPorQuilo, 2, '.', ''),
-                            'unidade' => 'KG',
-                            'fornecedor_id' => (string) $data['fornecedor_id'],
-                        ]],
-                    ],
-                    $user->id
-                );
-            });
+            if ($shouldPublishBrokerEvent) {
+                DB::afterCommit(function () use ($salmaoLimpo, $data, $user, $precoPorQuilo, $unidadeId) {
+                    $this->eventBrokerService->publishEventSafely(
+                        101,
+                        [
+                            'unidade_id' => (string) $unidadeId,
+                            'produtos' => [[
+                                'insumo_id' => $salmaoLimpo->brokerInsumoId(),
+                                'nome' => $salmaoLimpo->nome,
+                                'quantidade' => number_format((float) $data['peso_limpo'], 3, '.', ''),
+                                'preco_insumo' => number_format((float) $precoPorQuilo, 2, '.', ''),
+                                'unidade' => 'KG',
+                                'fornecedor_id' => (string) $data['fornecedor_id'],
+                            ]],
+                        ],
+                        $user->id
+                    );
+                });
+            }
 
             // Confirmar transação
             DB::commit();

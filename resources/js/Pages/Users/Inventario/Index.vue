@@ -1,10 +1,9 @@
 <template>
   <LayoutFranqueado>
+
+<div id="conteiner-legado">
     <!-- Cabeçalho da página -->
     <Head title="Insumos" />
-    <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Festoque.taiksu.com.br%2Fcallback" target="_blank" class="w-full rounded-md">
-      <img src="https://dashboard.taiksu.com.br/images/banner-beta.png" alt="Banner Estoque" class="w-full rotate-180 mb-5 h-auto rounded-xl transition-all duration-300" />
-    </a>
     <!-- Container de novos produtos -->
     <div v-if="showCadastroProduto" class="mt-6">
       <CadastroProduto
@@ -50,6 +49,7 @@
         </template>
       </div>
     </div>
+</div>
   </LayoutFranqueado>
 </template>
 

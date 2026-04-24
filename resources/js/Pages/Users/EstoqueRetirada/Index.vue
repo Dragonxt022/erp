@@ -1,10 +1,17 @@
 <template>
   <LayoutFranqueadoEstoque>
-    <!-- Cabeçalho da página -->
-
-    <a href="https://forms.gle/8nkNhrqCG5UHXLAQ9" target="_blank" class="w-full rounded-xl ">
-      <img src="/storage/images/banner-xl.png" alt="Banner Estoque" class="hidden w-full mb-5 h-auto rounded-xl shadow-xl hover:shadow-none transition-all duration-300" />
-    </a>
+    <div class="w-full px-32 py-16">
+      <div class="mx-auto flex flex-col items-center justify-center w-full bg-white rounded-lg px-12 py-24 border border-gray-200 group">
+          <img src="https://login.taiksu.com.br/applications/69d956794e888.png" alt="Logo" class="w-16 h-16 mb-4 p-2 rounded-lg border border-gray-200 bg-white shadow-xl">
+          <h2 class="text-2xl font-semibold text-gray-700 text-center">O estoque está mudando</h2>
+          <p class="text-lg text-gray-500 text-center">Acesse a nova tela de retiradas</p>
+          <div class="flex flex-col items-center justify-center gap-2 mt-2">
+            <a href="https://login.taiksu.com.br/?redirect_uri=https%3A%2F%2Festoque.taiksu.com.br%2Fcallback%2Fsaida" class="text-md text-white bg-green-500 px-16 shadow-xl hover:shadow-sm transition-shadow duration-400 py-2 rounded-full hover:bg-green-600 transition-all ease-in-out duration-300 mt-4 text-center">Acessar saída</a>
+          </div>
+      </div>
+    </div>
+<div id="conteiner-legado" class="hidden">
+      <!-- Cabeçalho da página -->
     
     <Head title="Controle de Estoque" />
     <div v-if="isLoading" class="loading-overlay">
@@ -226,6 +233,7 @@
         </tbody>
       </table>
     </div>
+</div>
   </LayoutFranqueadoEstoque>
 </template>
 
