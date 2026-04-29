@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Services\PainelAnaliticosService;
 
@@ -325,6 +326,9 @@ class PainelAnaliticos extends Controller
             null
         );
 
+        // Busca o CMV da API externa — sem cálculo, valores prontos
+        $cmvApi = $this->fetchCmvFromApi($unidadeId, $startDateCarbon, $endDateCarbon);
+
         $calendario = $this->generateCalendarData($startDateCarbon->year, $unidadeId);
         $dadosGruposFormatados = $this->formatGroupData($dreData);
         $graficoData = $this->calculateChartData($dreData);
@@ -343,6 +347,12 @@ class PainelAnaliticos extends Controller
             'calendario' => $calendario,
             'grafico_data' => $graficoData,
             'explicacao_dre' => $explicacao,
+            'cmv' => $cmvApi ? [
+                'valor'         => $cmvApi['saidas_estoque'],
+                'porcentagem'   => $cmvApi['porcentagem_cmv'],
+                'limiar_maximo' => $cmvApi['limiar_maximo'],
+                'alerta'        => $cmvApi['alerta'],
+            ] : null,
         ]);
     }
 
@@ -470,48 +480,129 @@ class PainelAnaliticos extends Controller
     private function generateCalendarData(int $year, int $unidadeId): array
     {
         $meses = [
-            1 => 'Janeiro',
-            2 => 'Fevereiro',
-            3 => 'Março',
-            4 => 'Abril',
-            5 => 'Maio',
-            6 => 'Junho',
-            7 => 'Julho',
-            8 => 'Agosto',
-            9 => 'Setembro',
-            10 => 'Outubro',
-            11 => 'Novembro',
-            12 => 'Dezembro'
+            1 => 'Janeiro',   2 => 'Fevereiro', 3 => 'Março',
+            4 => 'Abril',     5 => 'Maio',       6 => 'Junho',
+            7 => 'Julho',     8 => 'Agosto',     9 => 'Setembro',
+            10 => 'Outubro',  11 => 'Novembro',  12 => 'Dezembro',
         ];
 
-        return collect(range(1, 12))->map(function ($month) use ($year, $unidadeId, $meses) {
+        // Busca o CMV dos 12 meses em paralelo via nova API externa
+        $cmvPorMes = $this->fetchCmvMesesParalelo($year, $unidadeId);
+
+        return collect(range(1, 12))->map(function ($month) use ($year, $unidadeId, $meses, $cmvPorMes) {
             $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
-            $endOfMonth = Carbon::create($year, $month, $startOfMonth->daysInMonth)->endOfDay();
+            $endOfMonth   = Carbon::create($year, $month, $startOfMonth->daysInMonth)->endOfDay();
 
             $monthData = $this->analyticService->calculatePeriodData($unidadeId, $startOfMonth, $endOfMonth, true, $month, $year);
 
-            $totalCaixasMes = $monthData['total_caixas'];
-            $totalDespesasMes = $monthData['total_despesas_categorias'];
-            $cmvMes = $monthData['cmv'];
-            $resultadoDoPeriodoMes = $totalCaixasMes - $totalDespesasMes;
+            $totalCaixasMes     = $monthData['total_caixas'];
+            $totalDespesasMes   = $monthData['total_despesas_categorias'];
+            $resultadoDoPeriodo = $totalCaixasMes - $totalDespesasMes;
+
+            // CMV direto da API (já formatado), sem cálculo
+            $valorCmv = isset($cmvPorMes[$month])
+                ? $cmvPorMes[$month]['saidas_estoque']
+                : 'R$ ' . number_format($monthData['cmv'], 2, ',', '.');
+
+            $porcentagemCmv = isset($cmvPorMes[$month])
+                ? $cmvPorMes[$month]['porcentagem_cmv']
+                : null;
 
             if ($startOfMonth->greaterThan(Carbon::today()->endOfDay()) && $totalCaixasMes == 0) {
-                $totalDespesasMes = 0;
-                $resultadoDoPeriodoMes = 0;
-                $cmvMes = 0;
+                $totalDespesasMes   = 0;
+                $resultadoDoPeriodo = 0;
+                $valorCmv           = 'R$ 0,00';
+                $porcentagemCmv     = null;
             }
 
             return [
-                'nome_mes' => $meses[$month],
-                'data_inicio_mes' => $startOfMonth->format('Y-m-d H:i:s'),
-                'data_final_mes' => $endOfMonth->format('Y-m-d H:i:s'),
-                'total_caixas' => number_format($totalCaixasMes, 2, ',', '.'),
-                'total_despesas' => number_format($totalDespesasMes, 2, ',', '.'),
-                'resultado_do_periodo' => number_format($resultadoDoPeriodoMes, 2, ',', '.'),
-                'valor_cmv' => number_format($cmvMes, 2, ',', '.'),
+                'nome_mes'             => $meses[$month],
+                'data_inicio_mes'      => $startOfMonth->format('Y-m-d H:i:s'),
+                'data_final_mes'       => $endOfMonth->format('Y-m-d H:i:s'),
+                'total_caixas'         => number_format($totalCaixasMes, 2, ',', '.'),
+                'total_despesas'       => number_format($totalDespesasMes, 2, ',', '.'),
+                'resultado_do_periodo' => number_format($resultadoDoPeriodo, 2, ',', '.'),
+                'valor_cmv'            => $valorCmv,
+                'porcentagem_cmv'      => $porcentagemCmv,
             ];
         })->toArray();
     }
+
+    private function fetchCmvMesesParalelo(int $year, int $unidadeId): array
+    {
+        $baseUrl = env('API_CMV_NOVO_URL');
+
+        if (!$baseUrl) {
+            return [];
+        }
+
+        $mesesDatas = collect(range(1, 12))->map(function ($month) use ($year) {
+            $start = Carbon::create($year, $month, 1)->startOfDay();
+            return [
+                'month' => $month,
+                'inicio' => $start->format('Y-m-d'),
+                'final'  => $start->copy()->endOfMonth()->format('Y-m-d'),
+            ];
+        });
+
+        try {
+            $responses = Http::pool(function ($pool) use ($baseUrl, $unidadeId, $mesesDatas) {
+                return $mesesDatas->map(fn($m) => $pool->timeout(10)->get($baseUrl, [
+                    'unidade' => $unidadeId,
+                    'inicio'  => $m['inicio'],
+                    'final'   => $m['final'],
+                ]))->toArray();
+            });
+        } catch (\Throwable $e) {
+            Log::error('Erro ao buscar CMV em paralelo', ['exception' => $e->getMessage()]);
+            return [];
+        }
+
+        $resultado = [];
+        foreach ($responses as $index => $response) {
+            $month = $mesesDatas[$index]['month'];
+            if ($response instanceof \Illuminate\Http\Client\Response
+                && $response->successful()
+                && $response->status() !== 400
+            ) {
+                $resultado[$month] = $response->json();
+            }
+        }
+
+        return $resultado;
+    }
+
+    private function fetchCmvFromApi(int $unidadeId, Carbon $inicio, Carbon $final): ?array
+    {
+        $baseUrl = env('API_CMV_NOVO_URL');
+
+        if (!$baseUrl) {
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get($baseUrl, [
+                'unidade' => $unidadeId,
+                'inicio'  => $inicio->format('Y-m-d'),
+                'final'   => $final->format('Y-m-d'),
+            ]);
+
+            if ($response->status() === 400) {
+                return null;
+            }
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Falha ao buscar CMV da API para unidade #{$unidadeId}", [
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
 
     private function formatGroupData(array $dreData): array
     {

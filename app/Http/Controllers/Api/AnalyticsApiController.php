@@ -3,86 +3,86 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\InforUnidade;
 use App\Models\SalmaoHistorico;
-use App\Services\AnalyticService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AnalyticsApiController extends Controller
 {
-    public function cmv(Request $request, AnalyticService $service)
+    public function cmv(Request $request)
     {
         $unidadeId = $request->query('unidade');
 
         if ($unidadeId && (int) $unidadeId > 0) {
-            // Datas em formato ISO obrigatório
             try {
                 $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
-                $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
-            } catch (\Exception $e) {
+                $final  = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
+            } catch (\Exception) {
                 return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
             }
 
-            $data = $this->processUnitData($service, (int) $unidadeId, $inicio, $final);
+            $data = $this->processUnitData((int) $unidadeId, $inicio, $final);
+
             return response()->json([
-                'valor_cmv' => $data['cmv'],
-                'porcentagem_cmv' => $data['porcentagem_cmv'],
+                'valor_cmv'            => $data['cmv'],
+                'porcentagem_cmv'      => $data['porcentagem_cmv'],
+                'limiar_maximo'        => $data['limiar_maximo'],
+                'alerta'               => $data['alerta'],
+                'saidas_estoque'       => $data['saidas_estoque'],
                 'aproveitamento_salmao' => $data['aproveitamento_salmao'],
             ]);
         }
 
-        // Se não passou unidade, redireciona para a lógica global
-        return $this->cmvGlobal($request, $service);
+        return $this->cmvGlobal($request);
     }
 
-
-    public function cmvGlobal(Request $request, AnalyticService $service)
+    public function cmvGlobal(Request $request)
     {
         try {
             $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
-            $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
-        } catch (\Exception $e) {
+            $final  = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
+        } catch (\Exception) {
             return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
         }
 
-        $units = \App\Models\InforUnidade::all();
+        $units    = InforUnidade::all();
         $detalhes = [];
         $globalCmv = 0;
-
-        // Novas variáveis para a média da calculadora
-        $somaDasPorcentagens = 0;
+        $somaDasPorcentagens   = 0;
         $totalUnidadesComDados = 0;
 
         foreach ($units as $unit) {
-            $data = $this->processUnitData($service, $unit->id, $inicio, $final);
+            $data = $this->processUnitData($unit->id, $inicio, $final);
 
             if ($data['cmv'] <= 0) {
                 continue;
             }
 
             $detalhes[] = [
-                'unidade_id' => $unit->id,
-                'nome_unidade' => $unit->cidade,
-                'valor_cmv' => $data['cmv'],
+                'unidade_id'      => $unit->id,
+                'nome_unidade'    => $unit->cidade,
+                'valor_cmv'       => $data['cmv'],
                 'porcentagem_cmv' => $data['porcentagem_cmv'],
+                'limiar_maximo'   => $data['limiar_maximo'],
+                'alerta'          => $data['alerta'],
             ];
 
-            $globalCmv += $data['cmv'];
-
-            // Acumula as porcentagens para tirar a média simples depois
-            $somaDasPorcentagens += $data['porcentagem_cmv'];
+            $globalCmv             += $data['cmv'];
+            $somaDasPorcentagens   += $data['porcentagem_cmv'];
             $totalUnidadesComDados++;
         }
 
-        // Lógica da Calculadora: Média das porcentagens individuais
         $porcentagemCmvGlobal = $totalUnidadesComDados > 0
             ? round($somaDasPorcentagens / $totalUnidadesComDados, 2)
             : 0;
 
         return response()->json([
-            'valor_cmv_global' => round($globalCmv, 2),
-            'porcentagem_cmv_global' => $porcentagemCmvGlobal, // Agora vai bater com a calculadora
-            'unidades' => $detalhes,
+            'valor_cmv_global'       => round($globalCmv, 2),
+            'porcentagem_cmv_global' => $porcentagemCmvGlobal,
+            'unidades'               => $detalhes,
         ]);
     }
 
@@ -92,8 +92,8 @@ class AnalyticsApiController extends Controller
 
         try {
             $inicio = Carbon::createFromFormat('Y-m-d', $request->query('inicio'))->startOfDay();
-            $final = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
-        } catch (\Exception $e) {
+            $final  = Carbon::createFromFormat('Y-m-d', $request->query('final'))->endOfDay();
+        } catch (\Exception) {
             return response()->json(['error' => 'Datas inválidas. Use o formato Y-m-d.'], 400);
         }
 
@@ -103,56 +103,94 @@ class AnalyticsApiController extends Controller
         );
 
         return response()->json([
-            'unidade_id' => $unidadeId,
+            'unidade_id'            => $unidadeId,
             'aproveitamento_salmao' => $aproveitamento,
         ]);
     }
 
-
-    private function processUnitData(AnalyticService $service, int $unidadeId, Carbon $inicio, Carbon $final): array
+    private function processUnitData(int $unidadeId, Carbon $inicio, Carbon $final): array
     {
-        $dreData = $service->calculatePeriodData(
-            $unidadeId,
-            $inicio,
-            $final,
-            false,
-            null,
-            null,
-            false
-        );
-
-        $valorCmv = (float) ($dreData['cmv'] ?? 0);
-
-        // USAR O MÉTODO CENTRALIZADO DO SERVIÇO PARA OBTER A PORCENTAGEM DO CMV
-        $porcentagemCmv = $service->extractCmvPercentage($dreData);
+        $cmvApi = $this->fetchCmvFromApi($unidadeId, $inicio, $final);
 
         $aproveitamentoSalmao = round(
             $this->calcularAproveitamentoSalmao($unidadeId, $inicio, $final),
             2
         );
 
+        if ($cmvApi === null) {
+            return [
+                'faturamento'           => 0,
+                'cmv'                   => 0,
+                'porcentagem_cmv'       => 0,
+                'limiar_maximo'         => null,
+                'alerta'                => null,
+                'saidas_estoque'        => null,
+                'aproveitamento_salmao' => $aproveitamentoSalmao,
+            ];
+        }
+
         return [
-            'faturamento' => (float) $dreData['total_caixas'],
-            'cmv' => round($valorCmv, 2),
-            'porcentagem_cmv' => $porcentagemCmv,
+            'faturamento'           => (float) $cmvApi['faturamento'],
+            'cmv'                   => round($this->parseMoedaBr($cmvApi['saidas_estoque']), 2),
+            'porcentagem_cmv'       => (float) $cmvApi['porcentagem_cmv'],
+            'limiar_maximo'         => (int)   $cmvApi['limiar_maximo'],
+            'alerta'                => (bool)  $cmvApi['alerta'],
+            'saidas_estoque'        => $cmvApi['saidas_estoque'],
             'aproveitamento_salmao' => $aproveitamentoSalmao,
         ];
     }
 
-    /**
-     * Aproveitamento real do salmão (operacional)
-     */
-    private function calcularAproveitamentoSalmao(
-        int $unidadeId,
-        Carbon $inicio,
-        Carbon $final
-    ): float {
+    private function fetchCmvFromApi(int $unidadeId, Carbon $inicio, Carbon $final): ?array
+    {
+        $baseUrl = env('API_CMV_NOVO_URL');
+
+        if (!$baseUrl) {
+            Log::warning('API_CMV_NOVO_URL não configurada.');
+            return null;
+        }
+
+        try {
+            $response = Http::timeout(10)->get($baseUrl, [
+                'unidade' => $unidadeId,
+                'inicio'  => $inicio->format('Y-m-d'),
+                'final'   => $final->format('Y-m-d'),
+            ]);
+
+            if ($response->status() === 400) {
+                return null;
+            }
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning("CMV API retornou erro para unidade #{$unidadeId}", [
+                'status' => $response->status(),
+                'body'   => $response->body(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Falha ao chamar CMV API para unidade #{$unidadeId}", [
+                'exception' => $e->getMessage(),
+            ]);
+        }
+
+        return null;
+    }
+
+    private function parseMoedaBr(string $valor): float
+    {
+        // Remove tudo que não for dígito, ponto ou vírgula (inclui non-breaking space  )
+        $clean = preg_replace('/[^\d.,]/', '', $valor);
+        $clean = str_replace('.', '', $clean);  // remove separador de milhar
+        $clean = str_replace(',', '.', $clean); // vírgula decimal → ponto
+        return (float) $clean;
+    }
+
+    private function calcularAproveitamentoSalmao(int $unidadeId, Carbon $inicio, Carbon $final): float
+    {
         $dados = SalmaoHistorico::where('unidade_id', $unidadeId)
             ->whereBetween('created_at', [$inicio, $final])
-            ->selectRaw('
-                SUM(peso_limpo) as total_limpo,
-                SUM(peso_bruto) as total_bruto
-            ')
+            ->selectRaw('SUM(peso_limpo) as total_limpo, SUM(peso_bruto) as total_bruto')
             ->first();
 
         if (!$dados || $dados->total_bruto <= 0) {

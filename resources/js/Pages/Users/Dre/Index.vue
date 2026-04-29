@@ -73,9 +73,60 @@
                 <div>
                     <div class="bg-white rounded-lg p-5 flex justify-center w-full h-[480px]">
                         <canvas id="myChart"></canvas>
-
                     </div>
 
+                    <!-- Card CMV -->
+                    <div class="bg-white rounded-lg p-4 mt-4 shadow">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-[#262a27] text-[15px] font-semibold font-['Figtree']">CMV do Período</h3>
+                            <template v-if="cmvData">
+                                <span v-if="cmvData.alerta"
+                                    class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
+                                    ⚠ Acima do limite
+                                </span>
+                                <span v-else
+                                    class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded-full">
+                                    ✓ Dentro do limite
+                                </span>
+                            </template>
+                        </div>
+
+                        <div v-if="loading" class="flex gap-4">
+                            <div class="shimmer h-24 w-24 rounded-full"></div>
+                            <div class="flex-1 space-y-2 pt-2">
+                                <div class="shimmer h-4 w-1/2 rounded"></div>
+                                <div class="shimmer h-4 w-1/3 rounded"></div>
+                                <div class="shimmer h-4 w-2/5 rounded"></div>
+                            </div>
+                        </div>
+
+                        <div v-else-if="cmvData" class="flex items-center gap-4">
+                            <div class="relative w-28 h-28 flex-shrink-0">
+                                <canvas id="cmvChart"></canvas>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span class="text-[13px] font-bold"
+                                        :class="cmvData.alerta ? 'text-red-600' : 'text-green-600'">
+                                        {{ cmvData.porcentagem }}%
+                                    </span>
+                                    <span class="text-[10px] text-gray-400">CMV</span>
+                                </div>
+                            </div>
+                            <div class="space-y-1 text-[13px]">
+                                <div>
+                                    <span class="text-gray-500">Valor:</span>
+                                    <span class="font-bold text-[#262a27] ml-1">{{ cmvData.valor }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Limite máx.:</span>
+                                    <span class="font-semibold text-gray-700 ml-1">{{ cmvData.limiar_maximo }}%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else class="text-gray-400 text-sm text-center py-4">
+                            Sem dados de CMV para o período
+                        </div>
+                    </div>
 
                     <div class="mt-5">
                         <div class="flex items-center justify-between">
