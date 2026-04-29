@@ -49,10 +49,11 @@ class SsoAuthenticationMiddleware
         // 3. Sincroniza Unidade e Usuário Local
         try {
             $unidadeData = $ssoUser['unidade'] ?? null;
-            $unidadeId   = $unidadeData['id'] ?? null;
+            $unidadeId   = null;
 
             if ($unidadeData) {
-                $this->ssoService->syncUnidadeDetails($unidadeData);
+                $synced    = $this->ssoService->syncUnidadeDetails($unidadeData);
+                $unidadeId = $synced?->id ?? ($unidadeData['id'] ?? null);
             }
 
             $user = $this->ssoService->syncUser($ssoUser, $unidadeId);

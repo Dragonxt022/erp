@@ -94,12 +94,13 @@ class AuthController extends Controller
 
         $userData = $ssoUser;
         $unidadeData = $userData['unidade'] ?? null;
-        $unidadeId   = $unidadeData['id'] ?? null;
+        $unidadeId   = null;
         $grupoNome   = $userData['grupo_nome'] ?? $userData['grupo'] ?? null;
 
         // 🔎 Cria/atualiza unidade
         if ($unidadeData) {
-            $ssoService->syncUnidadeDetails($unidadeData);
+            $synced    = $ssoService->syncUnidadeDetails($unidadeData);
+            $unidadeId = $synced?->id ?? ($unidadeData['id'] ?? null);
         }
 
         // Cria/atualiza usuário e permissões

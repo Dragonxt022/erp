@@ -11,27 +11,47 @@ class SsoService
 {
     /**
      * Sincroniza os detalhes da unidade (empresa) com base nos dados do SSO.
+     * Retorna o modelo salvo para que o ID real (local) seja usado.
      *
      * @param array $unidadeData
-     * @return void
+     * @return \App\Models\InforUnidade|null
      */
-    public function syncUnidadeDetails(array $unidadeData)
+    public function syncUnidadeDetails(array $unidadeData): ?\App\Models\InforUnidade
     {
         if (empty($unidadeData['id'])) {
-            return;
+            return null;
         }
 
-        // Usa o Model InforUnidade que já existe no projeto
-        \App\Models\InforUnidade::updateOrCreate(
+        $attributes = [
+            'cep'    => $unidadeData['cep']    ?? null,
+            'cidade' => $unidadeData['cidade'] ?? null,
+            'bairro' => $unidadeData['bairro'] ?? null,
+            'rua'    => $unidadeData['rua']    ?? null,
+            'numero' => $unidadeData['numero'] ?? null,
+            'cnpj'   => $unidadeData['cnpj']   ?? null,
+        ];
+
+        // 1. Busca pelo ID do SSO
+        $unidade = \App\Models\InforUnidade::find($unidadeData['id']);
+
+        if ($unidade) {
+            $unidade->update($attributes);
+            return $unidade;
+        }
+
+        // 2. ID não existe localmente — tenta pelo CNPJ para evitar violação de unique
+        if (!empty($unidadeData['cnpj'])) {
+            $unidade = \App\Models\InforUnidade::where('cnpj', $unidadeData['cnpj'])->first();
+            if ($unidade) {
+                $unidade->update($attributes);
+                return $unidade;
+            }
+        }
+
+        // 3. Nenhum registro existente — cria preservando o ID do SSO
+        return \App\Models\InforUnidade::updateOrCreate(
             ['id' => $unidadeData['id']],
-            [
-                'cep'    => $unidadeData['cep'],
-                'cidade' => $unidadeData['cidade'],
-                'bairro' => $unidadeData['bairro'],
-                'rua'    => $unidadeData['rua'],
-                'numero' => $unidadeData['numero'],
-                'cnpj'   => $unidadeData['cnpj'],
-            ]
+            $attributes
         );
     }
 
