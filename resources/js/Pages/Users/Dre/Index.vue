@@ -71,15 +71,23 @@
                 </div>
 
                 <div>
-                    <div class="bg-white rounded-lg p-5 flex justify-center w-full h-[480px]">
-                        <canvas id="myChart"></canvas>
-                    </div>
-
-                    <!-- Card CMV -->
-                    <div class="bg-white rounded-lg p-4 mt-4 shadow">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-[#262a27] text-[15px] font-semibold font-['Figtree']">CMV do Período</h3>
-                            <template v-if="cmvData">
+                    <div class="bg-white rounded-lg p-5 w-full">
+                        <div class="flex justify-center h-[420px]">
+                            <canvas id="myChart"></canvas>
+                        </div>
+                        <!-- CMV info integrada -->
+                        <div class="border-t mt-3 pt-3 flex items-center justify-between">
+                            <div v-if="loading" class="shimmer h-4 w-1/3 rounded"></div>
+                            <template v-else-if="cmvData">
+                                <div class="text-[13px] text-gray-600">
+                                    <span class="font-semibold text-[#262a27]">CMV:</span>
+                                    <span class="font-bold ml-1">{{ cmvData.valor }}</span>
+                                    <span class="ml-2 font-bold"
+                                        :class="cmvData.alerta ? 'text-red-600' : 'text-green-600'">
+                                        {{ cmvData.porcentagem }}%
+                                    </span>
+                                    <span class="text-gray-400 text-xs ml-1">(limite {{ cmvData.limiar_maximo }}%)</span>
+                                </div>
                                 <span v-if="cmvData.alerta"
                                     class="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
                                     ⚠ Acima do limite
@@ -89,42 +97,6 @@
                                     ✓ Dentro do limite
                                 </span>
                             </template>
-                        </div>
-
-                        <div v-if="loading" class="flex gap-4">
-                            <div class="shimmer h-24 w-24 rounded-full"></div>
-                            <div class="flex-1 space-y-2 pt-2">
-                                <div class="shimmer h-4 w-1/2 rounded"></div>
-                                <div class="shimmer h-4 w-1/3 rounded"></div>
-                                <div class="shimmer h-4 w-2/5 rounded"></div>
-                            </div>
-                        </div>
-
-                        <div v-else-if="cmvData" class="flex items-center gap-4">
-                            <div class="relative w-28 h-28 flex-shrink-0">
-                                <canvas id="cmvChart"></canvas>
-                                <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span class="text-[13px] font-bold"
-                                        :class="cmvData.alerta ? 'text-red-600' : 'text-green-600'">
-                                        {{ cmvData.porcentagem }}%
-                                    </span>
-                                    <span class="text-[10px] text-gray-400">CMV</span>
-                                </div>
-                            </div>
-                            <div class="space-y-1 text-[13px]">
-                                <div>
-                                    <span class="text-gray-500">Valor:</span>
-                                    <span class="font-bold text-[#262a27] ml-1">{{ cmvData.valor }}</span>
-                                </div>
-                                <div>
-                                    <span class="text-gray-500">Limite máx.:</span>
-                                    <span class="font-semibold text-gray-700 ml-1">{{ cmvData.limiar_maximo }}%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-else class="text-gray-400 text-sm text-center py-4">
-                            Sem dados de CMV para o período
                         </div>
                     </div>
 
@@ -158,7 +130,7 @@
                                             {{ mes.nome_mes }}
                                         </span>
                                         <span class="text-center text-gray-600 font-medium">
-                                            R$ {{ mes.valor_cmv }}
+                                            {{ mes.valor_cmv }}
                                         </span>
                                         <span class="text-center text-gray-600 font-semibold">
                                             R$ {{ mes.resultado_do_periodo }}
@@ -188,7 +160,6 @@ import {
     ArcElement,
     Tooltip,
     Legend,
-    DoughnutController,
     PieController,
     CategoryScale,
     Filler,
@@ -202,8 +173,9 @@ const grupos = ref([]);
 const historico = ref([]); // This will now directly hold the calendar data
 const explicacaoDRE = ref('');
 const loading = ref(true);
+const cmvData = ref(null);
 
-const chartType = ref('pie'); // Assuming pie chart is the primary one
+const chartType = ref('pie');
 let myChart = null;
 
 const graficoData = ref([]);
@@ -237,25 +209,20 @@ const fetchData = async (startDate, endDate) => {
         });
 
         const data = response.data;
-        
-        // Debug: Log the complete response to check if total_salarios is present
-        console.log('DRE API Response:', data);
-        console.log('Total Salarios from API:', data.total_salarios);
 
-        // Update main DRE period data
         totalCaixas.value = data.total_caixas || '0,00';
         totalSalarios.value = data.total_salarios || '0,00';
         resultadoPeriodo.value = data.resultado_do_periodo || '0,00';
         grupos.value = data.grupos || [];
-        historico.value = data.calendario || []; // Directly assign the calendar data
+        historico.value = data.calendario || [];
         explicacaoDRE.value = data.explicacao_dre || [];
+        cmvData.value = data.cmv || null;
 
-        // Prepare data for the chart using the new `grafico_data` from the backend
         graficoLabels.value = data.grafico_data.labels || [];
         graficoData.value = data.grafico_data.data || [];
         graficoPorcentagem.value = data.grafico_data.porcentagens || [];
 
-        renderGrafico(); // Re-render the chart with new data
+        renderGrafico();
 
     } catch (error) {
         console.error('Erro ao buscar os dados do DRE:', error);
@@ -268,8 +235,9 @@ const fetchData = async (startDate, endDate) => {
         graficoLabels.value = [];
         graficoData.value = [];
         graficoPorcentagem.value = [];
+        cmvData.value = null;
         if (myChart) {
-            myChart.destroy(); // Destroy chart on error if it exists
+            myChart.destroy();
             myChart = null;
         }
     } finally {
@@ -282,10 +250,9 @@ Chart.register(
     ArcElement,
     Tooltip,
     Legend,
-    DoughnutController,
     PieController,
-    CategoryScale, // Needed if you were to use Bar/Line charts later
-    Filler, // Needed for certain chart fills, keeping it for robustness
+    CategoryScale,
+    Filler,
     ChartDataLabels
 );
 
@@ -378,20 +345,7 @@ const renderGrafico = () => {
     myChart = new Chart(chartCanvas, baseConfig);
 };
 
-// Fetch initial data when the component is mounted
-onMounted(() => {
-    // Pass default dates (current month) to fetchData
-    const today = new Date();
-    const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-        .toLocaleDateString('pt-BR')
-        .split('/')
-        .join('-');
-    const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-        .toLocaleDateString('pt-BR')
-        .split('/')
-        .join('-');
-    fetchData(startDate, endDate);
-});
+// CalendarFilterDre emite as datas no onMounted, disparando handleFilterUpdate → fetchData
 
 //  Chat
 const gerarFeedbackChatbot = (calendario) => {

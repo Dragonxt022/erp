@@ -3,18 +3,30 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Categoria extends Model
 {
     protected $table = 'categorias';
 
     protected $fillable = [
-        'nome', 
+        'nome',
         'grupo_id',
         'exibir_contas_apagar',
         'exibir_dre',
         'exibir_seletor_caixa'
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        $clearCache = fn() => Cache::forget('category_groups_with_categories');
+
+        static::created($clearCache);
+        static::updated($clearCache);
+        static::deleted($clearCache);
+    }
 
     public function grupo()
     {

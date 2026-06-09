@@ -33,32 +33,29 @@
     >
       <!-- Informações da conta -->
       <div>
-        <p class="text-lg font-medium text-gray-900">{{ conta.nome }}</p>
-        <p class="text-sm text-gray-600">
-          {{ conta.valor_formatado }} - Vence em
+        <p class="text-sm font-semibold text-gray-900">{{ conta.nome }}</p>
+        <p class="text-xs text-gray-500">
+          {{ conta.valor_formatado }} · Vence em
           {{ formatarData(conta.vencimento) }}
         </p>
       </div>
 
       <!-- Ícone + Badge do status -->
-    <div class="flex items-center gap-2">
-        <!-- Badge com nome do status -->
+      <div class="flex items-center gap-2 shrink-0">
         <span
-            :class="[
-            'px-2 py-1 text-xs font-semibold rounded-full capitalize',
+          :class="[
+            'px-2 py-0.5 text-xs font-semibold rounded-full capitalize',
             getStatusClass(conta.status)
-            ]"
+          ]"
         >
-            {{ conta.status }}
+          {{ conta.status }}
         </span>
-
-        <!-- Ícone -->
         <img
-            :src="getStatusIcon(conta.status)"
-            :alt="conta.status"
-            class="w-8 h-8"
+          :src="getStatusIcon(conta.status)"
+          :alt="conta.status"
+          class="w-6 h-6"
         />
-    </div>
+      </div>
 
     </div>
   </div>

@@ -331,7 +331,7 @@ class PainelAnaliticos extends Controller
 
         $calendario = $this->generateCalendarData($startDateCarbon->year, $unidadeId);
         $dadosGruposFormatados = $this->formatGroupData($dreData);
-        $graficoData = $this->calculateChartData($dreData);
+        $graficoData = $this->calculateChartData($dreData, $cmvApi);
         $explicacao = $this->generateExplanation($dreData, $graficoData);
 
         $resultadoPeriodo = $dreData['total_caixas'] - $dreData['total_despesas_categorias'];
@@ -621,16 +621,21 @@ class PainelAnaliticos extends Controller
         })->toArray();
     }
 
-    private function calculateChartData(array $dreData): array
+    private function parseMoedaBr(string $valor): float
+    {
+        $clean = preg_replace('/[^\d.,]/', '', $valor);
+        $clean = str_replace('.', '', $clean);
+        $clean = str_replace(',', '.', $clean);
+        return (float) $clean;
+    }
+
+    private function calculateChartData(array $dreData, ?array $cmvApi = null): array
     {
         $valoresParaGrafico = [];
         $porcentagensParaGrafico = [];
 
-        // USAR O FATURAMENTO NÃO AUDITADO COMO BASE PARA AS PORCENTAGENS
-        // Se não existir, usa o total_caixas como fallback
         $baseParaPorcentagem = $dreData['faturamento_nao_auditado'] ?? $dreData['total_caixas'];
 
-        // VALIDAÇÃO IMPORTANTE: evitar divisão por zero
         if ($baseParaPorcentagem <= 0) {
             return [
                 'labels' => ['CMV', 'Custos Fixos', 'Impostos', 'Custos Variáveis', 'Custos Operacionais', 'Resultado do Período'],
@@ -639,13 +644,19 @@ class PainelAnaliticos extends Controller
             ];
         }
 
-        // 1. CMV (Custo das Mercadorias Vendidas)
-        $grupoCmv = $dreData['dados_grupos']->firstWhere('nome_grupo', 'CMV');
-        $cmv = ($grupoCmv && isset($grupoCmv['categorias']))
-            ? $grupoCmv['categorias']->sum('valor')
-            : $dreData['cmv'];
+        // 1. CMV — usa a nova API quando disponível
+        if ($cmvApi && isset($cmvApi['saidas_estoque'])) {
+            $cmv = $this->parseMoedaBr($cmvApi['saidas_estoque']);
+            $cmvPorcentagem = (float) $cmvApi['porcentagem_cmv'];
+        } else {
+            $grupoCmv = $dreData['dados_grupos']->firstWhere('nome_grupo', 'CMV');
+            $cmv = ($grupoCmv && isset($grupoCmv['categorias']))
+                ? $grupoCmv['categorias']->sum('valor')
+                : $dreData['cmv'];
+            $cmvPorcentagem = $baseParaPorcentagem > 0 ? ($cmv / $baseParaPorcentagem) * 100 : 0;
+        }
         $valoresParaGrafico['CMV'] = $cmv;
-        $porcentagensParaGrafico['CMV'] = ($cmv / $baseParaPorcentagem) * 100;
+        $porcentagensParaGrafico['CMV'] = $cmvPorcentagem;
 
         // 2. Custos Fixos
         $grupoCustosFixos = $dreData['dados_grupos']->firstWhere('nome_grupo', 'Custos Fixos');

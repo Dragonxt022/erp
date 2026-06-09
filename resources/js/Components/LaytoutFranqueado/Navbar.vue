@@ -5,14 +5,25 @@
     <div class="navbar-content">
       <!-- Logo e ícones de navegação -->
       <div class="navbar-left">
-          <a href="https://login.taiksu.com.br/" class="flex flex-row gap-2 px-3 py-1 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
-            <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-5 h-5 rotate-180" />
-            <h2 class="group text-md font-semibold text-green-700">Voltar para o <span class="text-green-500 font-bold">Office</span></h2>
+          <!-- Botão hamburguer — visível apenas no mobile -->
+          <button
+            @click="toggleSidebar"
+            class="md:hidden mr-3 p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none"
+            aria-label="Abrir menu"
+          >
+            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+
+          <a href="https://login.taiksu.com.br/" class="flex flex-row gap-1.5 px-2 py-1 sm:px-3 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
+            <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-4 h-4 sm:w-5 sm:h-5 rotate-180 shrink-0 self-center" />
+            <span class="text-xs sm:text-sm font-semibold text-green-700 leading-tight">Voltar para o <span class="text-green-500 font-bold">Office</span></span>
           </a>
       </div>
-      <a v-if="canAccessDre" href="https://admin.taiksu.com.br/franqueado/dre-gerencial" class="flex flex-row gap-2 px-3 py-1 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
-        <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-5 h-5 rotate-180" />
-        <h2 class="group text-md font-semibold text-green-700">DRE Gerencial</h2>
+      <a v-if="canAccessDre" href="https://admin.taiksu.com.br/franqueado/dre-gerencial" class="flex flex-row gap-1.5 px-2 py-1 sm:px-3 rounded-full bg-green-100 shadow-md hover:shadow-xl transition-all duration-300">
+        <img src="https://login.taiksu.com.br/frontend/img/seta.png" alt="Menu" class="w-4 h-4 sm:w-5 sm:h-5 rotate-180 shrink-0 self-center" />
+        <span class="text-xs sm:text-sm font-semibold text-green-700 leading-tight">DRE Gerencial</span>
       </a>
     </div>
   </div>

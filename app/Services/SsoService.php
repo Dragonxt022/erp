@@ -10,6 +10,24 @@ use Illuminate\Support\Str;
 class SsoService
 {
     /**
+     * Mapeamento de IDs do SSO para IDs locais do banco legado.
+     * Necessário quando o ID da unidade no SSO difere do ID cadastrado localmente.
+     * Formato: [id_sso => id_local]
+     */
+    private array $legacyIdMap = [
+        34 => 84, // Rolim de Moura: ID 34 no SSO, ID 84 no banco legado
+    ];
+
+    /**
+     * Resolve o ID local de uma unidade a partir do ID vindo do SSO.
+     * Retorna o ID mapeado (legado) se existir, ou o próprio ID recebido.
+     */
+    public function resolveLocalUnidadeId(int $ssoId): int
+    {
+        return $this->legacyIdMap[$ssoId] ?? $ssoId;
+    }
+
+    /**
      * Sincroniza os detalhes da unidade (empresa) com base nos dados do SSO.
      * Retorna o modelo salvo para que o ID real (local) seja usado.
      *
@@ -31,8 +49,11 @@ class SsoService
             'cnpj'   => $unidadeData['cnpj']   ?? null,
         ];
 
-        // 1. Busca pelo ID do SSO
-        $unidade = \App\Models\InforUnidade::find($unidadeData['id']);
+        // Verifica se o ID do SSO tem um mapeamento para ID legado local
+        $localId = $this->legacyIdMap[$unidadeData['id']] ?? $unidadeData['id'];
+
+        // 1. Busca pelo ID local (legado ou igual ao SSO)
+        $unidade = \App\Models\InforUnidade::find($localId);
 
         if ($unidade) {
             $unidade->update($attributes);
@@ -48,9 +69,9 @@ class SsoService
             }
         }
 
-        // 3. Nenhum registro existente — cria preservando o ID do SSO
+        // 3. Nenhum registro existente — cria preservando o ID local (mapeado ou do SSO)
         return \App\Models\InforUnidade::updateOrCreate(
-            ['id' => $unidadeData['id']],
+            ['id' => $localId],
             $attributes
         );
     }

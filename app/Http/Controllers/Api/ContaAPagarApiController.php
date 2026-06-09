@@ -59,6 +59,13 @@ class ContaAPagarApiController extends Controller
             $this->ssoService->ensureUserExists($request->responsavel_id);
         }
 
+        // Resolve o unidade_id do SSO para o ID local (trata divergências de banco legado)
+        if ($request->has('unidade_id')) {
+            $request->merge([
+                'unidade_id' => $this->ssoService->resolveLocalUnidadeId((int) $request->unidade_id)
+            ]);
+        }
+
         // 2. Validação dos Dados Recebidos
         $validator = Validator::make($request->all(), [
             'nome' => 'required|string|max:255',

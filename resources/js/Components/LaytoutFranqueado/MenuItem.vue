@@ -26,7 +26,8 @@
         " class="submenu">
             <div v-for="(submenu, submenuIndex) in filteredSubmenuItems" :key="submenuIndex">
                 <Link class="submenu-item" :href="route(submenu.link)"
-                    :class="{ active: isSubmenuActive(submenu.link) }">
+                    :class="{ active: isSubmenuActive(submenu.link) }"
+                    @click="fecharMenuMobile">
                 <div class="label">{{ submenu.label }}</div>
                 </Link>
             </div>
@@ -37,6 +38,9 @@
 <script setup>
 import { defineProps, ref, computed, watch, nextTick, inject } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
+import { useSidebarStore } from '@/stores/sidebar';
+
+const sidebarStore = useSidebarStore();
 
 const props = defineProps({
     
@@ -86,8 +90,9 @@ const handleClick = (e) => {
     if (filteredSubmenuItems.value.length > 0) {
         e.preventDefault();
         toggleSubmenu();
+    } else if (window.innerWidth < 768) {
+        sidebarStore.close();
     }
-    // Para links externos, o clique não precisa ser tratado aqui, pois o <a> já redireciona
 };
 
 const toggleSubmenu = () => {
@@ -132,6 +137,12 @@ const isAnySubmenuActive = computed(() => {
 const handleLogout = () => {
     if (props.isLogout) {
         router.post(route('logout.sair'));
+    }
+};
+
+const fecharMenuMobile = () => {
+    if (window.innerWidth < 768) {
+        sidebarStore.close();
     }
 };
 

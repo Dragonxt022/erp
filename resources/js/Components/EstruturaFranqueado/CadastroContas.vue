@@ -5,33 +5,65 @@
   </div>
 
   <div class="mt-5">
-    <div class="grid grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Primeira coluna com duas linhas -->
-      <div class="bg-white rounded-lg p-12">
-        <div class="flex gap-4">
+      <div class="bg-white rounded-lg p-6 lg:p-12">
+        <div class="flex flex-col sm:flex-row gap-4">
           <!-- Seletor de Nome da Conta (categorias) -->
           <div class="flex-1 mb-8">
-            <label
-              for="categoria"
-              class="block text-sm font-medium text-gray-700"
-            ></label>
             <LabelModel text="Nome da Conta" />
-            <select
-              id="categoria"
-              v-model="categoriaSelecionada"
-              @change="verificarCategoriaFornecedor"
-              name="categoria"
-              class="w-full py-2 bg-transparent border border-gray-300 rounded-lg outline-none text-base text-gray-700 focus:ring-2 focus:ring-green-500 font-['Figtree']"
-            >
-              <option value="" selected>Selecione uma categoria</option>
-              <option
-                v-for="categoria in categorias"
-                :key="categoria.id"
-                :value="categoria.id"
+            <div class="relative" ref="categoriaDropdownRef">
+              <!-- Trigger -->
+              <button
+                type="button"
+                @click="toggleCategoriaDropdown"
+                class="w-full px-3 py-2 bg-white border rounded-lg outline-none text-base text-left flex items-center justify-between focus:ring-2 focus:ring-green-500 font-['Figtree']"
+                :class="errors.categoria ? 'border-red-400' : 'border-gray-300'"
               >
-                {{ categoria.nome }}
-              </option>
-            </select>
+                <span :class="categoriaSelecionada ? 'text-gray-900' : 'text-gray-400'">
+                  {{ categoriaNomeExibido || 'Selecione uma categoria' }}
+                </span>
+                <svg class="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              <!-- Painel dropdown -->
+              <div
+                v-if="dropdownAberto"
+                class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg"
+              >
+                <div class="p-2 border-b border-gray-100">
+                  <div class="relative flex items-center">
+                    <svg class="absolute left-2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      ref="categoriaSearchInput"
+                      v-model="categoriaBusca"
+                      placeholder="Buscar por nome ou código..."
+                      class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded outline-none focus:ring-2 focus:ring-green-500"
+                      @keydown.escape="dropdownAberto = false"
+                    />
+                  </div>
+                </div>
+                <ul class="max-h-48 overflow-y-auto py-1">
+                  <li
+                    v-for="cat in categoriasFiltradas"
+                    :key="cat.id"
+                    @click="selecionarCategoria(cat)"
+                    class="px-3 py-2 text-sm cursor-pointer hover:bg-green-50 flex items-center gap-2"
+                    :class="categoriaSelecionada === cat.id ? 'bg-green-100' : ''"
+                  >
+                    <span v-if="cat.codigo" class="text-xs text-gray-400 font-mono shrink-0 w-12">{{ cat.codigo }}</span>
+                    <span class="text-gray-800">{{ cat.nome }}</span>
+                  </li>
+                  <li v-if="categoriasFiltradas.length === 0" class="px-3 py-3 text-sm text-gray-400 text-center">
+                    Nenhuma categoria encontrada
+                  </li>
+                </ul>
+              </div>
+            </div>
             <span v-if="errors.categoria" class="text-red-500 text-sm">
               {{ errors.categoria }}
             </span>
@@ -128,7 +160,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-lg p-12">
+      <div class="bg-white rounded-lg p-6 lg:p-12">
         <!-- Seletor de Dias de Lembrete -->
         <LabelModel text="Informações adicionais" />
         <textarea
@@ -196,7 +228,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineEmits } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, defineEmits } from 'vue';
 import LabelModel from '@/Components/Label/LabelModel.vue';
 import axios from 'axios';
 import ButtonPrimaryMedio from '../Button/ButtonPrimaryMedio.vue';
@@ -211,7 +243,11 @@ const descricao = ref('');
 const emitidaEm = ref('');
 const vencimento = ref('');
 const diasLembrete = ref(1);
-const categoriaSelecionada = ref(null);
+const categoriaSelecionada = ref('');
+const dropdownAberto = ref(false);
+const categoriaBusca = ref('');
+const categoriaSearchInput = ref(null);
+const categoriaDropdownRef = ref(null);
 const arquivoNome = ref('');
 const fornecedorSelecionado = ref(null);
 const fornecedores = ref([]);
@@ -225,17 +261,67 @@ const errors = ref({}); // Armazenar erros de validação
 
 const emit = defineEmits(['voltar']);
 
-// IDs das categorias que devem mostrar o seletor de fornecedor
 const CATEGORIAS_FORNECEDOR = [19];
 
+const normalizarCodigo = (input) => {
+  const limpo = input.replace(/\s/g, '');
+  const soDigitos = limpo.replace(/\./g, '');
+  if (soDigitos.length === 3 && /^\d{3}$/.test(soDigitos)) {
+    return `${soDigitos[0]}.${soDigitos[1]}.${soDigitos[2]}`;
+  }
+  return limpo;
+};
+
+const categoriaNomeExibido = computed(() => {
+  if (!categoriaSelecionada.value) return '';
+  const cat = categorias.value.find((c) => c.id === categoriaSelecionada.value);
+  if (!cat) return '';
+  return cat.codigo ? `[${cat.codigo}] ${cat.nome}` : cat.nome;
+});
+
+const categoriasFiltradas = computed(() => {
+  if (!categoriaBusca.value) return categorias.value;
+  const q = categoriaBusca.value.toLowerCase();
+  const normalizado = normalizarCodigo(categoriaBusca.value);
+  return categorias.value.filter(
+    (c) =>
+      c.nome.toLowerCase().includes(q) ||
+      (c.codigo && (c.codigo.includes(q) || c.codigo === normalizado))
+  );
+});
+
+const toggleCategoriaDropdown = () => {
+  dropdownAberto.value = !dropdownAberto.value;
+  if (dropdownAberto.value) {
+    nextTick(() => categoriaSearchInput.value?.focus());
+  }
+};
+
+const selecionarCategoria = (cat) => {
+  categoriaSelecionada.value = cat.id;
+  dropdownAberto.value = false;
+  categoriaBusca.value = '';
+  verificarCategoriaFornecedor();
+};
+
+const handleClickOutside = (event) => {
+  if (categoriaDropdownRef.value && !categoriaDropdownRef.value.contains(event.target)) {
+    dropdownAberto.value = false;
+  }
+};
 
 onMounted(async () => {
   try {
-    const response = await axios.get('/api/categorias/seleto-contas'); 
+    const response = await axios.get('/api/categorias/seleto-contas');
     categorias.value = response.data;
   } catch (error) {
     console.error('Erro ao carregar categorias:', error);
   }
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 
 // Carrega fornecedores da API externa
@@ -372,7 +458,9 @@ const formatarValorBR = (valor) => {
 
 const cancelForm = () => {
   // Limpa os campos
-  categoriaSelecionada.value = null;
+  categoriaSelecionada.value = '';
+  dropdownAberto.value = false;
+  categoriaBusca.value = '';
   valor.value = null;
   emitidaEm.value = '';
   vencimento.value = '';

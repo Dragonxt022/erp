@@ -3,7 +3,18 @@
         <!-- Tabela de Lotes -->
         <div v-if="!isEditMode">
             <div class="mt-8">
-                <div class="w-full h-[555px] bg-white rounded-[20px] p-7 relative">
+                <div class="w-full min-h-[555px] bg-white rounded-[20px] p-7 relative">
+                    <!-- Botão Voltar -->
+                    <button
+                        @click="emit('voltar')"
+                        class="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 mb-4 transition-colors"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Voltar
+                    </button>
+
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3">
                             <p class="text-[25px] font-bold font-['Figtree'] leading-8 tracking-tight">

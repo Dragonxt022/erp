@@ -20,14 +20,16 @@
     <!-- Grid de Listagem e Detalhes (visível apenas se showCadastro for false) -->
     <div
       v-if="!showCadastro"
-      class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 h-full"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3 pb-24"
     >
-      <!-- Componente de Listagem -->
-      <ListarContasApagar
-        :key="listaKey"
-        ref="listaDados"
-        @dado-selecionado="dadoSelecionado"
-      />
+      <!-- Lista: oculta no mobile quando um item está selecionado -->
+      <div :class="dadosSelecionado ? 'hidden sm:block' : 'block'">
+        <ListarContasApagar
+          :key="listaKey"
+          ref="listaDados"
+          @dado-selecionado="dadoSelecionado"
+        />
+      </div>
 
       <!-- Componente de Detalhes (mostra apenas se houver um item selecionado) -->
       <div v-if="dadosSelecionado">

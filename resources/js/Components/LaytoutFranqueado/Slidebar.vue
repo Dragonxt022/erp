@@ -4,9 +4,17 @@
             <div class="spinner"></div>
         </div>
 
+        <!-- Overlay escuro no mobile quando o menu está aberto -->
+        <transition name="fade">
+            <div
+                v-if="sidebarStore.isOpen && !loading"
+                class="fixed inset-0 bg-black bg-opacity-40 z-40 md:hidden"
+                @click="sidebarStore.close()"
+            />
+        </transition>
 
         <!-- Sidebar -->
-        <div v-else :class="[
+        <div v-if="!loading" :class="[
                 'sidebar z-50 bg-gray-200 text-gray-800 flex flex-col p-3 transition-transform duration-300 ease-in-out',
 
                 /* Mobile: fixo na esquerda */
@@ -280,4 +288,12 @@ const isActive = (link) => {
 
 
 /* Overlay para mobile */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.25s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>
